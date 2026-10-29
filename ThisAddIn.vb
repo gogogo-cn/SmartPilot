@@ -82,10 +82,13 @@ Partial Public NotInheritable Class ThisAddIn
         Else
             Try
                 ' Excel COM Application 对象没有 WinForms 风格的 Invoke 方法。
-                ' 此分支通常已经在 Excel 主线程中执行，直接调用 action；若仍跨线程则由调用方捕获异常。
+                ' 此分支通常已经在 Excel 主线程中执行，直接调用 action；
+                ' 失败时记录日志并重新抛出，绝不重复执行（避免副作用跑两遍）。
                 action()
-            Catch
-                action()
+            Catch ex As Exception
+                Dim logger = addIn._chatLogger
+                logger?.LogError("ADDIN", "RunOnUIThread 直接执行分支失败: " & ex.Message, ex)
+                Throw
             End Try
         End If
     End Sub
