@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "description": "数据类型配置 - 支持可扩展的业务类型定义",
+  "lastUpdated": "2024-01-01",
+  "dataTypes": [
+    {
+      "typeName": "发票",
+      "displayName": "发票",
+      "defaultSheetName": "发票记录",
+      "includeImagePath": true,
+      "detectionFields": ["invoiceNumber", "invoiceCode", "invoiceDate", "amount"],
+      "fieldMappings": {
+        "发票号码": "invoiceNumber",
+        "发票代码": "invoiceCode",
+        "开票日期": "invoiceDate",
+        "金额": "amount",
+        "价税合计": "totalAmount",
+        "税率": "taxRate",
+        "税额": "taxAmount",
+        "不含税金额": "netAmount",
+        "销售方名称": "sellerName",
+        "销售方税号": "sellerTaxId",
+        "销售方地址": "sellerAddress",
+        "销售方银行": "sellerBank",
+        "购买方名称": "buyerName",
+        "购买方税号": "buyerTaxId",
+        "购买方地址": "buyerAddress",
+        "购买方银行": "buyerBank",
+        "发票类型": "invoiceType",
+        "规格型号": "specModel",
+        "收款人": "payee",
+        "复核人": "reviewer",
+        "开票人": "drawer",
+        "校验码": "verifyCode",
+        "备注": "remarks"
+      },
+      "excelColumns": [
+        { "field": "invoiceNumber", "header": "发票号码", "width": 15, "format": "@" },
+        { "field": "invoiceCode", "header": "发票代码", "width": 15, "format": "@" },
+        { "field": "invoiceDate", "header": "开票日期", "width": 12, "format": "yyyy-mm-dd" },
+        { "field": "totalAmount", "header": "价税合计", "width": 12, "format": "¥#,##0.00" },
+        { "field": "taxAmount", "header": "税额", "width": 12, "format": "¥#,##0.00" },
+        { "field": "sellerName", "header": "销售方名称", "width": 30, "format": "@" },
+        { "field": "buyerName", "header": "购买方名称", "width": 30, "format": "@" },
+        { "field": "imagePath", "header": "图片路径", "width": 40, "format": "@" }
+      ]
+    },
+    {
+      "typeName": "名片/身份证",
+      "displayName": "名片/身份证",
+      "defaultSheetName": "名片识别",
+      "includeImagePath": false,
+      "detectionFields": ["姓名", "公民身份号码", "身份证号码", "电话", "公司名称"],
+      "fieldMappings": {
+        "姓名": "姓名",
+        "性别": "性别",
+        "民族": "民族",
+        "出生日期": "出生日期",
+        "出生": "出生",
+        "住址": "住址",
+        "公民身份号码": "公民身份号码",
+        "身份证号码": "身份证号码",
+        "身份证号": "身份证号",
+        "签发机关": "签发机关",
+        "有效期限": "有效期限",
+        "职位": "职位",
+        "公司名称": "公司名称",
+        "公司": "公司",
+        "电话": "电话",
+        "手机": "手机",
+        "邮箱": "邮箱",
+        "地址": "地址",
+        "部门": "部门"
+      },
+      "excelColumns": [
+        { "field": "姓名", "header": "姓名", "width": 10, "format": "@" },
+        { "field": "性别", "header": "性别", "width": 8, "format": "@" },
+        { "field": "公民身份号码", "header": "身份证号", "width": 20, "format": "@" },
+        { "field": "职位", "header": "职位", "width": 15, "format": "@" },
+        { "field": "公司名称", "header": "公司名称", "width": 30, "format": "@" },
+        { "field": "电话", "header": "电话", "width": 15, "format": "@" },
+        { "field": "邮箱", "header": "邮箱", "width": 25, "format": "@" },
+        { "field": "地址", "header": "地址", "width": 40, "format": "@" }
+      ]
+    },
+    {
+      "typeName": "表格",
+      "displayName": "通用表格",
+      "defaultSheetName": "表格数据",
+      "includeImagePath": true,
+      "detectionFields": ["表格", "行", "列", "单元格"],
+      "fieldMappings": {},
+      "excelColumns": [],
+      "dynamicColumns": true
+    },
+    {
+      "typeName": "文档",
+      "displayName": "通用文档",
+      "defaultSheetName": "文档内容",
+      "includeImagePath": true,
+      "detectionFields": ["标题", "段落", "正文"],
+      "fieldMappings": {
+        "标题": "title",
+        "内容": "content",
+        "摘要": "summary"
+      },
+      "excelColumns": [
+        { "field": "title", "header": "标题", "width": 30, "format": "@" },
+        { "field": "content", "header": "内容", "width": 60, "format": "@" },
+        { "field": "summary", "header": "摘要", "width": 40, "format": "@" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+<html style="margin:0;padding:0;">
+<title>ExcelAIVSTOAddIn 路线图 2026Q4-2027Q1</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif;}
+  .wrap{width:100%;max-width:1120px;margin:0 auto;padding:18px 14px 24px;}
+  h1{font-size:20px;color:#1f2329;margin-bottom:4px;}
+  .sub{font-size:13px;color:#6b7280;margin-bottom:14px;}
+  .axis{position:relative;height:26px;border-bottom:2px solid #d1d5db;margin:0 0 6px 150px;}
+  .axis .tk{position:absolute;top:6px;transform:translateX(-50%);font-size:12px;color:#6b7280;}
+  .axis .tickline{position:absolute;top:0;width:1px;height:8px;background:#d1d5db;}
+  .lane{display:flex;margin-bottom:12px;align-items:stretch;}
+  .label{width:150px;flex:none;padding-right:12px;}
+  .label .m{font-size:14px;font-weight:600;}
+  .label .d{font-size:12px;color:#6b7280;margin-top:2px;}
+  .body{flex:1;position:relative;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;background:#fafafa;}
+  .bar{position:absolute;top:10px;height:14px;border-radius:7px;color:#fff;font-size:11px;line-height:14px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tasks{margin-top:30px;font-size:12.5px;color:#374151;line-height:1.65;}
+  .tasks b{font-weight:600;}
+  .exit{margin-top:6px;font-size:12px;color:#4b5563;background:#f3f4f6;border-left:3px solid #9ca3af;padding:4px 8px;border-radius:0 4px 4px 0;}
+  .lock{display:inline-block;background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-size:11px;padding:0 6px;border-radius:10px;margin-left:6px;}
+  .dep{position:absolute;font-size:11px;color:#dc2626;font-weight:600;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:#4b5563;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .sw{width:14px;height:10px;border-radius:4px;display:inline-block;}
+</style>
+<div class="wrap">
+  <h1>ExcelAIVSTOAddIn 路线图 · 2026-Q4 → 2027-Q1</h1>
+  <div class="sub">基线 2026-10-28 ｜ 现状：功能齐备（75 个 Excel 工具 + PPT 分步构建 + Skill 体系 + 授权底座）→ 核心矛盾 = 发布就绪度与已知缺陷清零</div>
+
+  <div class="axis">
+    <div class="tickline" style="left:0%;"></div><div class="tk" style="left:0%;">10月</div>
+    <div class="tickline" style="left:17%;"></div><div class="tk" style="left:17%;">11月</div>
+    <div class="tickline" style="left:33.5%;"></div><div class="tk" style="left:33.5%;">12月</div>
+    <div class="tickline" style="left:50.5%;"></div><div class="tk" style="left:50.5%;">1月</div>
+    <div class="tickline" style="left:67.6%;"></div><div class="tk" style="left:67.6%;">2月</div>
+    <div class="tickline" style="left:83%;"></div><div class="tk" style="left:83%;">3月</div>
+    <div class="tickline" style="left:100%;"></div><div class="tk" style="left:100%;">3月底</div>
+  </div>
+
+  <div class="lane">
+    <div class="label"><div class="m">M0 发布就绪</div><div class="d">10-28 → 11-21<br>能发·能装·能验</div></div>
+    <div class="body">
+      <div class="bar" style="left:14.8%;width:13.2%;background:#dc2626;">M0 · 3.5周</div>
+      <div class="tasks">
+        <b>1 正式代码签名证书</b>（EV/OV 采购，最早启动）<span class="lock">外部依赖</span> → <b>2 InstallUrl 公网 HTTPS</b> → <b>3 Legal 主体替换</b> → <b>4 LicenseServer 公网部署 + /health + 密钥扫描</b> → <b>5 release-check 全绿</b> → <b>6 三宿主 Release 重新出包（去临时 pfx）</b> → <b>7 ClickOnce 更新链验证</b>
+      </div>
+      <div class="exit">出口条件：release-check.ps1（strict）退出码 0 ＋ 干净机安装 / 更新 / 卸载全通过</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="label"><div class="m">M1 商业闭环</div><div class="d">11-22 → 12-19<br>能收钱·能激活·能退款</div></div>
+    <div class="body">
+      <div class="bar" style="left:28.6%;width:14.8%;background:#2563eb;">M1 · 4周</div>
+      <div class="dep" style="left:27%;top:36px;">▲ 前置依赖 M0</div>
+      <div class="tasks">
+        <b>1 Stripe 价格表 + webhook + 结账联调</b> → <b>2 国内支付 微信/支付宝</b><span class="lock">商户资质</span> → <b>3 OpsConsole 配置热加载 → 插件端购买按钮点亮</b> → <b>4 试用→付费→激活→席位全链路</b> → <b>5 退款/取消 SOP</b> → <b>6 授权监控与发码台账</b>
+      </div>
+      <div class="exit">预案：商户资质未就绪 → 国内支付后置，Stripe + 人工激活码先收钱；出口条件：测试卡走通订阅→席位生效，退款可操作</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="label"><div class="m">M2 质量加固</div><div class="d">12-20 → 01-23<br>已知缺陷清零</div></div>
+    <div class="body">
+      <div class="bar" style="left:44%;width:18.6%;background:#059669;">M2 · 5周</div>
+      <div class="tasks">
+        <b>P0 公式意图路由修复</b>（skill 流与 agent-loop 互通 / cachedSkills 刷新 / 公式兜底）→ <b>P0 覆盖度自检等价识别（T39）</b> → <b>P1 OCR 引擎状态真值化</b>（ConfigBridge 假值）→ <b>P1 图表门控回归</b>（10-28 新功能）→ <b>P1 聚合维度边界补测</b> → <b>P1 Python 依赖向导</b> → <b>P2 三宿主技能分桶回归</b>
+      </div>
+      <div class="exit">出口条件：run-tests.ps1 全绿 ＋ 文档缺陷案例（10-02 实测 4/5）复测通过 ＋ 无新增 P0/P1</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="label"><div class="m">M3 增长引擎</div><div class="d">01-24 → 03底<br>扩大分发与转化</div></div>
+    <div class="body">
+      <div class="bar" style="left:63.2%;width:36.8%;background:#7c3aed;">M3 · 9-10周</div>
+      <div class="tasks">
+        <b>1 Skill 扩展路线图落地</b>（6 方向，先做 2 个）→ <b>2 领域包/行业模板产品化</b>（DOMAIN_PACKS）→ <b>3 Web 版落地页 + 试用漏斗</b>（SmartPilotWebSetup 已存在）→ <b>4 用户反馈闭环</b> → <b>5 企业版/团队席位</b>（BYOK 扩展）→ <b>6 教程视频与上架素材</b>
+      </div>
+      <div class="exit">出口条件：安装量/转化有数据；企业版可演示；Skill 扩展 ≥2 方向转正</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:#dc2626;"></span>M0 发布硬闸门</span>
+    <span><span class="sw" style="background:#2563eb;"></span>M1 商业闭环</span>
+    <span><span class="sw" style="background:#059669;"></span>M2 质量加固</span>
+    <span><span class="sw" style="background:#7c3aed;"></span>M3 增长引擎</span>
+    <span><span style="background:#fff7ed;border:1px solid #fdba74;color:#c2410c;padding:0 6px;border-radius:10px;">外部依赖</span> 证书采购 / 商户资质</span>
+    <span>▲ 前置依赖（M0 → M1）</span>
+  </div>
+</div>
+</html>

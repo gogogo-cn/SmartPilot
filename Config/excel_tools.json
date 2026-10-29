@@ -1,0 +1,3270 @@
+{
+  "tools": [
+    {
+      "name": "excel_read_range",
+      "layer": 1,
+      "description": "【读取Excel数据的首选工具，优先级最高】直接读取 Excel 工作表中单元格区域的原始数据。\n\n📌 截断行为：超过 maxRows 行时自动截断，返回体带 truncated: true 标记，告知大模型数据不全需缩小 range 重读。\n📌 range 兜底：range 为空时自动按 → 当前选中区域(Selection) → 已使用区域(UsedRange) 逐级回退，返回体带上实际生效的 range 地址。\n📌 返回格式：array（默认二维数组）或 object（含表头的对象数组）。\n\n适用于：读取当前选中数据、读取选区数据、读取当前工作表数据、读取指定范围内容、分析表格数据、获取单元格值、解析表格。用户说'读取选中数据'、'读取当前数据'、'读取选区'、'读取这份数据'、'看看数据'、'分析表格内容'等任何涉及Excel单元格内容的读取场景，必须调用本工具！严禁使用 excel_ocr_recognize（OCR仅用于图片文件）。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（默认为当前活动工作表，用户未指定时留空即可自动取当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "单元格范围，如 A1:B10（默认为当前已选中区域；如果用户选中了区域则无需指定，自动读取选区）"
+        },
+        {
+          "name": "hasHeaders",
+          "type": "boolean",
+          "description": "第一行是否为表头（默认true，通常数据第一行是列名）"
+        },
+        {
+          "name": "maxRows",
+          "type": "integer",
+          "description": "最大读取行数，默认 10000，防止大数据卡死"
+        },
+        {
+          "name": "returnFormat",
+          "type": "string",
+          "enum": [
+            "array",
+            "object"
+          ],
+          "description": "返回格式：array（默认，二维数组）或 object（含表头的对象数组，更易读），仅允许二选一"
+        },
+        {
+          "name": "skipEmptyRows",
+          "type": "boolean",
+          "required": false,
+          "description": "【可选】是否跳过全空行。\n- true：自动过滤所有单元格均为空的行，减少无效数据污染；\n- false（默认）：保留原始数据行，包括空行。\n适用于表格末尾存在大量格式空行的场景。"
+        },
+        {
+          "name": "maxColumns",
+          "type": "integer",
+          "required": false,
+          "description": "【可选】最大读取列数，默认 100，防止列数过多导致单元格爆炸。\n与 maxRows 共同限制总单元格数 ≤ maxRows × maxColumns。超过时自动截断列。"
+        },
+        {
+          "name": "readFormulas",
+          "type": "boolean",
+          "required": false,
+          "description": "【可选】是否读取单元格公式。\n- true：返回单元格原始公式文本（如 =SUM(A1:A10)）；\n- false（默认）：返回单元格计算后的显示值。"
+        }
+      ],
+      "displayName": "读取Excel数据",
+      "intentKeywords": [
+        "读取",
+        "查看",
+        "获取数据",
+        "显示内容",
+        "看看",
+        "查",
+        "读一下",
+        "读入",
+        "读数据",
+        "查找",
+        "搜索",
+        "浏览",
+        "研究",
+        "评估",
+        "检查",
+        "判断",
+        "识别",
+        "了解",
+        "分析一下",
+        "看一下"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_write_range",
+      "layer": 1,
+      "description": "【写入数据到Excel的核心工具】将一组二维数据（values，JSON二维数组）从指定起始单元格（range，如 A1）写入工作表。\n📌 写入模式：writeMode=overwrite（默认，覆盖）或 append（追加到末尾）。\n📌 clearFirst=true 会先清空目标范围再写，避免旧数据残留。\n📌 sheet 留空→当前活动表；range 留空→从 A1 开始。\n⚠️ values 必须是 JSON 二维数组（如 [['表头1','表头2'],['值1','值2']]），单条数据也要包成二维。\n适用于：把分析/聚合/清洗后的结果、AI生成的表格写回Excel、填充模板。用户说'写入''填到Excel''保存结果到表格''输出到A1'时必须调用本工具。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "目标工作表名称"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "起始单元格。只有用户说出地址时才填；没说就留空，不要为了填参写成 A1。A1 只是地址格式举例。"
+        },
+        {
+          "name": "values",
+          "type": "string",
+          "description": "要写入的数据，JSON 二维数组格式（外层是行，内层是单元格）。示例：[['姓名','年龄'],['张三',20],['李四',25]]。单条记录也要包成二维；空单元格用 null 或空字符串",
+          "required": true
+        },
+        {
+          "name": "clearFirst",
+          "type": "boolean",
+          "description": "写入前是否清空目标范围"
+        },
+        {
+          "name": "writeMode",
+          "type": "string",
+          "description": "写入模式：overwrite（覆盖，默认）或 append（追加）"
+        }
+      ],
+      "displayName": "写入Excel数据",
+      "intentKeywords": [
+        "写入",
+        "填充",
+        "输入数据",
+        "填入",
+        "写到",
+        "放到",
+        "存到",
+        "保存到",
+        "写到新表",
+        "结果写到",
+        "写",
+        "写入到"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_get_sheets",
+      "layer": 1,
+      "description": "获取工作簿中所有工作表的名称列表（及顺序）。\n📌 在执行'复制到某表''在某表写入''合并工作表'等操作前，先调用本工具确认目标表名是否存在/拼写正确，避免写到错误表。\n适用于：查询有哪些表、确认表名、列出工作表结构。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。",
+          "required": false
+        }
+      ],
+      "displayName": "获取工作表列表",
+      "intentKeywords": [
+        "工作表列表",
+        "有哪些sheet",
+        "sheets"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_create_sheet",
+      "layer": 1,
+      "description": "创建新的空白工作表。仅用于创建空表，不涉及任何数据合并/复制/移动操作。用户说'创建新表'/'新建工作表'/'新建sheet'时使用本工具",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "新工作表的名称",
+          "required": true
+        }
+      ],
+      "displayName": "创建工作表",
+      "intentKeywords": [
+        "新建工作表",
+        "创建sheet",
+        "新建sheet",
+        "新表",
+        "新sheet",
+        "新的工作表",
+        "新建表",
+        "创建新表"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_execute_vba",
+      "layer": 3,
+      "description": "【仅用于执行/运行已有的 VBA 代码】在 Excel 中运行一段已经写好的 VBA 代码。严禁用于'写宏'、'生成代码'、'创建脚本'等代码生成场景；那些场景应直接输出 Markdown 代码块，而不是调用本工具。",
+      "parameters": [
+        {
+          "name": "code",
+          "type": "string",
+          "description": "要执行的 VBA 代码",
+          "required": true
+        }
+      ],
+      "displayName": "执行VBA代码",
+      "intentKeywords": [
+        "VBA",
+        "宏",
+        "vba代码"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "执行 VBA 代码可能包含不可逆操作（如删除文件、修改系统设置）。"
+    },
+    {
+      "name": "excel_search",
+      "layer": 2,
+      "description": "在工作表中搜索指定内容（query 为关键词，必填）。\n📌 sheet 留空→当前活动表；range 可选（如 A1:C100）限定搜索区域，不传则搜整表。\n📌 与 excel_read_range 区别：本工具只返回命中位置/值，不返回整片数据；想看数据内容用 read_range。\n适用于：找某个值在哪、定位含关键词的单元格。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "description": "搜索关键词",
+          "required": true
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "要搜索的工作表名称"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "可选：搜索范围，如 A1:C100"
+        }
+      ],
+      "displayName": "搜索Excel",
+      "intentKeywords": [
+        "搜索",
+        "查找",
+        "搜索内容"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_create_chart",
+      "layer": 3,
+      "description": "【严禁直接用原始数据】根据数据创建图表。dataRange 必须是已聚合/重构后的数据区域。工作流：1)用 excel_write_range 写入汇总数据 2)再对此工具传入新区域。示例：按部门展示业绩 → 先写入[部门,总业绩] → 再建图表。直接用原始明细数据建图表是错误的！",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "chartType",
+          "type": "string",
+          "description": "【auto=自动选择（推荐：用户未明确图表类型时传 auto，引擎按数据特征自动选型）·中文对应英文枚举】最常用→xlColumnClustered=柱状图/柱形图/分组柱/对比图、xlPie=饼图/扇形图/占比图(≤6类)、xlLineMarkers=折线图/折线带点/趋势图、xlColumnStacked=堆叠柱/累积柱、xlColumnStacked100=100%堆叠柱/百分比柱、xlBarClustered=条形图/横向柱状图、xlDoughnut=圆环图/环形图(>6类)、xlArea=面积图、xlXYScatter=散点图、xlRadar=雷达图、xlBubble=气泡图、xlWaterfall=瀑布图、xlFunnel=漏斗图、xlBoxwhisker=箱线图、xlTreemap=树状图、xlSunburst=旭日图、xlHistogram=直方图。未知类型将返回错误，不再静默降级。",
+          "required": true
+        },
+        {
+          "name": "dataRange",
+          "type": "string",
+          "description": "数据范围，用用户给出的地址，或上一步汇总结果的范围。禁止编造 A1:H6、Sheet1!A1:B12。用户没说范围时不要拿说明里的地址充数。",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "图表标题，用用户说的维度和指标。说明里的标题不是默认值，用户没说区域或漏斗就不要写这些词。",
+          "required": false
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "【推荐传递】放置图表的工作表名称；不传则默认当前活动工作表。建议与 dataRange 所在工作表保持一致（避免跨 Sheet 引用）。"
+        },
+        {
+          "name": "position",
+          "type": "string",
+          "description": "【可选】图表位置与大小，JSON：{left, top, width, height}；单位=磅（默认 Excel 标准）。留空=自动在数据区下方或现有图表之后错开排列（避免多张图重叠），适合一次性批量建图。"
+        },
+        {
+          "name": "seriesBy",
+          "type": "string",
+          "description": "【推荐传递】数据系列方向：columns（按列分组，每列=1系列，默认）/ rows（按行分组，每行=1系列）。多指标表头在行首时传 rows。"
+        },
+        {
+          "name": "switchRowColumn",
+          "type": "boolean",
+          "description": "【可选】等价于 Excel『切换行/列』按钮：True 直接反转数据方向（覆盖 seriesBy）。用于图做出来后系列错位、分类/系列对调时快速修正。"
+        },
+        {
+          "name": "hasLegend",
+          "type": "boolean",
+          "description": "【强烈建议显式传递】是否显示图例（默认 True）。饼图/圆环/漏斗/瀑布/树状/旭日：建议 False（用数据标签标注类别名更清楚）。",
+          "required": false
+        },
+        {
+          "name": "legendPosition",
+          "type": "string",
+          "description": "【推荐传递】图例位置：xlLegendPositionBottom（默认，分组柱/折线）/ xlLegendPositionRight（条/散点/气泡）/ xlLegendPositionTop / xlLegendPositionLeft / xlLegendPositionCorner"
+        },
+        {
+          "name": "xAxisTitle",
+          "type": "string",
+          "description": "【强烈建议显式传递】横坐标轴（分类轴）标题，如『月份』、『产品类别』、『分数区间』。让看的人立刻知道 X 轴在表达什么。",
+          "required": false
+        },
+        {
+          "name": "yAxisTitle",
+          "type": "string",
+          "description": "【强烈建议显式传递】纵坐标轴（数值轴）标题，如『销售额(万元)』、『数量(个)』、『占比(%)』。组合图+次轴时，此处标题默认主轴；次轴标题请在 set_chart_properties 再补充。",
+          "required": false
+        },
+        {
+          "name": "showDataLabels",
+          "type": "boolean",
+          "description": "【强烈建议显式传递】是否显示数据标签：饼图/圆环/漏斗/瀑布/100%堆叠 强烈建议 True（否则数值丢失）；时间序列折线/散点/气泡 图点多时建议 False（避免视觉拥堵）。",
+          "required": false
+        },
+        {
+          "name": "dataLabelPosition",
+          "type": "string",
+          "description": "【推荐传递】数据标签位置：xlLabelPositionOutsideEnd（柱/条默认，防止遮挡条体）/ xlLabelPositionCenter（居中）/ xlLabelPositionInsideEnd（内靠尾端）/ xlLabelPositionInsideBase（内靠基线）/ xlLabelPositionBestFit（饼图/圆环/漏斗推荐，自动避免重叠）/ xlLabelPositionAbove（折线数据点上方）"
+        },
+        {
+          "name": "chartStyle",
+          "type": "integer",
+          "description": "【强烈建议显式传递】Excel 内置图表主题样式 1~208：201=Office 2016 默认商务蓝(推荐) / 202=多色活泼 / 203=单色灰 / 204=单色橙 / 205=单色绿 / 206=简约浅灰。传了就直接应用，不做任何二次美化。",
+          "required": false
+        },
+        {
+          "name": "useSecondaryAxisLastSeries",
+          "type": "boolean",
+          "description": "【组合图专用】把最后一个系列放到**次坐标轴**，一步到位制作 柱(主)+折(次) 组合图。常见用法：2系列柱(销量+同比%) → 最后系列(同比%)放次轴（范围 0-100% 不再被销量压缩）。需要精细控制（指定任意系列到次轴/取消次轴）请在 set_chart_properties 用 secondaryAxisSeriesIndex。"
+        }
+      ],
+      "displayName": "创建图表",
+      "intentKeywords": [
+        "图表",
+        "画图",
+        "作图",
+        "柱状图",
+        "折线图",
+        "饼图",
+        "可视化",
+        "看板",
+        "仪表盘",
+        "dashboard",
+        "大屏"
+      ],
+      "operationType": "Visualize",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_build_dashboard",
+      "layer": 3,
+      "description": "【一键生成专业数据看板的首选工具，优先级高于手动 add_shape+create_chart 拼装】直接产出排版整齐、配色统一、卡片化 KPI 的成品看板。\n📌 你只负责给数据（标题/KPI 数值/图表数据源），坐标、行高列宽、配色、圆角卡片、2×2 图表网格全部由引擎硬编码，不要自己算位置。\n📌 工作流：1) 先把聚合结果写到 _dash_pivot 或某张数据表 2) 再调本工具，charts 里的 dataRange 指向这些聚合表 3) 不要在看板表上直接画形状/建图。\n📌 看板表默认名「看板」，重复调用会清空重建（旧形状/图表自动删除）。\n📌 图表类型按维度语义选：区域/类别对比→xlBarClustered(条形)、占比→xlDoughnut(环形)、趋势→xlLineMarkers(折线)、多系列对比→xlColumnClustered(柱形)。不要三个图都用饼图。\n适用于：用户说'做个看板''生成仪表盘''数据大屏''可视化报告''BI看板'等任何一键出图场景。",
+      "parameters": [
+        {
+          "name": "sheet",
+          "type": "string",
+          "required": false,
+          "description": "看板工作表名称，默认「看板」。已存在则清空重建。"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "看板大标题，默认「数据看板」。显示在顶部深蓝标题栏。"
+        },
+        {
+          "name": "kpis",
+          "type": "string",
+          "required": false,
+          "description": "KPI 卡片数组 JSON，最多 4 张。每项 {\"label\":\"指标名\",\"value\":\"显示值\",\"sub\":\"辅助说明\"}。示例：[{\"label\":\"订单金额\",\"value\":\"¥128.5万\",\"sub\":\"总销售额\"},{\"label\":\"客单价\",\"value\":\"¥3,218\",\"sub\":\"平均每单\"}]。value 会被原样显示（带单位/千分位），sub 显示为灰色小字。"
+        },
+        {
+          "name": "charts",
+          "type": "string",
+          "required": false,
+          "description": "图表数组 JSON，最多 4 张，按 2×2 网格自动排列。每项 {\"title\":\"图表标题\",\"chartType\":\"xlBarClustered\",\"dataRange\":\"_dash_pivot!A1:B10\"}。chartType 留空=auto；dataRange 指向已聚合好的两列数据(维度+数值)。也可用 dataValues 传内存二维数组 JSON。"
+        },
+        {
+          "name": "showGridlines",
+          "type": "boolean",
+          "required": false,
+          "description": "是否显示网格线，默认 false（专业看板隐藏网格线更干净）。"
+        },
+        {
+          "name": "freezeTitle",
+          "type": "boolean",
+          "required": false,
+          "description": "是否冻结前 3 行标题区，默认 true。"
+        }
+      ],
+      "displayName": "一键生成看板",
+      "intentKeywords": [
+        "看板",
+        "仪表盘",
+        "dashboard",
+        "大屏",
+        "数据看板",
+        "BI",
+        "可视化报告",
+        "一键生成看板",
+        "做个看板",
+        "生成看板"
+      ],
+      "operationType": "Visualize",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_capture_dashboard",
+      "layer": 3,
+      "description": "截取看板工作表区域为 PNG 图片（base64），用于视觉审查。入参 sheet（看板表名）、range（截取范围，默认 A1:Q32）。返回 imageBase64 字段。",
+      "parameters": [
+        {"name": "sheet", "type": "string", "required": false, "description": "看板表名，默认「看板」"},
+        {"name": "range", "type": "string", "required": false, "description": "截取范围，默认 A1:Q32"}
+      ],
+      "displayName": "截取看板",
+      "intentKeywords": ["截图", "截取", "看板截图"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_audit_dashboard",
+      "layer": 3,
+      "description": "【视觉审查看板】调用多模态模型审查看板截图，返回结构化问题列表 JSON。入参 sheet（看板表名）、focus（可选审查重点）。自动截图并分析 KPI 对齐、图表重叠、切片器位置、配色、留白、可读性。你看到返回的 issues 后，应根据每条 fix 建议调用 excel_format_range/excel_add_shape 等工具修正，然后再次截图审查，直到 overall_score>=8 或无 high severity 问题。适用于：用户说'优化看板''看板不美观''看看这个看板哪里不好''调整排版'。",
+      "parameters": [
+        {"name": "sheet", "type": "string", "required": false, "description": "看板表名，默认「看板」"},
+        {"name": "focus", "type": "string", "required": false, "description": "审查重点，如'KPI卡片太小''图表重叠'"}
+      ],
+      "displayName": "审查看板",
+      "intentKeywords": ["优化看板", "看板不美观", "审查看板", "看板排版", "调整看板", "看看看板"],
+      "operationType": "Analyze",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_format_range",
+      "layer": 2,
+      "description": "格式化指定范围的单元格（range 必填）。format 为样式 JSON：{bold,italic,fontSize,fontName,fontColor,bgColor,numberFormat,...}；alignment 控制对齐 {horizontal,vertical,wrapText}；conditionalFormat 支持数据条/色阶/图标集。\n📌 仅改样式，不改数据值。\n📌 简单条件着色优先用 conditionalFormat；复杂规则用 excel_apply_conditional_format。\n适用于：加粗标题、设置数字格式、单元格对齐与底色。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "单元格范围，如 A1:D10",
+          "required": true
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "description": "样式 JSON，只填用户提到的项。颜色必须是用户所说颜色的 6 位色值（不含 #）；用户没说黄就不要填 FFFF00，没说红就不要填 FF0000。字段示例只说明格式，不是默认样式。",
+          "required": true
+        },
+        {
+          "name": "conditionalFormat",
+          "type": "string",
+          "description": "条件格式 JSON：{type:'dataBar'|'colorScale'|'iconSet', ...}。数据条示例 {type:'dataBar', color:'638EC6'}，色阶示例 {type:'colorScale', minColor:'F8696B', maxColor:'63BE7B'}，图标集示例 {type:'iconSet', iconSet:'3TrafficLights'}"
+        },
+        {
+          "name": "alignment",
+          "type": "string",
+          "description": "对齐 JSON：{horizontal:'center'|'left'|'right', vertical:'top'|'middle'|'bottom', wrapText:true}。示例 {horizontal:'center', vertical:'middle', wrapText:true}"
+        }
+      ],
+      "displayName": "格式化单元格",
+      "intentKeywords": [
+        "格式化",
+        "设置格式",
+        "单元格格式",
+        "字体",
+        "字体颜色",
+        "字体大小",
+        "字号",
+        "颜色",
+        "边框",
+        "对齐",
+        "居中",
+        "水平居中",
+        "垂直居中",
+        "加粗",
+        "粗体",
+        "倾斜",
+        "斜体",
+        "填充色",
+        "背景色",
+        "底色",
+        "行高",
+        "列宽",
+        "自动换行",
+        "换行",
+        "高亮",
+        "条件格式",
+        "数据条",
+        "色阶",
+        "图标集",
+        "数字格式",
+        "日期格式",
+        "百分比格式",
+        "清除格式",
+        "合并单元格",
+        "取消合并",
+        "美化",
+        "美观",
+        "好看",
+        "不好看",
+        "漂亮",
+        "太丑",
+        "beautify"
+      ],
+      "operationType": "Format",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_get_workbook_info",
+      "layer": 1,
+      "description": "获取当前工作簿的基本信息：名称、路径、工作表数量、各表名等。\n📌 想拿有哪些表用 excel_get_sheets 更聚焦；想拿打开了哪些文件用 excel_get_open_workbooks。\n适用于：确认当前操作的是哪个文件、了解工作簿概况。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。",
+          "required": false
+        }
+      ],
+      "displayName": "工作簿信息",
+      "intentKeywords": [
+        "工作簿信息",
+        "文件信息"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_fill_data",
+      "layer": 3,
+      "description": "【智能填入数据】把 AI 整理好的记录快速填入 Excel，自动识别数据类型并格式化（日期/数字/文本自适应）。data 为 JSON 数组。\n📌 与 excel_write_range 区别：本工具强调'智能识别+格式化'，适合把混合类型数据快速落表；write_range 更偏'精确按范围写入'。\n适用于：把整理后的记录快速填入当前表、智能填充一片区域。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "data",
+          "type": "string",
+          "description": "要填入的数据，JSON 数组格式",
+          "required": true
+        },
+        {
+          "name": "dataType",
+          "type": "string",
+          "description": "数据类型标识"
+        }
+      ],
+      "displayName": "智能填充数据",
+      "intentKeywords": [
+        "填充",
+        "智能填充",
+        "自动填充",
+        "填入"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_delete_sheet",
+      "layer": 3,
+      "description": "⚠️ 危险操作：删除指定工作表（name 必填），数据不可恢复。\n📌 删除前建议先确认表名（excel_get_sheets），避免误删。\n📌 不能删除工作簿中最后一张表。\n适用于：清理无用表、删除临时表。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "要删除的工作表名称",
+          "required": true
+        }
+      ],
+      "displayName": "删除工作表",
+      "intentKeywords": [
+        "删除工作表",
+        "删除sheet"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "删除工作表是不可恢复的操作，会永久删除整个工作表及其所有数据。"
+    },
+    {
+      "name": "excel_rename_sheet",
+      "layer": 3,
+      "description": "重命名工作表（oldName 原表名、newName 新表名，均必填）。\n📌 新表名不能与现有表重名。\n📌 改名后，后续读写工具请使用新表名。\n适用于：给表起有意义的名字、统一命名规范。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "oldName",
+          "type": "string",
+          "description": "原工作表名称",
+          "required": true
+        },
+        {
+          "name": "newName",
+          "type": "string",
+          "description": "新工作表名称",
+          "required": true
+        }
+      ],
+      "displayName": "重命名工作表",
+      "intentKeywords": [
+        "重命名",
+        "改名"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_copy_sheet",
+      "layer": 3,
+      "description": "复制工作表（source→target）。source 为源表名（必填）；target 为新表名（可选，不传由后端自动生成如 Sheet1 (2)）。\n📌 复制的是整张表（含数据+格式）。\n📌 跨工作簿复制请走 excel_merge_workbooks / 导出导入。\n适用于：备份当前表、基于模板表复制一份再改、批量生成同结构表。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "description": "源工作表名称",
+          "required": true
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "description": "新工作表名称（可选，不传则后端自动生成）",
+          "required": false
+        }
+      ],
+      "displayName": "复制工作表",
+      "intentKeywords": [
+        "复制工作表",
+        "复制sheet",
+        "备份工作表"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_copy_range",
+      "layer": 3,
+      "description": "复制指定范围的数据到目标工作表（源数据保持不变）。用于将选中区域或指定范围的数据复制到另一张工作表。如果目标工作表已有数据，粘贴会覆盖对应区域。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sourceSheet",
+          "type": "string",
+          "required": true,
+          "description": "源工作表名称"
+        },
+        {
+          "name": "sourceRange",
+          "type": "string",
+          "required": false,
+          "description": "源数据范围，如 A1:D100（可选，不传则默认使用源工作表的已用区域 UsedRange）"
+        },
+        {
+          "name": "destinationSheet",
+          "type": "string",
+          "required": true,
+          "description": "目标工作表名称"
+        },
+        {
+          "name": "destinationRange",
+          "type": "string",
+          "required": false,
+          "description": "目标区域左上角单元格，如 A1（可选，默认 A1）"
+        }
+      ],
+      "displayName": "复制数据范围",
+      "intentKeywords": [
+        "复制数据",
+        "复制范围",
+        "复制区域",
+        "拷贝数据",
+        "复制到",
+        "拷贝到",
+        "复制选中",
+        "拷贝选中",
+        "复制选区",
+        "拷贝选区",
+        "复制单元格",
+        "拷贝单元格"
+      ],
+      "operationType": "Manage",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_clear_range",
+      "layer": 2,
+      "description": "清除指定范围内单元格的内容/数据。按用户意图设置清除粒度：默认仅清内容（clearContent=true, clearFormat=false）；要求'全部清除'（内容+格式）→传 clearContent=true, clearFormat=true。若用户只想清格式而不动内容，应使用excel_clear_format（本工具清格式只是辅助清数据的兜底，不鼓励单独清格式）。range 可选，不传则后端自动选选区（优先最近read_range选区，其次实时选中区域）。⚠️仅当用户明确说'清空整个工作表/清空整个Sheet'才用excel_clear_sheet。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "单元格范围，如 A1:D10（可选，不传则后端自动选择选区）"
+        },
+        {
+          "name": "clearContent",
+          "type": "boolean",
+          "description": "是否清除单元格内容（默认 true；仅清除格式时传 false）"
+        },
+        {
+          "name": "clearFormat",
+          "type": "boolean",
+          "description": "是否清除单元格格式（默认 false；要求内容+格式一并清除时传 true）"
+        }
+      ],
+      "displayName": "清空单元格",
+      "intentKeywords": [
+        "清空",
+        "清除内容",
+        "清除数据",
+        "删除内容",
+        "清空选中",
+        "清空数据"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "清空选区数据，数据将丢失。"
+    },
+    {
+      "name": "excel_clear_format",
+      "layer": 2,
+      "description": "仅清除指定范围内的单元格格式（字体、颜色、边框、对齐、填充等），保留单元格内容不变。适合用户说'清空格式'/'去掉格式'/'清除格式'/'取消格式'时使用。若用户要清空的是内容/数据，应使用excel_clear_range；若两者都要，建议按步骤分别调用。range 可选，不传则后端自动选选区（优先最近read_range选区，其次实时选中区域）。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "单元格范围，如 A1:D10（可选，不传则后端自动选择选区）"
+        }
+      ],
+      "displayName": "清除格式",
+      "intentKeywords": [
+        "清空格式",
+        "清除格式",
+        "去掉格式",
+        "取消格式",
+        "格式化清除"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_clear_sheet",
+      "layer": 2,
+      "description": "清空指定工作表的所有内容和格式（保留工作表本身，不删除工作表）。⚠️危险操作：此工具会清除整个工作表的所有数据！仅当用户明确说'清空整个工作表'/'清空整个Sheet'/'清除所有数据'时才使用。如果用户说'清空数据'/'清空选中'/'清除内容'，应该使用excel_clear_range。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        }
+      ],
+      "displayName": "清空工作表",
+      "intentKeywords": [
+        "清空工作表",
+        "清空整个sheet",
+        "清除所有数据"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "清空整个工作表会删除所有数据和格式，且不可撤销。"
+    },
+    {
+      "name": "excel_get_open_workbooks",
+      "layer": 1,
+      "description": "获取当前 Excel 中所有已打开工作簿的列表：名称、路径、工作表数、哪个是活动工作簿。\n📌 与 excel_get_workbook_info 区别：本工具列出所有打开的文件，后者只看当前文件。\n📌 想切换到某文件操作，先用本工具确认其路径，再用 excel_open_workbook 或带 filePath 的读写工具。\n适用于：在多文件间确认目标、排查当前活动文件。",
+      "parameters": [],
+      "displayName": "打开的工作簿",
+      "intentKeywords": [
+        "打开的工作簿",
+        "所有工作簿"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_ocr_recognize",
+      "layer": 3,
+      "description": "【仅用于图片文件，严禁用于Excel单元格】对本地图片文件（PNG/JPG/BMP等）或截图执行OCR文字识别。输入必须是图片文件路径或图片Base64。绝对禁止：读取Excel选区数据、读取当前工作表数据、解析表格内容等场景——这些场景必须使用 excel_read_range 工具，而不是OCR。适用场景仅包括：用户上传了图片、用户要求识别截图/扫描件/照片中的文字。",
+      "parameters": [
+        {
+          "name": "imagePath",
+          "type": "string",
+          "description": "【必填之一】图片文件的完整路径，如 C:\\temp\\screenshot.png。注意：不能是Excel单元格区域，必须是磁盘上的图片文件！",
+          "required": true
+        },
+        {
+          "name": "imageData",
+          "type": "string",
+          "description": "【必填之一】Base64 编码的图片二进制数据。与 imagePath 二选一，不能用于Excel单元格数据。"
+        },
+        {
+          "name": "engine",
+          "type": "string",
+          "description": "指定 OCR 引擎：paddleocr / rapidocr / cloudocr（不指定则使用默认引擎）"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "description": "识别语言：ch（中文，默认）、en（英文），仅对 PaddleOCR 生效"
+        }
+      ],
+      "displayName": "OCR识别",
+      "intentKeywords": [
+        "OCR",
+        "识别图片",
+        "图片文字"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_read_file",
+      "layer": 3,
+      "description": "读取本地文件内容。必须指定完整文件路径。支持 DOCX、PDF、TXT、XLSX、CSV、MD、JSON、XML 等格式。注意：只能读取单个文件，不能读取目录。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "文件完整绝对路径（如 C:\\Desktop\\WPS\\文档.docx），必须包含文件名和扩展名",
+          "required": true
+        },
+        {
+          "name": "maxChars",
+          "type": "integer",
+          "description": "返回的最大字符数（默认 50000，超过则截断）"
+        }
+      ],
+      "displayName": "读取文件",
+      "intentKeywords": [
+        "读取文件",
+        "打开文件",
+        "查看文件"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_list_files",
+      "layer": 3,
+      "description": "列出指定目录（directoryPath，必填，如 C:/Desktop/WPS，不要含文件名）下的文件和子目录。\n📌 想让用户自己选文件用 excel_browse_files；想读某个文件内容用 excel_read_file。\n适用于：浏览磁盘文件、确认某路径下有哪些文件。",
+      "parameters": [
+        {
+          "name": "directoryPath",
+          "type": "string",
+          "description": "目录完整绝对路径（如 C:\\Desktop\\WPS），不要包含文件名",
+          "required": true
+        }
+      ],
+      "displayName": "列出文件",
+      "intentKeywords": [
+        "列出文件",
+        "文件列表",
+        "目录"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_browse_files",
+      "layer": 3,
+      "description": "弹出系统文件选择对话框，让用户手动选一个或多个文件（返回所选路径）。filter 控制类型：all / excel / doc / image 等。\n📌 适合让用户指定文件路径的交互场景；若路径已知直接传 filePath 即可，不必弹窗。\n适用于：请用户挑文件、选择模板/图片。",
+      "parameters": [
+        {
+          "name": "filter",
+          "type": "string",
+          "description": "文件类型过滤器（可选）。常用值：all=所有文件, excel=Excel文件(*.xlsx;*.xls), doc=文档(*.docx;*.pdf), image=图片(*.jpg;*.png), csv=CSV文件。默认 all"
+        }
+      ],
+      "displayName": "选择文件",
+      "intentKeywords": [
+        "选择文件",
+        "浏览文件",
+        "打开文件"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_set_cell_value",
+      "layer": 1,
+      "description": "设置单个单元格的值（cell 如 A1、value 必填）。\n📌 只写单个单元格；写一片区域用 excel_write_range，批量填行用 excel_insert_rows / excel_fill_data。\n📌 写公式请用 excel_add_formula（本工具会把公式当普通文本写入）。\n适用于：改某个单元格内容、填一个固定值。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "cell",
+          "type": "string",
+          "description": "单元格地址，如 A1",
+          "required": true
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "要设置的值",
+          "required": true
+        }
+      ],
+      "displayName": "设置单元格值",
+      "intentKeywords": [
+        "设置单元格",
+        "修改单元格"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_get_cell_value",
+      "layer": 1,
+      "description": "读取单个单元格的值（cell 如 A1，必填）。\n📌 只读一个格；读一片区域用 excel_read_range。\n适用于：取某个特定单元格的内容。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "cell",
+          "type": "string",
+          "description": "单元格地址，如 A1",
+          "required": true
+        }
+      ],
+      "displayName": "获取单元格值",
+      "intentKeywords": [
+        "单元格值",
+        "读取单元格",
+        "读单元格",
+        "单元格内容",
+        "取单元格"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_add_formula",
+      "layer": 2,
+      "description": "在指定单元格写入公式（cell + formula 必填，formula 形如 =SUM(A1:A10)）。\n📌 与 excel_set_cell_value 区别：本工具写入的是可计算公式，后者写入的是文本/数值。\n📌 公式中的范围引用会随单元格位置生效，注意绝对/相对引用。\n适用于：加汇总公式、在单元格里放可计算表达式。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "cell",
+          "type": "string",
+          "description": "单元格地址，如 A1",
+          "required": true
+        },
+        {
+          "name": "formula",
+          "type": "string",
+          "description": "公式内容，如 =SUM(A1:A10)",
+          "required": true
+        }
+      ],
+      "displayName": "添加公式",
+      "intentKeywords": [
+        "公式",
+        "函数",
+        "SUM",
+        "VLOOKUP",
+        "IF"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_insert_row",
+      "layer": 2,
+      "description": "在指定行号（row，1基，必填）处插入 count 行（默认1）。\n📌 插入的是空行，不填数据；要插入并写入数据用 excel_insert_rows。\n📌 注意插入后下方行号会顺移。\n适用于：在表中腾出空行、调整表格结构。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "row",
+          "type": "integer",
+          "description": "起始行号（从1开始）",
+          "required": true
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "description": "要插入的行数，默认1"
+        }
+      ],
+      "displayName": "插入行",
+      "intentKeywords": [
+        "插入行",
+        "新增行"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_insert_column",
+      "layer": 2,
+      "description": "在指定列号（column，1基，1=A，必填）处插入 count 列（默认1）。\n📌 插入的是空列；注意右侧列号会顺移。\n适用于：在表中新增一列位置、调整结构。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "column",
+          "type": "integer",
+          "description": "起始列号（从1开始，1=A列）",
+          "required": true
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "description": "要插入的列数，默认1"
+        }
+      ],
+      "displayName": "插入列",
+      "intentKeywords": [
+        "插入列",
+        "新增列"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_delete_row",
+      "layer": 2,
+      "description": "按行号删除整行。row 必须是用户明确说出的行号，禁止编造。用户要按单元格内容删除（如移除「销售一部」）时，不要猜行号，也不要只读表后声称已删除。删除后下方行上移，数据不可恢复。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "row",
+          "type": "integer",
+          "description": "用户明确说出的起始行号（从 1 开始）。用户没说行号就不要调用本工具。",
+          "required": true
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "description": "要删除的行数，默认1"
+        }
+      ],
+      "displayName": "删除行",
+      "intentKeywords": [
+        "删除行",
+        "移除行"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "删除行会移除整行数据。"
+    },
+    {
+      "name": "excel_delete_column",
+      "layer": 2,
+      "description": "⚠️ 危险操作：从指定列号（column，1基，1=A，必填）开始删除 count 列（默认1），数据不可恢复。\n📌 删除后右侧列左移。\n适用于：删除多余列、精简字段。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "column",
+          "type": "integer",
+          "description": "起始列号（从1开始，1=A列）",
+          "required": true
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "description": "要删除的列数，默认1"
+        }
+      ],
+      "displayName": "删除列",
+      "intentKeywords": [
+        "删除列",
+        "移除列"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "删除列会移除整列数据。"
+    },
+    {
+      "name": "excel_merge_cells",
+      "layer": 2,
+      "description": "合并指定范围的单元格。按用户意图设置合并粒度：只说'合并'→mergeType=merge（默认，仅合并）；说'合并后居中/合并居中'→mergeType=mergeAndCenter（合并后文字居中）。range 必填。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "要合并的单元格范围，如 A1:C3",
+          "required": true
+        },
+        {
+          "name": "mergeType",
+          "type": "string",
+          "description": "合并类型：merge（仅合并，默认）或 mergeAndCenter（合并后居中）"
+        }
+      ],
+      "displayName": "合并单元格",
+      "intentKeywords": [
+        "合并单元格"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_unmerge_cells",
+      "layer": 2,
+      "description": "取消合并指定范围的单元格。若用户希望取消合并后把每个原合并区域的值展开填充到整片区域（如'取消合并并填充/铺满/复制到所有单元格'），传 fillAfterUnmerge=true；默认 false 时仅取消合并、只保留左上角值。range 必填。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "要取消合并的单元格范围，如 A1:C3",
+          "required": true
+        },
+        {
+          "name": "fillAfterUnmerge",
+          "type": "boolean",
+          "description": "取消合并后是否把原合并区域左上角的值展开填充到整个区域（默认 false）"
+        }
+      ],
+      "displayName": "取消合并单元格",
+      "intentKeywords": [
+        "取消合并",
+        "拆分单元格"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_autofit",
+      "layer": 2,
+      "description": "自动调整列宽或行高（type=column 默认 / row）。range 指定范围（如 A1:C10），不指定则调整已使用范围。\n📌 仅改显示尺寸，不改数据。\n适用于：让内容不被截断、表格更美观。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "要调整的单元格范围，如 A1:C10（可选，不指定则调整已使用范围）"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "description": "调整类型：column（列宽，默认）或 row（行高）"
+        }
+      ],
+      "displayName": "自动调整列宽行高",
+      "intentKeywords": [
+        "自动调整",
+        "列宽",
+        "行高",
+        "自适应"
+      ],
+      "operationType": "Format",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_save_workbook",
+      "layer": 2,
+      "description": "保存当前工作簿。\n📌 不传 filePath → 保存到原路径（覆盖）。\n📌 传 filePath → 另存为到指定路径（不影响原文件）。\n⚠️ 重要：执行任何写入/修改后调用本工具确保结果落盘；另存为新文件时用 filePath 区分。\n适用于：保存修改、把结果另存为新文件。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。",
+          "required": false
+        }
+      ],
+      "displayName": "保存工作簿",
+      "intentKeywords": [
+        "保存",
+        "另存为"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_protect_sheet",
+      "layer": 2,
+      "description": "保护工作表防止被修改（可选 password）。\n📌 与 excel_unprotect_sheet 配对使用。\n📌 加密码后需妥善保存密码，否则无法解除保护。\n适用于：冻结终版报表、防止误改。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "description": "可选：保护密码"
+        }
+      ],
+      "displayName": "保护工作表",
+      "intentKeywords": [
+        "保护",
+        "锁定",
+        "保护工作表",
+        "加保护",
+        "保护sheet",
+        "锁定工作表"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_unprotect_sheet",
+      "layer": 2,
+      "description": "取消工作表保护（若设了密码需提供 password）。\n📌 与 excel_protect_sheet 配对。\n适用于：需要修改被保护表时先解除。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "description": "可选：保护密码（如果设置了密码）"
+        }
+      ],
+      "displayName": "取消保护",
+      "intentKeywords": [
+        "取消保护",
+        "解锁",
+        "解锁工作表",
+        "去保护",
+        "取消锁定"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_split_by_column",
+      "layer": 3,
+      "description": "按指定列的唯一值将数据拆分为多个工作表或文件。column 支持列名（如'部门'）或列号（如'A'）。\n📌 outputMode=sheets（默认）→ 拆分到同一工作簿的新工作表；=files → 拆分到独立 .xlsx 文件（需 outputDir）。\n📌 onConflict：目标表名已存在时 skip（默认，跳过不建 _2 副本）/ replace（覆写）/ suffix（递增 _2/_3）。\n📌 namingPattern 控制命名，{value}=列值、{original}=原文件名。\n适用于：'按部门拆成多个表''按地区分成独立文件'等一对多拆分。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "column",
+          "type": "string",
+          "description": "用户说的拆分列。用户说按部门就填部门，不要改成 A。只有用户明确说了列字母或第几列时才填字母。",
+          "required": true
+        },
+        {
+          "name": "outputMode",
+          "type": "string",
+          "description": "输出方式：sheets（拆分到同一工作簿的新工作表）或 files（拆分到独立文件）"
+        },
+        {
+          "name": "outputDir",
+          "type": "string",
+          "description": "files 模式时的输出目录"
+        },
+        {
+          "name": "namingPattern",
+          "type": "string",
+          "description": "命名模板，{value}=列值, {original}=原文件名"
+        },
+        {
+          "name": "onConflict",
+          "type": "string",
+          "required": false,
+          "description": "目标表名已存在时的策略：skip（默认，跳过）/ replace（覆写）/ suffix（建 _2/_3）"
+        }
+      ],
+      "displayName": "按列拆分",
+      "intentKeywords": [
+        "按列拆分",
+        "拆分数据",
+        "按...分",
+        "分类",
+        "按部门拆分",
+        "拆分成不同Sheet",
+        "拆分到不同",
+        "拆分sheet",
+        "拆分表"
+      ],
+      "operationType": "Transform",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "按列拆分数据会创建新的工作表。"
+    },
+    {
+      "name": "excel_create_pivot_table",
+      "layer": 3,
+      "description": "在工作表中创建 Excel 原生数据透视表。需提供 sourceRange（源数据范围）与字段布局：rowFields（行字段）、columnFields（列字段，可选）、valueFields（值字段）、valueFunctions（聚合：Sum/Count/Average/Max/Min）。\n📌 targetSheet/targetCell 指定放置位置（如 A1）。\n📌 若只需'按某列汇总数据'而不需要交互式透视表，用 excel_aggregate 更轻量。\n适用于：多维度交叉分析、需要可筛选/可刷新的交互式汇总表。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sourceRange",
+          "type": "string",
+          "description": "源数据范围",
+          "required": true
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "description": "放置透视表的工作表"
+        },
+        {
+          "name": "targetCell",
+          "type": "string",
+          "description": "放置位置，如 A1"
+        },
+        {
+          "name": "rowFields",
+          "type": "array",
+          "description": "行字段列表（数组，元素为列名或列字母，如 ['部门','月份']；决定透视表左侧逐层分行的维度，可多列分层）"
+        },
+        {
+          "name": "columnFields",
+          "type": "array",
+          "description": "列字段列表（数组，元素为列名或列字母，如 ['季度']；决定透视表顶部分列的维度，可留空表示不分列）"
+        },
+        {
+          "name": "valueFields",
+          "type": "array",
+          "description": "值字段列表（数组，元素为数值列名，如 ['销售额','数量']；决定被汇总的度量列，与 valueFunctions 一一对应）"
+        },
+        {
+          "name": "valueFunctions",
+          "type": "array",
+          "description": "聚合函数列表（与 valueFields 一一对应，元素取 Sum/Count/Average/Max/Min，如 ['Sum','Average']；不传则默认每列 Sum）"
+        }
+      ],
+      "displayName": "创建数据透视表",
+      "intentKeywords": [
+        "透视表",
+        "数据透视",
+        "交叉表"
+      ],
+      "operationType": "Analyze",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_set_pivot_field_layout",
+      "layer": 3,
+      "description": "配置已有数据透视表的字段布局：行字段 rowFields、列字段 columnFields、值字段 valueFields + 聚合函数 valueFunctions；可用 sourceRange 同时更换数据源；resetFields=false 可在现有布局上追加字段（默认 true 先清空旧布局）。\n📌 字段名必须取自该透视表实际字段——传错时报错会列出全部可用字段。\n📌 找不到透视表时会告诉你透视表真实所在工作表。\n适用于：透视表已建好，但要换维度/换度量/换数据源（无需删除重建）。",
+      "parameters": [
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "透视表所在工作表名（不传则用当前活动表）"
+        },
+        {
+          "name": "pivotTableName",
+          "type": "string",
+          "description": "透视表名称，如 PivotTable1；不传则操作该工作表最后一个透视表"
+        },
+        {
+          "name": "sourceRange",
+          "type": "string",
+          "description": "【可选】更换数据源范围，如 Sheet1!A1:I101 或 A1:I101；留空不改数据源"
+        },
+        {
+          "name": "rowFields",
+          "type": "array",
+          "description": "行字段列表（数组，元素为字段名，如 ['部门','月份']）"
+        },
+        {
+          "name": "columnFields",
+          "type": "array",
+          "description": "列字段列表（数组，可留空表示不分列）"
+        },
+        {
+          "name": "valueFields",
+          "type": "array",
+          "description": "值字段列表（数组，元素为数值字段名，如 ['销售额']）"
+        },
+        {
+          "name": "valueFunctions",
+          "type": "array",
+          "description": "聚合函数列表（与 valueFields 一一对应：Sum/Count/Average/Max/Min，默认 Sum）"
+        },
+        {
+          "name": "resetFields",
+          "type": "boolean",
+          "description": "是否先清空现有字段布局（默认 true）；false 表示在现有布局上追加"
+        }
+      ],
+      "displayName": "配置透视表字段",
+      "intentKeywords": [
+        "透视表字段",
+        "调整透视表",
+        "改透视表",
+        "透视表布局",
+        "换数据源"
+      ],
+      "operationType": "Analyze",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_merge_workbooks",
+      "layer": 3,
+      "description": "将多个 Excel 文件合并到一个工作簿：每个源文件的所有工作表全部复制进来（filePaths 为路径列表，必填）。\n📌 targetPath 指定合并后保存路径；留空则新建工作簿且不保存。\n📌 sheetPrefix 可给复制进来的表加前缀（如 '[文件1]'）避免重名冲突。\n📌 仅合并'同工作簿多表'用 excel_merge_sheets。\n适用于：把多份报表汇总到一个文件、批量归集工作表。",
+      "parameters": [
+        {
+          "name": "filePaths",
+          "type": "array",
+          "description": "要合并的 Excel 文件路径数组（必填），如 ['C:/报表/a.xlsx','C:/报表/b.xlsx']；每个源文件的所有工作表都会复制进新工作簿",
+          "required": true
+        },
+        {
+          "name": "targetPath",
+          "type": "string",
+          "description": "合并后的保存路径，空则新建工作簿不保存"
+        },
+        {
+          "name": "sheetPrefix",
+          "type": "string",
+          "description": "工作表名前缀，如'[文件1]'"
+        }
+      ],
+      "displayName": "合并工作簿",
+      "intentKeywords": [
+        "合并工作簿",
+        "合并文件",
+        "汇总工作簿",
+        "汇总文件"
+      ],
+      "operationType": "Transform",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "合并工作簿可能覆盖现有数据。"
+    },
+    {
+      "name": "excel_import_csv",
+      "layer": 3,
+      "description": "导入 CSV 文件（filePath 必填）到当前工作簿：delimiter 默认逗号，encoding 支持 utf8（默认）/gbk/ansi，targetSheet 指定目标表（空则新建）。\n📌 与 excel_export_csv 方向相反（导入 vs 导出）。\n适用于：把外部 CSV 数据读入 Excel 处理。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "CSV 文件路径",
+          "required": true
+        },
+        {
+          "name": "delimiter",
+          "type": "string",
+          "description": "分隔符，默认逗号"
+        },
+        {
+          "name": "encoding",
+          "type": "string",
+          "description": "编码：utf8（默认）/ gbk / ansi"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "description": "目标工作表，空则新建"
+        }
+      ],
+      "displayName": "导入CSV",
+      "intentKeywords": [
+        "导入CSV",
+        "导入csv"
+      ],
+      "operationType": "Import",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_export_csv",
+      "layer": 3,
+      "description": "将工作表导出为 CSV 文件。sheet 指定源表（默认当前表），filePath 为保存路径（可选：留空自动存桌面，文件名=工作表名_时间戳.csv），delimiter 默认逗号，includeHeader 控制是否带表头。\n📌 导出大表前可先用 excel_get_used_range 确认范围。\n适用于：导出数据给其他系统、生成 CSV 报表、将当前工作表保存为 CSV。",
+      "parameters": [
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称"
+        },
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "【可选】CSV 保存路径。留空时自动保存到桌面，文件名格式为 工作表名称_时间戳.csv。支持传目录路径（自动拼接文件名）或完整文件路径。",
+          "required": false
+        },
+        {
+          "name": "delimiter",
+          "type": "string",
+          "description": "分隔符，默认逗号"
+        },
+        {
+          "name": "includeHeader",
+          "type": "boolean",
+          "description": "是否包含表头"
+        }
+      ],
+      "displayName": "导出CSV",
+      "intentKeywords": [
+        "导出CSV",
+        "导出csv",
+        "另存为CSV"
+      ],
+      "operationType": "Export",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_open_workbook",
+      "layer": 3,
+      "description": "打开指定路径的 Excel 文件（filePath 为完整路径，必填），使其成为当前活动工作簿。\n📌 打开后后续读写工具若 filePath 留空，即作用于本工作簿。\n适用于：开始处理某个磁盘上的 .xlsx 文件、切换当前操作的文件。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "Excel 文件完整路径",
+          "required": true
+        }
+      ],
+      "displayName": "打开工作簿",
+      "intentKeywords": [
+        "打开工作簿",
+        "打开文件"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_close_workbook",
+      "layer": 3,
+      "description": "关闭工作簿。filePath 留空→关闭当前活动工作簿；saveChanges 默认 false（不保存），改为 true 会先保存再关。\n📌 有未保存修改时务必 saveChanges=true，否则改动丢失。\n适用于：收尾关闭文件、切换上下文。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。",
+          "required": false
+        },
+        {
+          "name": "saveChanges",
+          "type": "boolean",
+          "description": "是否保存更改，默认 false"
+        }
+      ],
+      "displayName": "关闭工作簿",
+      "intentKeywords": [
+        "关闭工作簿",
+        "关闭文件"
+      ],
+      "operationType": "Manage",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_get_used_range",
+      "layer": 1,
+      "description": "获取工作表的已使用范围（UsedRange）地址与行列数（如 'A1:F50'，50行×6列）。\n📌 sheet 留空→当前活动表。\n📌 在不知道确切数据范围时，先调本工具拿到真实 range，再传给读取/写入/图表工具，避免瞎编地址。\n适用于：确认数据边界、为后续读写定位范围。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        }
+      ],
+      "displayName": "获取已用范围",
+      "intentKeywords": [
+        "已用范围",
+        "数据范围",
+        "usedrange"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_batch_execute",
+      "layer": 3,
+      "description": "批量顺序执行多个 Excel 操作（operations 为 [{toolName, arguments}, ...]，必填），任一步失败自动回滚，保证原子性。\n📌 适合把多个写操作打包成全成功或全失败的事务。\n📌 操作名即各工具 name（如 excel_write_range）。\n适用于：一次性组合多个修改、需要整体成功保障的场景。",
+      "parameters": [
+        {
+          "name": "operations",
+          "type": "array",
+          "description": "操作列表 JSON 数组（必填），每个元素 {toolName: 工具名, arguments: 该工具参数字典}。示例：[{toolName:'excel_write_range', arguments:{'sheet':'Sheet1','range':'A1','values':[['a','b']]}}, {toolName:'excel_save_workbook', arguments:{}}]。任一步失败整体回滚",
+          "required": true
+        }
+      ],
+      "displayName": "批量操作",
+      "intentKeywords": [
+        "批量",
+        "批量执行"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_sort_range",
+      "layer": 2,
+      "description": "对指定范围排序，完整还原 Excel 原生「排序」对话框能力：① 多级排序依据/次要关键字（sortBy 数组按顺序生效）；② 排序依据支持「单元格值/单元格颜色/字体颜色/条件格式图标」（sortBy[].sortOn）；③ 次序升序/降序（sortBy[].order）；④ 选项：区分大小写 matchCase、方向 orientation（按列/按行）、排序方法 sortMethod（拼音/笔划）。未指定 sortBy 时默认按第一列升序。按颜色排序必须同时给出 color（如 #FF0000），且 ascending=指定颜色排最前、descending=排最后；按图标排序需给出 iconSet（图标集序号或名称如 3Arrows）与 icon（图标序号，从 1 开始）。排序成功后返回表头+前几行预览数据，可直接用于总结。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "要排序的范围。用用户给出的地址，或已经读到的真实范围。禁止编造 A1:D100。",
+          "required": true
+        },
+        {
+          "name": "sortBy",
+          "type": "string",
+          "description": "排序依据 JSON 数组。column 必须是用户原话里的表头：用户说按销售额，column 就写销售额，禁止改成 A。降序或从高到低写 descending，升序写 ascending。格式示例不是默认值。只有用户说按颜色或图标排时才加 sortOn（values/cellColor/fontColor/icon）与 color（六位 hex）；按图标排再加 iconSet（图标集名如 3Arrows）和 icon（序号从 1 起）。"
+        },
+        {
+          "name": "hasHeader",
+          "type": "boolean",
+          "description": "是否有表头，默认 true"
+        },
+        {
+          "name": "matchCase",
+          "type": "boolean",
+          "description": "【可选】区分大小写（原生对话框「选项」），默认 false"
+        },
+        {
+          "name": "orientation",
+          "type": "string",
+          "description": "【可选】排序方向（原生对话框「选项」）：columns=按列排序（默认，沿垂直方向重排行）| rows=按行排序（沿水平方向重排列）"
+        },
+        {
+          "name": "sortMethod",
+          "type": "string",
+          "description": "【可选】排序方法（原生对话框「选项」，仅对文本生效）：pinYin=按字母顺序（拼音，默认）| stroke=按笔划"
+        },
+        {
+          "name": "previewRows",
+          "type": "integer",
+          "description": "【可选】排序成功后回传前几行预览数据（默认 5，最大 50），用于总结展示"
+        }
+      ],
+      "displayName": "排序",
+      "intentKeywords": [
+        "排序",
+        "升序",
+        "降序",
+        "按...排"
+      ],
+      "operationType": "Analyze",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_apply_filter",
+      "layer": 2,
+      "description": "对范围打开自动筛选，不删除行。criteria 的键必须是用户说的列名，值必须是用户说的条件，禁止写成 A 列或销售部。用户没给范围就不要编造 A1:D100。清除筛选用 excel_clear_filter。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "筛选范围。用户给了地址才填。没给时不要编造 A1:D100，改传 autoRange=true。",
+          "required": false
+        },
+        {
+          "name": "autoRange",
+          "type": "boolean",
+          "description": "用户没指定范围时传 true，用已用区域。不要和编造的 A1:D100 一起传。"
+        },
+        {
+          "name": "criteria",
+          "type": "string",
+          "description": "筛选条件 JSON。键用用户说的表头，值用用户说的条件。用户说部门是销售一部、销售额大于 3000，就写这些，不要改成 A、B 或说明里的别的部门。比较符可用 > < >= <= =。用户只说打开筛选、没给条件时留空。"
+        }
+      ],
+      "displayName": "应用筛选",
+      "intentKeywords": [
+        "筛选",
+        "过滤",
+        "只看"
+      ],
+      "operationType": "Analyze",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_clear_filter",
+      "layer": 2,
+      "description": "清除指定工作表的自动筛选（不删除数据）。sheet 留空→当前表。\n📌 与 excel_apply_filter 配对；清除的是筛选状态，不是数据。\n适用于：关掉筛选、恢复查看全部数据。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        }
+      ],
+      "displayName": "清除筛选",
+      "intentKeywords": [
+        "清除筛选",
+        "取消筛选",
+        "显示全部"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_split_workbook",
+      "layer": 3,
+      "description": "将工作簿按工作表拆分为多个独立 Excel 文件。outputDir 输出目录（空则同目录）；namingPattern 命名 {original}=原名 {sheet}=表名 {index}=序号；fileFormat 支持 xlsx/xls/csv；includeHidden 是否含隐藏表（默认 false）。\n📌 与 excel_split_by_column（按列拆行）不同：本工具是一表一文件。\n适用于：把多表工作簿拆成单表文件分发给不同人。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "outputDir",
+          "type": "string",
+          "description": "输出文件夹路径，空则与源文件同目录"
+        },
+        {
+          "name": "namingPattern",
+          "type": "string",
+          "description": "文件名模板：{original}=原文件名, {sheet}=工作表名, {index}=序号。默认'{original}_{sheet}'"
+        },
+        {
+          "name": "fileFormat",
+          "type": "string",
+          "description": "输出格式：xlsx（默认）、xls、csv"
+        },
+        {
+          "name": "includeHidden",
+          "type": "boolean",
+          "description": "是否包含隐藏工作表，默认 false"
+        }
+      ],
+      "displayName": "拆分工作簿",
+      "intentKeywords": [
+        "拆分工作簿",
+        "按sheet拆分"
+      ],
+      "operationType": "Transform",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_delete_chart",
+      "layer": 3,
+      "description": "删除工作表上的图表。chartName 指定图表名（不指定则删最后一个）。sheet 留空→当前表。\n📌 删前可用 excel_list_charts 确认图表名。\n适用于：清理多余/错误图表。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "chartName",
+          "type": "string",
+          "description": "图表名称（可选，不指定则删除最后一个图表）"
+        }
+      ],
+      "displayName": "删除图表",
+      "intentKeywords": [
+        "删除图表"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_update_chart_data",
+      "layer": 3,
+      "description": "更新图表的数据源范围（newDataRange 必填，如 Sheet1!A1:B10）。chartName 不指定则更新最后一个图表。\n📌 想改图表类型/样式用 excel_set_chart_properties；改标题用 excel_set_chart_title。\n适用于：数据变了，让图表重新指向新范围。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "chartName",
+          "type": "string",
+          "description": "图表名称（可选，不指定则更新最后一个图表）"
+        },
+        {
+          "name": "newDataRange",
+          "type": "string",
+          "description": "新的数据范围，如 Sheet1!A1:B10",
+          "required": true
+        }
+      ],
+      "displayName": "更新图表数据",
+      "intentKeywords": [
+        "更新图表",
+        "修改图表数据"
+      ],
+      "operationType": "Visualize",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_set_chart_title",
+      "layer": 3,
+      "description": "设置图表标题（title 必填）。chartName 不指定则设最后一个图表。sheet 留空→当前表。\n📌 只改标题文字；改数据源用 excel_update_chart_data。\n适用于：给图表加/改名称。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "chartName",
+          "type": "string",
+          "description": "图表名称（可选，不指定则设置最后一个图表的标题）"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "图表标题",
+          "required": true
+        }
+      ],
+      "displayName": "设置图表标题",
+      "intentKeywords": [
+        "图表标题"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_refresh_pivot_table",
+      "layer": 3,
+      "description": "刷新数据透视表以同步最新数据源（pivotTableName 不指定则刷新最后一个）。sheet 留空→当前表。\n📌 源数据改了之后必须刷新，透视表才更新。\n适用于：数据更新后让透视表生效。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "pivotTableName",
+          "type": "string",
+          "description": "透视表名称（可选，不指定则刷新最后一个透视表）"
+        }
+      ],
+      "displayName": "刷新透视表",
+      "intentKeywords": [
+        "刷新透视表",
+        "更新透视表"
+      ],
+      "operationType": "Analyze",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_apply_conditional_format",
+      "layer": 3,
+      "description": "按用户原话套一种条件格式：数据条 dataBar、色阶 colorScale、图标集 iconSet、把某个值涂成某色 highlight。用户点了具体内容或颜色时必须用 highlight，不要改成色阶，也不要默认高亮大于 0。range 没说就留空，走选区或已用区域，不要编造 A1:D100。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "要应用条件格式的范围，如 A1:D100（可选；不传自动走「选区 → UsedRange」回退）",
+          "required": false
+        },
+        {
+          "name": "formatType",
+          "type": "string",
+          "description": "dataBar=数据条，colorScale=色阶，iconSet=图标集，highlight=按值上色。用户要把某个内容标成某种颜色时只能填 highlight，不要填色阶。",
+          "required": false
+        },
+        {
+          "name": "options",
+          "type": "string",
+          "description": "JSON。highlight 时 operator 取 equal、greaterThan、lessThan、between、notEqual；value 是用户说的单元格内容，不要写成 100；color 是用户说的颜色的 6 位色值，用户没说黄就不要用 FFFF00。示例只说明格式，禁止照抄。"
+        }
+      ],
+      "displayName": "应用条件格式",
+      "intentKeywords": [
+        "条件格式",
+        "数据条",
+        "色阶",
+        "图标集",
+        "热力图",
+        "渐变",
+        "一键格式化"
+      ],
+      "operationType": "Format",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_run_python_script",
+      "layer": 3,
+      "description": "执行 Python 脚本进行数据分析。已预置 pandas(pd)、numpy(np)、matplotlib.pyplot(plt) 无需手动 import。调用 plt.show() 会自动保存图表为 PNG 并返回路径。脚本中可使用 input_data 变量获取输入数据，将结果赋值给 output 变量返回。",
+      "parameters": [
+        {
+          "name": "script",
+          "type": "string",
+          "description": "Python 脚本内容",
+          "required": true
+        },
+        {
+          "name": "timeout",
+          "type": "integer",
+          "description": "执行超时时间（秒），默认 30"
+        }
+      ],
+      "displayName": "执行Python脚本",
+      "intentKeywords": [
+        "Python",
+        "python脚本",
+        "数据分析脚本"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "执行 Python 脚本可能包含不可逆操作。"
+    },
+    {
+      "name": "excel_take_screenshot",
+      "layer": 3,
+      "description": "截取 Excel 区域截图（用于生成操作预览或异常排查）。range 指定范围（如 A1:D20，可选，不指定则截当前可见区域）；outputPath 指定保存路径（可选，不指定存临时目录）。\n📌 与 excel_export_chart_image（导出图表图片）不同：本工具截的是单元格区域画面。\n📌 适合把操作结果/异常界面发回聊天中展示。\n适用于：生成预览图、记录异常现场、汇报当前表格样貌。",
+      "parameters": [
+        {
+          "name": "range",
+          "type": "string",
+          "description": "要截图的范围，如 A1:D20（可选，不指定则截取当前可见区域）"
+        },
+        {
+          "name": "outputPath",
+          "type": "string",
+          "description": "截图保存路径（可选，不指定则保存到临时目录）"
+        }
+      ],
+      "displayName": "截图",
+      "intentKeywords": [
+        "截图",
+        "截屏",
+        "预览"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_display_html_in_browser",
+      "layer": 3,
+      "description": "在系统默认浏览器中展示内容。【两种用法】1)不传htmlContent参数：自动读取当前选中区域（或最近read_range的上下文选区）数据，生成美观的表格HTML并在浏览器中打开——用于'用HTML列出/展示/浏览器查看数据/网页展示'等场景，无需先读取数据，直接调用即可；2)传htmlContent参数：展示自定义HTML内容。",
+      "parameters": [
+        {
+          "name": "htmlContent",
+          "type": "string",
+          "description": "自定义 HTML 内容（可选，不传则自动读取选区数据生成表格HTML）"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "页面标题，也用于生成文件名（可选，默认：选中数据报表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "数据范围地址，如A1:H10（可选，仅在不传htmlContent时生效；不传则自动使用上下文选区/实时Selection）"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，仅在不传htmlContent时生效，默认当前工作表）"
+        }
+      ],
+      "displayName": "浏览器展示",
+      "intentKeywords": [
+        "浏览器展示",
+        "HTML展示",
+        "浏览器查看",
+        "HTML表格"
+      ],
+      "operationType": "Visualize",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_clipboard_read",
+      "layer": 3,
+      "description": "【仅限明确提到剪贴板时使用】读取Windows操作系统剪贴板中的文本内容。注意：这不是读取Excel单元格数据！读取Excel数据/选区/表格/单元格内容必须使用 excel_read_range。仅当用户明确说'读取剪贴板'、'粘贴板内容'、'复制的内容'时才使用本工具。",
+      "parameters": [],
+      "displayName": "读取剪贴板",
+      "intentKeywords": [
+        "剪贴板",
+        "粘贴板"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_clipboard_write",
+      "layer": 3,
+      "description": "【仅限明确提到剪贴板时使用】将文本内容写入Windows操作系统剪贴板。注意：这不是写入Excel单元格！写入Excel数据必须使用 excel_write_range 或 excel_set_cell_value。仅当用户明确说'写入剪贴板'、'复制到剪贴板'时才使用本工具。",
+      "parameters": [
+        {
+          "name": "content",
+          "type": "string",
+          "description": "要写入剪贴板的文本内容",
+          "required": true
+        }
+      ],
+      "displayName": "写入剪贴板",
+      "intentKeywords": [
+        "复制到剪贴板",
+        "写入剪贴板"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_aggregate",
+      "layer": 3,
+      "description": "按指定维度列分组聚合数值列，仅返回聚合结果数据（不做画图、不写回工作表）。聚合方式支持 sum/avg/count/max/min。需画图请先调用本工具取得结果后再用图表类工具；需落盘请再用 excel_write_range。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "dimColumn",
+          "type": "string",
+          "description": "用户原话里的分组表头。用户说按地区汇总就填地区。括号里的部门、分类不是默认列，禁止改成 A。",
+          "required": true
+        },
+        {
+          "name": "valueColumn",
+          "type": "string",
+          "description": "用户原话里的数值表头。用户说销售额就填销售额；没说才留空，由系统推断。不要把举例里的销售额当成默认列。"
+        },
+        {
+          "name": "aggFunc",
+          "type": "string",
+          "description": "聚合函数：sum（默认）、avg、count、max、min"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "源数据工作表名（可选，默认当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "源数据范围（可选，默认当前选中区域）"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "required": false,
+          "description": "【可选】结果落地表名。传入时把聚合结果写入该表（不存在则新建）；留空则仅返回数据，不写回 Excel"
+        },
+        {
+          "name": "skipEmptyRows",
+          "type": "boolean",
+          "required": false,
+          "description": "【可选】是否跳过全空行。\n- true：自动过滤所有单元格均为空的行，减少无效数据污染；\n- false（默认）：保留原始数据行，包括空行。"
+        }
+      ],
+      "displayName": "分组聚合统计",
+      "intentKeywords": [
+        "聚合",
+        "分组统计",
+        "求和",
+        "平均",
+        "计数",
+        "合计",
+        "汇总统计",
+        "按...分组",
+        "分析",
+        "分析一下",
+        "看看",
+        "哪些",
+        "研究",
+        "对比",
+        "找出",
+        "卖得好",
+        "排名",
+        "Top",
+        "top",
+        "计算",
+        "统计"
+      ],
+      "operationType": "Compute",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_date_group",
+      "layer": 3,
+      "description": "【日期时间分组专用工具】将 Excel 中的日期列按指定粒度（年/季度/月/周/日）分组计算并返回结果。支持自然年度/财年、周起始日自定义。默认仅返回分组数据（不写回 Excel）：传入 aggColumn 时按组对数值列求和输出汇总表；不传则给每行追加分组列；传入 targetSheet 时才把结果落地到指定表。适用于时间序列分析、按周期汇总、趋势统计等场景。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。留空时操作当前已打开的工作簿。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "源数据工作表名（可选，默认当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "源数据范围（可选，默认当前选中区域）"
+        },
+        {
+          "name": "dateColumn",
+          "type": "string",
+          "required": true,
+          "description": "用户说的日期列表头。举例里的「日期」不是默认列名，表头是别的名字就填那个名字。"
+        },
+        {
+          "name": "groupBy",
+          "type": "string",
+          "required": true,
+          "enum": [
+            "year",
+            "quarter",
+            "month",
+            "week",
+            "day"
+          ],
+          "description": "分组粒度：year（按年）、quarter（按季度）、month（按月）、week（按周）、day（按日）"
+        },
+        {
+          "name": "weekStart",
+          "type": "string",
+          "required": false,
+          "enum": [
+            "monday",
+            "sunday"
+          ],
+          "description": "【week 粒度专用】周起始日：monday（周一，默认）或 sunday（周日）"
+        },
+        {
+          "name": "outputColumn",
+          "type": "string",
+          "required": false,
+          "description": "输出分组结果的列名。留空时默认生成如'年份'/'季度'/'月份'/'周'/'日期'列名"
+        },
+        {
+          "name": "fiscalYearStart",
+          "type": "integer",
+          "required": false,
+          "description": "【可选】财年起始月份（1-12），默认1（自然年）。如财年从4月开始则传4"
+        },
+        {
+          "name": "fiscalQuarter",
+          "type": "boolean",
+          "required": false,
+          "description": "【可选】是否使用财年季度。true时按 fiscalYearStart 定义的财年起始计算季度"
+        },
+        {
+          "name": "aggColumn",
+          "type": "string",
+          "required": false,
+          "description": "用户说的数值表头。提供时按时间粒度汇总该列；没说就留空，只追加分组列。不要套用别的示例列名。"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "required": false,
+          "description": "【可选】结果落地表名。传入时把分组结果写入该表（不存在则新建）；留空则仅返回数据，不写回 Excel"
+        }
+      ],
+      "displayName": "日期分组",
+      "intentKeywords": [
+        "按年",
+        "按季度",
+        "按月",
+        "按周",
+        "按日",
+        "日期分组",
+        "时间分组",
+        "年度",
+        "季度",
+        "月度",
+        "周度",
+        "财年",
+        "按月汇总",
+        "按季汇总",
+        "按年汇总"
+      ],
+      "operationType": "Compute",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_read_vba_macros",
+      "layer": 3,
+      "description": "读取当前工作簿中所有 VBA 宏代码，按模块拆分输出。需要在 Excel 信任中心启用'信任对 VBA 项目对象模型的访问'。",
+      "parameters": [
+        {
+          "name": "moduleName",
+          "type": "string",
+          "description": "可选：只读取指定模块名称的代码，不指定则读取所有模块"
+        },
+        {
+          "name": "includeCode",
+          "type": "boolean",
+          "description": "是否包含完整代码内容，默认 true。false 时只返回模块列表和摘要"
+        },
+        {
+          "name": "splitByModule",
+          "type": "boolean",
+          "description": "是否按模块拆分输出，默认 true。true 时每个模块独立输出代码块"
+        }
+      ],
+      "displayName": "读取VBA宏",
+      "intentKeywords": [
+        "VBA宏",
+        "宏代码",
+        "查看宏"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_list_charts",
+      "layer": 3,
+      "description": "列出指定工作表上的所有图表（名称、类型、位置、大小、标题），修改或删除图表前必须先调用本工具取得准确的 chartName",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        }
+      ],
+      "displayName": "列出所有图表",
+      "intentKeywords": [
+        "图表列表",
+        "查看图表",
+        "有哪些图表",
+        "图表名称"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_set_chart_properties",
+      "layer": 3,
+      "description": "统一设置已存在图表的属性（位置、大小、类型、样式、图例、坐标轴标题、数据标签、系列方向、趋势线、组合次轴、分系列类型），避免分别调用多个小工具。支持为任意系列单独指定类型+次轴以实现柱+折线的组合图。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "chartName",
+          "type": "string",
+          "description": "图表名称（可选，默认操作最后一个图表）；推荐先调用 excel_list_charts 获取"
+        },
+        {
+          "name": "chartType",
+          "type": "string",
+          "description": "修改整个图表的类型：同 excel_create_chart（20 种）"
+        },
+        {
+          "name": "seriesChartType",
+          "type": "string",
+          "description": "仅修改单个系列的自身类型（用于组合图）：同 excel_create_chart（20 种），例如把最后一个系列从柱状改为折线。需配合 seriesIndex 使用"
+        },
+        {
+          "name": "seriesIndex",
+          "type": "integer",
+          "description": "seriesChartType 或 secondaryAxisSeriesIndex 作用的系列编号（从 1 开始）。留空且指定了 seriesChartType 时默认为『最后一个系列』"
+        },
+        {
+          "name": "secondaryAxisSeriesIndex",
+          "type": "integer",
+          "description": "把指定系列放到**次坐标轴**（从 1 开始；留空=取最后一个系列；0 或负数=清空该系列的次轴设置，放回主轴）。典型：柱(主)+折(次) 看销量+同比"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "图表标题；传入空串可删除标题"
+        },
+        {
+          "name": "position",
+          "type": "string",
+          "description": "位置与大小 JSON：{left,top,width,height}，缺某项不修改"
+        },
+        {
+          "name": "seriesBy",
+          "type": "string",
+          "description": "数据系列方向：columns（按列分组）/ rows（按行分组）"
+        },
+        {
+          "name": "switchRowColumn",
+          "type": "boolean",
+          "description": "True 反转行/列，等价于 Excel『切换行/列』按钮"
+        },
+        {
+          "name": "chartStyle",
+          "type": "integer",
+          "description": "内置样式 1~208"
+        },
+        {
+          "name": "hasLegend",
+          "type": "boolean",
+          "description": "是否显示图例"
+        },
+        {
+          "name": "legendPosition",
+          "type": "string",
+          "description": "图例位置：xlLegendPositionRight / xlLegendPositionBottom / xlLegendPositionTop / xlLegendPositionLeft / xlLegendPositionCorner"
+        },
+        {
+          "name": "xAxisTitle",
+          "type": "string",
+          "description": "横轴（分类轴）标题；空串=取消标题"
+        },
+        {
+          "name": "yAxisTitle",
+          "type": "string",
+          "description": "纵轴（数值轴）标题；空串=取消标题"
+        },
+        {
+          "name": "showDataLabels",
+          "type": "boolean",
+          "description": "是否显示数据标签"
+        },
+        {
+          "name": "dataLabelPosition",
+          "type": "string",
+          "description": "数据标签位置：xlLabelPositionOutsideEnd / xlLabelPositionCenter / xlLabelPositionInsideEnd / xlLabelPositionInsideBase / xlLabelPositionBestFit 等"
+        },
+        {
+          "name": "addTrendline",
+          "type": "boolean",
+          "description": "为第 1 个数值系列添加线性趋势线（R² + 预测公式常用于回归/预测）"
+        }
+      ],
+      "displayName": "设置图表属性",
+      "intentKeywords": [
+        "图表属性",
+        "改图表",
+        "调整图表",
+        "图表美化",
+        "趋势线",
+        "图例",
+        "坐标轴标题",
+        "数据标签"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_export_chart_image",
+      "layer": 3,
+      "description": "将图表导出为图片（png 默认 / jpg / gif），返回保存路径，可在聊天中内联展示或用于报告。chartName 推荐先用 excel_list_charts 获取；outputPath 指定完整路径（含扩展名），空则存临时目录；imageFormat 可选。\n📌 与 excel_export_csv（导数据）不同，本工具导的是图表图片。\n适用于：把图表贴进报告、生成预览图。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "chartName",
+          "type": "string",
+          "description": "图表名称（可选，默认导出最后一个图表）；推荐先调用 excel_list_charts 获取"
+        },
+        {
+          "name": "outputPath",
+          "type": "string",
+          "description": "完整输出文件路径（含扩展名）。为空时保存到系统临时目录，文件名=图表名.png"
+        },
+        {
+          "name": "imageFormat",
+          "type": "string",
+          "description": "图片格式：png（默认）/ jpg / gif；outputPath 含扩展名时优先取扩展名"
+        }
+      ],
+      "displayName": "导出图表图片",
+      "intentKeywords": [
+        "图表导出",
+        "保存图片",
+        "导出图片",
+        "生成图片"
+      ],
+      "operationType": "Export",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_remove_duplicates",
+      "layer": 3,
+      "description": "只计算唯一行，不删除工作表里的行，也不要在回复里声称已经删掉。用户要真正去掉重复行时改用 excel_clean_data，并设 dryRun=false、writeBack=true。columns 用用户说的表头；没说就不要传，表示整行比较。不要默认写成 A、B。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "columns",
+          "type": "array",
+          "description": "去重依据，用用户说的表头名（数组，支持多列联合去重）。没说就不要传，按整行比较。不要默认写成 A、B 或客户、产品。"
+        },
+        {
+          "name": "hasHeaderRow",
+          "type": "boolean",
+          "description": "范围首行是否为表头（True=视为表头不参与去重；False=纯数据无表头）。不传则按首行样式+内容自动判断。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名（可选，默认当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "去重范围（可选，默认当前选中区域 / 最终回退 UsedRange）"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "required": false,
+          "description": "【可选】结果落地表名。传入时把去重结果写入该表（不存在则新建）；留空则仅返回数据，不写回 Excel"
+        }
+      ],
+      "displayName": "删除重复行",
+      "intentKeywords": [
+        "去重",
+        "删除重复",
+        "重复项",
+        "去重复",
+        "删重",
+        "去重处理"
+      ],
+      "operationType": "Compute",
+      "isWrite": false,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "去重会删除重复行数据。"
+    },
+    {
+      "name": "excel_clean_data",
+      "layer": 3,
+      "description": "按用户点名的动作清洗。operations 只放用户说到的项：trimSpaces 去空格、removeEmptyRows 删空行、removeDuplicates 去重、fillEmpty 填空、normalizeDates 规范日期、normalizeNumbers 规范数字、standardizeText 规范文本。用户只说清洗整表时用 trimSpaces、removeDuplicates、removeEmptyRows。用户要改表时 dryRun=false 且 writeBack=true；只说看看或别改时 dryRun=true。不要在没写回时声称已经清洗完成。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "description": "数据范围（可选，默认当前选中区域 / 回退 UsedRange）"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "工作表名（可选，默认当前活动工作表）"
+        },
+        {
+          "name": "hasHeaderRow",
+          "type": "boolean",
+          "description": "首行是否为表头（默认 true，表头不参与清洗）"
+        },
+        {
+          "name": "operations",
+          "type": "array",
+          "description": "只包含用户点名的操作：trimSpaces、fillEmpty、normalizeDates、normalizeNumbers、standardizeText、removeEmptyRows、removeDuplicates。不要把没提到的操作全部塞进来。",
+          "required": true
+        },
+        {
+          "name": "fillMethod",
+          "type": "string",
+          "description": "空值填充方式：zero/delete/ffill/placeholder（默认 ffill）"
+        },
+        {
+          "name": "fillValue",
+          "type": "string",
+          "description": "占位文本（fillMethod=placeholder 时，默认'待补充'）"
+        },
+        {
+          "name": "columns",
+          "type": "array",
+          "description": "去重时用户指定的表头。没指定就不要传，按整行比较。不要默认写成 A 或客户。"
+        },
+        {
+          "name": "dryRun",
+          "type": "boolean",
+          "description": "true 只预览不改表。用户要清洗、去重、移除并写回当前表时必须为 false。"
+        },
+        {
+          "name": "writeBack",
+          "type": "boolean",
+          "description": "true 把清洗结果写回当前表。用户要改表时与 dryRun=false 一起传。只说看看或别改时不要传 true。"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "required": false,
+          "description": "【可选】结果落地表名。传入时把清洗结果写入该表（不存在则新建）。用户要改当前表时不要填这里，改用 writeBack=true、dryRun=false。"
+        }
+      ],
+      "displayName": "智能数据清洗",
+      "intentKeywords": [
+        "清洗",
+        "数据清洗",
+        "去空格",
+        "填充空值",
+        "统一日期",
+        "统一数字",
+        "文本规范化",
+        "删除空行",
+        "数据整理",
+        "整理数据"
+      ],
+      "operationType": "Compute",
+      "isWrite": false,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "数据清洗会删除空行/重复行或修改数据内容。"
+    },
+    {
+      "name": "excel_merge_sheets",
+      "layer": 3,
+      "description": "【合并多个工作表到一张表】将同一工作簿中多个工作表的数据按行合并（表头只保留一次，数据行依次追加）。sourceSheets 不传时自动读取 Excel 中选中的多个工作表标签（尊重用户在界面上选中了哪几张）；mergeAll=true 强制合并全部可见表。\n\n⚠️ 何时用本工具 vs 只读数据做分析：\n- 用户说 '合并工作表/合到一张表/合表/合并数据/汇总数据' → 必须调本工具执行合并，不能只读数据然后自己做文本分析声称 '已合并'。\n- 用户只是想看数据/统计/汇总 → 用 excel_read_range + excel_aggregate，不需要调本工具。\n\n📌 targetSheet 留空时自动新建 '合并结果' 表写入（确保有实体产出）；传入则用指定表名（不存在自动新建）。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sourceSheets",
+          "type": "string",
+          "description": "源工作表名列表，JSON 数组；为空则合并除目标表外的所有可见工作表"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "required": false,
+          "description": "【可选】结果落地表名。传入时把合并后的数据写入该表（不存在则新建）；留空时自动创建 '合并结果' 表（确保有实体写入，不会像以前那样只返回计算数据不落表）"
+        },
+        {
+          "name": "includeHeaders",
+          "type": "boolean",
+          "description": "是否保留表头，默认 true（仅保留第一张表的表头）"
+        },
+        {
+          "name": "mergeAll",
+          "type": "boolean",
+          "description": "用户明确要求'合并所有Sheet'时为 true：忽略当前选中的工作表标签，强制合并全部可见表"
+        }
+      ],
+      "displayName": "合并工作表",
+      "intentKeywords": [
+        "合并sheet",
+        "合并工作表",
+        "合并多表",
+        "合到一张表",
+        "合并所有sheet",
+        "合并到一张",
+        "数据合并",
+        "合并数据",
+        "合表",
+        "合并选中",
+        "合并所选",
+        "合并到",
+        "合到一张",
+        "表合并",
+        "合并各"
+      ],
+      "operationType": "Transform",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_insert_rows",
+      "layer": 3,
+      "description": "向指定工作表写入数据行（原子插入能力）。rows 为二维数组（JSON），写入从 startRow（1 基）开始；append=true 时自动定位到目标表末尾追加。返回实际起始行、写入行数与下一空行，便于分步连续插入",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "目标工作表名",
+          "required": true
+        },
+        {
+          "name": "startRow",
+          "type": "integer",
+          "description": "起始行号（1 基）；与 append 二选一，默认 1"
+        },
+        {
+          "name": "append",
+          "type": "boolean",
+          "description": "是否追加到目标表末尾（自动取下一个空行），默认 true"
+        },
+        {
+          "name": "createIfMissing",
+          "type": "boolean",
+          "description": "目标表不存在时是否自动新建，默认 true"
+        }
+      ],
+      "displayName": "插入数据行",
+      "intentKeywords": [
+        "插入数据",
+        "追加数据",
+        "写入数据行",
+        "插入表格",
+        "insert rows",
+        "逐行写入"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_split_by_rows",
+      "layer": 3,
+      "description": "将当前工作表数据按固定行数拆分（rowsPerFile 每个结果的数据行数，必填，不含表头）。includeHeaders 每份是否带表头（默认 true）；outputMode=sheets（默认，拆到同工作簿新表）/ files（独立文件，需 outputDir）；namingPattern {i}=序号 {original}=原名。\n📌 与 excel_split_by_column（按列值拆）不同：本工具是按行数均匀切。\n适用于：大表分批发货、按行数切块。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "rowsPerFile",
+          "type": "integer",
+          "description": "每个结果包含的数据行数（不含表头），默认 500",
+          "required": true
+        },
+        {
+          "name": "includeHeaders",
+          "type": "boolean",
+          "description": "每个结果是否都保留表头，默认 true"
+        },
+        {
+          "name": "outputMode",
+          "type": "string",
+          "description": "输出方式：sheets（拆分到同一工作簿的新工作表，默认）或 files（拆分到独立文件）"
+        },
+        {
+          "name": "outputDir",
+          "type": "string",
+          "description": "files 模式时的输出目录，默认源文件目录"
+        },
+        {
+          "name": "namingPattern",
+          "type": "string",
+          "description": "命名模板，{i}=序号, {original}=原文件名，默认'{original}_第{i}份'"
+        }
+      ],
+      "displayName": "按行数拆分",
+      "intentKeywords": [
+        "按行拆分",
+        "按行数拆",
+        "拆成多份",
+        "每1000行",
+        "每500行",
+        "拆文件"
+      ],
+      "operationType": "Transform",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_join_tables",
+      "layer": 3,
+      "description": "按关联键将两个工作表进行跨表关联（内/左/右/全连接，类似数据库 JOIN），仅返回关联结果数据，不回写工作表。左右表各需一行表头，关联键列可传表头名、列序号或列字母。需落盘请再用 excel_write_range。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。\n- 提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；\n- 留空：操作Excel软件当前已经激活打开的工作簿，可以读取界面选中区域。\n⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "leftSheet",
+          "type": "string",
+          "description": "左表工作表名",
+          "required": true
+        },
+        {
+          "name": "rightSheet",
+          "type": "string",
+          "description": "右表工作表名",
+          "required": true
+        },
+        {
+          "name": "leftKeyColumns",
+          "type": "array",
+          "description": "左表关联键列列表（可传表头名、列序号或列字母），如 ['客户ID']。与 rightKeyColumns 一一对应"
+        },
+        {
+          "name": "rightKeyColumns",
+          "type": "array",
+          "description": "右表关联键列列表（可传表头名、列序号或列字母），如 ['编号']。与 leftKeyColumns 一一对应"
+        },
+        {
+          "name": "joinType",
+          "type": "string",
+          "description": "连接类型：inner（内连接，默认）/ left（左连接）/ right（右连接）/ full（全外连接）"
+        },
+        {
+          "name": "includeHeaders",
+          "type": "boolean",
+          "description": "是否保留表头，默认 true"
+        },
+        {
+          "name": "targetSheet",
+          "type": "string",
+          "required": false,
+          "description": "【可选】结果落地表名。传入时把关联结果写入该表（不存在则新建）；留空则仅返回数据，不写回 Excel"
+        }
+      ],
+      "displayName": "跨表关联",
+      "intentKeywords": [
+        "跨表关联",
+        "关联两个表",
+        "表连接",
+        "join",
+        "关联表",
+        "连接两张表"
+      ],
+      "operationType": "Compute",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_create_slicer",
+      "layer": 3,
+      "description": "创建 Excel 原生切片器（共享透视缓存 + 透视表 + SlicerCache/Slicers）。所有透视表共用同一 PivotCache，任一切片器筛选即联动全部透视表；图表通过 dataRange 引用透视表区域（本工具返回的 dataRange）即可随切片器联动",
+      "parameters": [
+        {
+          "name": "sourceRange",
+          "type": "string",
+          "description": "源数据范围（含表头），如 Sheet1!A1:G101；同一范围的所有透视表共享一个透视缓存",
+          "required": true
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "切片器所在工作表（看板工作表），省略则用当前活动表"
+        },
+        {
+          "name": "slicerDimensions",
+          "type": "array",
+          "description": "切片器维度列表 JSON：[{\"header\":\"销售区域\",\"top\":110,\"left\":20,\"width\":130,\"height\":150}]；top/left 为磅坐标"
+        },
+        {
+          "name": "pivotTables",
+          "type": "array",
+          "description": "透视表定义列表 JSON：[{\"dimension\":\"销售区域\",\"value\":\"订单金额(元)\",\"func\":\"sum\",\"name\":\"Pivot1\",\"targetCell\":\"A1\"}]；每个图表一个透视表"
+        }
+      ],
+      "displayName": "创建原生切片器",
+      "intentKeywords": [
+        "切片器",
+        "原生切片器",
+        "联动筛选",
+        "透视表筛选"
+      ],
+      "operationType": "Analyze",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_add_shape",
+      "layer": 4,
+      "description": "在看板上绘制形状：圆角卡片/矩形色块/圆形/细分隔条。用 range 锚点定位（取该单元格区域的左/上/宽/高换算成磅），支持 fill 填充色、line 边框色、可选多行文字（每行独立字号/颜色/加粗/对齐）。用于搭建专业卡片，不合并单元格",
+      "parameters": [
+        {
+          "name": "range",
+          "type": "string",
+          "description": "锚点单元格区域，如 A1:T2 或 D4:I9；形状贴合该区域绘制",
+          "required": true
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "description": "目标工作表名，省略则用当前活动表（或 range 的 sheet! 前缀）",
+          "required": false
+        },
+        {
+          "name": "shapeType",
+          "type": "string",
+          "description": "形状类型：roundedRect=圆角卡片(默认)/rect=矩形/oval=圆形",
+          "required": false
+        },
+        {
+          "name": "fill",
+          "type": "string",
+          "description": "填充色 hex(#RRGGBB) 或 none 不填充",
+          "required": false
+        },
+        {
+          "name": "line",
+          "type": "string",
+          "description": "边框色 hex 或 none 无边框",
+          "required": false
+        },
+        {
+          "name": "lineWeight",
+          "type": "number",
+          "description": "边框粗细磅值，默认 1",
+          "required": false
+        },
+        {
+          "name": "cornerRadius",
+          "type": "number",
+          "description": "圆角半径 0~0.5，roundedRect 专用（默认 0.12）",
+          "required": false
+        },
+        {
+          "name": "noShadow",
+          "type": "boolean",
+          "description": "关闭形状阴影（默认 true）",
+          "required": false
+        },
+        {
+          "name": "lines",
+          "type": "string",
+          "description": "形状文字 JSON：[{text,size,color,bold,alignH}...]，每行一个对象，alignH=center/left/right",
+          "required": false
+        },
+        {
+          "name": "sendToBack",
+          "type": "boolean",
+          "description": "是否置于底层（默认 false）",
+          "required": false
+        }
+      ],
+      "displayName": "绘制形状",
+      "intentKeywords": [
+        "形状",
+        "卡片",
+        "圆角",
+        "色块",
+        "横幅",
+        "分隔条",
+        "看板卡片",
+        "图形",
+        "看板",
+        "仪表盘",
+        "dashboard",
+        "文本框",
+        "矩形"
+      ],
+      "operationType": "Format",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_check_errors",
+      "layer": 1,
+      "description": "扫描工作表中的公式错误单元格（如 #DIV/0!、#N/A、#VALUE!、#REF! 等）。默认扫描当前活动工作表的已使用区域；可通过 sheet/range 参数指定范围。返回每个错误单元格的地址、错误类型和公式。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel文件绝对路径。提供路径：直接读取磁盘上的文件，不依赖Excel是否打开；留空：操作Excel软件当前已经激活打开的工作簿。⚠️ 传入filePath时，将忽略Excel界面选中状态。"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "required": false,
+          "description": "工作表名称（可选，默认为当前活动工作表）"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "required": false,
+          "description": "【可选】要检查的范围，如 A1:F100；留空则扫描整张表的已使用区域"
+        }
+      ],
+      "displayName": "检查表格错误",
+      "intentKeywords": [
+        "检查错误",
+        "错误检查",
+        "错误",
+        "有没有错误",
+        "包含错误",
+        "#DIV/0",
+        "#N/A",
+        "#VALUE",
+        "公式错误",
+        "异常值",
+        "校验"
+      ],
+      "operationType": "Utility",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "excel_get_layout_snapshot",
+      "layer": 1,
+      "description": "获取当前工作表的布局快照：已占用区域、图表列表(位置/大小/数据源)、已写 KPI、建议下一个锚点位置。框架自动在多步骤场景每轮调用，让 LLM 知道自己已经放了什么、还能放哪里",
+      "parameters": [
+        {
+          "name": "sheet",
+          "type": "string",
+          "required": false,
+          "description": "工作表名称（可选，默认当前活动工作表）"
+        },
+        {
+          "name": "includeHeader",
+          "type": "boolean",
+          "required": false,
+          "description": "是否返回表头行样本（默认 true）"
+        },
+        {
+          "name": "includeKpiCells",
+          "type": "boolean",
+          "required": false,
+          "description": "是否返回 KPI 单元格样本（默认 true，仅前 20 个非空单元格）"
+        }
+      ],
+      "displayName": "布局快照",
+      "intentKeywords": [
+        "布局",
+        "快照",
+        "看板布局",
+        "已放什么",
+        "还能放",
+        "图表位置",
+        "已占用区域",
+        "layout",
+        "snapshot",
+        "看板",
+        "仪表盘",
+        "dashboard",
+        "大屏",
+        "数据面板"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    }
+  ],
+  "version": "1.7.3",
+  "lastUpdated": "2026-10-10"
+}

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExcelAIVSTOAddIn</RootNamespace>
+    <AssemblyName>ExcelMcpCoreUtils.Tests</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- 【修复】本工程是 SDK 风格，默认会自动收编目录下所有 *.vb，
+       于是把同级的 ToolCoverage\（它是独立的 ExcelToolCoverage.Tests 工程）也收了进来，
+       导致两个 Module Program 在同一命名空间冲突（BC30179）。
+       这里显式排除该目录，使其只由自己的工程编译。 -->
+  <ItemGroup>
+    <Compile Remove="ToolCoverage\**" />
+    <Compile Remove="Manual\**" />
+  </ItemGroup>
+
+  <!-- 共享源文件：与 add-in 工程编译同一份源，保证被测试的是生产代码（单一事实源） -->
+  <ItemGroup>
+    <Compile Include="..\..\Services\Mcp\ExcelMcpCoreUtils.vb" Link="ExcelMcpCoreUtils.vb" />
+    <Compile Include="..\..\Services\PptDesignEngine.vb" Link="PptDesignEngine.vb" />
+    <Compile Include="..\..\Services\PptThemeDesignValidator.vb" Link="PptThemeDesignValidator.vb" />
+    <Compile Include="..\..\Services\PptStyleDirections.vb" Link="PptStyleDirections.vb" />
+    <Compile Include="..\..\Services\PptImagePaletteExtractor.vb" Link="PptImagePaletteExtractor.vb" />
+  </ItemGroup>
+
+  <!-- PptDesignEngine 输出 JObject/JArray，依赖 Newtonsoft.Json（与主工程同版本 13.0.3） -->
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

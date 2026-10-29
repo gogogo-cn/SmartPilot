@@ -1,0 +1,32 @@
+{
+  "_comment": "MCP 配置示例模板 - 使用环境变量占位符，可跨机器部署。复制为本文件 mcp.json 或修改 mcp.user.json。",
+  "_placeholder_help": {
+    "%PROGRAMFILES%": "C:\\Program Files",
+    "%USERPROFILE%": "C:\\Users\\你的用户名",
+    "%APPDATA%": "C:\\Users\\你的用户名\\AppData\\Roaming",
+    "%LOCALAPPDATA%": "C:\\Users\\你的用户名\\AppData\\Local",
+    "%DOCUMENTS%": "C:\\Users\\你的用户名\\Documents",
+    "%DESKTOP%": "C:\\Users\\你的用户名\\Desktop"
+  },
+  "mcpServers": {
+    "filesystem": {
+      "name": "filesystem",
+      "description": "文件系统访问工具（需要 Node.js 和 npx 可用）",
+      "transport": "stdio",
+      "command": "%PROGRAMFILES%\\nodejs\\npx.cmd",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "%USERPROFILE%"],
+      "enabled": true
+    },
+    "ms365": {
+      "name": "ms365",
+      "description": "Softeria MS 365 MCP Server - 通过 Graph API 访问邮件、日历、OneDrive、Excel 等 Microsoft 365 服务",
+      "transport": "stdio",
+      "command": "%PROGRAMFILES%\\nodejs\\node.exe",
+      "args": ["%APPDATA%\\npm\\node_modules\\@softeria\\ms-365-mcp-server\\dist\\index.js"],
+      "enabled": false
+    }
+  },
+  "serverPort": 9527,
+  "serverEnabled": true,
+  "autoStartClients": false
+}

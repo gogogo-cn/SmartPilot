@@ -1,0 +1,11 @@
+{
+  "name": "smartpilot-ops-console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SmartPilot 运营台：激活码生成 / 台账对账 / 发货状态 / 客户档案（本地 127.0.0.1，零依赖）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  }
+}

@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{2B8E5F71-4C1A-4D9E-9A33-7E6C5D8F1B24}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PptAIVSTOAddIn</RootNamespace>
+    <AssemblyName>PptAIVSTOAddIn</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <!-- PackageReference 还原需要显式声明 RuntimeIdentifier，否则报
+         "Your project file doesn't list 'win' as a RuntimeIdentifier"。 -->
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
+    <!-- COM 加载项：需要强名称才能 RegAsm /codebase -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>PptAIVSTOAddIn.snk</AssemblyOriginatorKeyFile>
+    <FileUpgradeFlags />
+    <OldToolsVersion>16.0</OldToolsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+    <OutputPath>bin\Debug\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>41999,42016,42358,42017,42018,42019,42032,42036</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="Extensibility">
+      <Guid>{AC0714F2-3D04-11D1-AE7D-00A0C90F26F4}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>false</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Microsoft.Office.Core">
+      <Guid>{2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>7</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Microsoft.Office.Interop.PowerPoint">
+      <Guid>{91493440-5A91-11CF-8700-00AA0060263B}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>12</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Office, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+      <Private>False</Private>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2">
+      <Version>1.0.2210.55</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 公共核心库：OCR 识别引擎（与 Excel 同源，单一维护点） -->
+    <ProjectReference Include="..\..\Core\SmartPilot.Core.vbproj">
+      <Project>{7C4E1A92-5D3B-4F81-9A62-8E1D4C7B3F55}</Project>
+      <Name>SmartPilot.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\OcrHost\OcrHost.vbproj">
+      <Project>{B7E4C1A2-6F58-4D3E-9C21-4A8E0F6D2B17}</Project>
+      <Name>OcrHost</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Text" />
+    <Import Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Connect.vb" />
+    <Compile Include="PptBridge.vb" />
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="..\Shared\OfficeHost.vb">
+      <Link>Shared\OfficeHost.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostWebView.vb">
+      <Link>Shared\HostWebView.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostConfig.vb">
+      <Link>Shared\HostConfig.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostLicense.vb">
+      <Link>Shared\HostLicense.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostBridgeBase.vb">
+      <Link>Shared\HostBridgeBase.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostRibbon.vb">
+      <Link>Shared\HostRibbon.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostMcpTools.vb">
+      <Link>Shared\HostMcpTools.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostPaneManager.vb">
+      <Link>Shared\HostPaneManager.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostPathHelper.vb">
+      <Link>Shared\HostPathHelper.vb</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 功能区布局：三宿主共用 Hosts\Shared\Ribbon.xml（Link 保证清单名仍为 PptAIVSTOAddIn.Ribbon.xml） -->
+    <EmbeddedResource Include="..\Shared\Ribbon.xml">
+      <Link>Ribbon.xml</Link>
+    </EmbeddedResource>
+    <!-- RapidOCR 引擎脚本：必须与主工程一致，落到输出目录的 Services\ 下
+         （RapidOcrService 按 AppDomain.BaseDirectory\Services\rapidocr_inference_engine.py 查找） -->
+    <None Include="..\..\Services\rapidocr_inference_engine.py">
+      <Link>Services\rapidocr_inference_engine.py</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Services\ocr_overlap_dedupe.py">
+      <Link>Services\ocr_overlap_dedupe.py</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Services\ocr_formula_router.py">
+      <Link>Services\ocr_formula_router.py</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="PptAIVSTOAddIn_TemporaryKey.pfx" />
+    <None Include="register.ps1" />
+  </ItemGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionCompare>Binary</OptionCompare>
+    <OptionStrict>Off</OptionStrict>
+  </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+  <!-- 构建后同步（UI / Config）：与 Word 共用 Hosts\Shared\SmartPilot.Build.targets -->
+  <Import Project="..\Shared\SmartPilot.Build.targets" />
+</Project>

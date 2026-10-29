@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ============================================================================
+     SmartPilot.Build.targets - 各宿主工程共用的构建后同步逻辑
+
+     背景：SyncUIFiles / SyncConfigFiles 这两个 Target 原先在 PptAIVSTOAddIn.vbproj
+     与 WordAIVSTOAddIn.vbproj 中各写了一份（内容完全相同），加一个同步规则要改两处。
+     现抽到本文件，两个工程用 <Import> 引入即可。
+
+     路径推导：本文件位于 <仓库根>\Hosts\Shared\，因此
+       - UI 源目录     = $(MSBuildThisFileDirectory)..\..\UI        → <仓库根>\UI
+       - 宿主配置源目录 = $(MSBuildThisFileDirectory)Config          → Hosts\Shared\Config
+     对 Excel / PPT / Word 三个工程都成立（它们都在同一仓库内）。
+
+     注：Excel 主工程仍保留自己的 SyncUIFiles（robocopy），但其"刷新 HTML 版本戳"
+     的脚本逻辑已抽出并统一到本文件的 SyncUIDebugStamp，PPT/Word 一并受益。
+     HTML 版本戳是 WebView2 的缓存失效手段：本插件用 SetVirtualHostNameToFolderMapping
+     提供 UI 且未设禁用缓存头，不刷新戳会导致旧 JS 被长期缓存、修复"看似不生效"。
+     ============================================================================ -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <SmartPilotUIRoot Condition="'$(SmartPilotUIRoot)' == ''">$(MSBuildThisFileDirectory)..\..\UI</SmartPilotUIRoot>
+    <SmartPilotHostConfigRoot Condition="'$(SmartPilotHostConfigRoot)' == ''">$(MSBuildThisFileDirectory)Config</SmartPilotHostConfigRoot>
+  </PropertyGroup>
+
+  <!-- 同步前端 UI（HTML/JS/CSS/图片等）到输出目录 -->
+  <Target Name="SyncUIFiles" AfterTargets="Build">
+    <Message Text="正在同步 UI 文件到输出目录..." Importance="high" />
+    <Exec Command="robocopy &quot;$(SmartPilotUIRoot)&quot; &quot;$(OutputPath)UI&quot; /E /NFL /NDL /NJH /NJS /XF *.ps1 *.bak* *.backup*" IgnoreExitCode="true" />
+    <Exec Command="robocopy &quot;$(SmartPilotUIRoot)&quot; &quot;$(OutputPath)UI&quot; index.html /NFL /NDL /NJH /NJS" IgnoreExitCode="true" />
+  </Target>
+
+  <!-- 同步宿主工具定义（Config\*.json）到输出目录 -->
+  <Target Name="SyncConfigFiles" AfterTargets="Build">
+    <Message Text="正在同步工具定义到输出目录..." Importance="high" />
+    <Exec Command="robocopy &quot;$(SmartPilotHostConfigRoot)&quot; &quot;$(OutputPath)Config&quot; *.json /NFL /NDL /NJH /NJS" IgnoreExitCode="true" />
+  </Target>
+
+  <!-- 刷新 $(OutputPath)UI 的 HTML 版本戳（缓存 busting）。
+       复用 Tools\sync-ui-to-debug.js（与 Excel 同一套逻辑），通过 dest 参数指向本宿主输出目录。
+       必须晚于 SyncUIFiles 运行：先 robocopy 把最新 JS 落盘，再统一刷新 ?v= 戳，
+       保证 WebView2 不会加载缓存的旧 JS（本插件用 SetVirtualHostNameToFolderMapping 提供 UI 且未设禁用缓存头）。
+       Debug/Release 都触发（原来仅 Debug，导致 Release 发布后 WebView2 仍缓存旧 JS）。 -->
+  <Target Name="SyncUIDebugStamp" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
+    <Message Text="刷新 UI 版本戳(失效 WebView2 缓存) -> $(OutputPath)UI ..." Importance="high" />
+    <Exec Command="node &quot;$(MSBuildThisFileDirectory)..\..\Tools\sync-ui-to-debug.js&quot; --dest &quot;$(OutputPath)UI&quot;" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
+</Project>

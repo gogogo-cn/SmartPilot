@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartPilot 使用教程</title>
+<style>
+  :root{
+    --primary:#4F7CFF; --primary2:#7A5CFF; --ink:#1f2430; --muted:#5b6472;
+    --line:#e7eaf0; --bg:#f6f8fc; --card:#ffffff; --code:#eef1fb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI","Microsoft YaHei",system-ui,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.75}
+  a{color:var(--primary);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* 封面 */
+  .cover{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:64px 24px 56px;text-align:center}
+  .cover .logo{font-size:14px;letter-spacing:3px;opacity:.9}
+  .cover h1{margin:12px 0 8px;font-size:40px;font-weight:800}
+  .cover p{margin:0;font-size:17px;opacity:.95}
+  .cover .meta{margin-top:20px;font-size:13px;opacity:.85}
+
+  /* 布局 */
+  .layout{display:flex;max-width:1180px;margin:0 auto;gap:28px;padding:28px 20px}
+  nav.toc{width:260px;flex:0 0 260px;position:sticky;top:20px;align-self:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 14px;max-height:calc(100vh - 40px);overflow:auto}
+  nav.toc h4{margin:2px 6px 10px;font-size:13px;color:var(--muted);letter-spacing:1px}
+  nav.toc a{display:block;padding:6px 8px;border-radius:8px;color:var(--ink);font-size:14px}
+  nav.toc a:hover{background:var(--code);text-decoration:none}
+
+  main{flex:1;min-width:0}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 28px 24px;margin-bottom:22px}
+  h2{font-size:24px;margin:22px 0 6px;padding-top:8px;border-top:3px solid var(--primary);display:inline-block}
+  h3{font-size:18px;margin:20px 0 6px;color:#2a3140}
+  p{margin:10px 0}
+  ul,ol{margin:8px 0 8px 4px;padding-left:22px}
+  li{margin:4px 0}
+  code{background:var(--code);color:#334; padding:2px 7px;border-radius:6px;font-family:Consolas,"Courier New",monospace;font-size:14px}
+  blockquote{margin:12px 0;padding:10px 16px;border-left:4px solid var(--primary2);background:#f4f2ff;border-radius:0 8px 8px 0;color:#3a3f52}
+  blockquote p{margin:4px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:15px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#f0f4ff;font-weight:700}
+  tr:nth-child(even) td{background:#fafbff}
+  .tag{display:inline-block;font-size:12px;color:#fff;background:var(--primary2);border-radius:20px;padding:1px 10px;margin-left:8px;vertical-align:middle}
+  footer{max-width:1180px;margin:0 auto;padding:26px 20px 50px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:900px){ nav.toc{display:none} .cover h1{font-size:30px} }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="logo">SMARTPILOT · AI FOR OFFICE</div>
+  <h1>SmartPilot 使用教程</h1>
+  <p>装进 Office 的 AI 助手 · Excel / Word / PowerPoint 通用 · 从入门到高阶</p>
+  <div class="meta">版本 v1.0 &nbsp;·&nbsp; 更新于 2026-10 &nbsp;·&nbsp; 客服/官网：见产品内「关于」</div>
+</header>
+
+<div class="layout">
+  <nav class="toc">
+    <h4>目录</h4>
+    <a href="#ch1">一、产品简介</a>
+    <a href="#ch2">二、安装与首次配置</a>
+    <a href="#ch3">三、快速开始</a>
+    <a href="#ch4">四、自然语言操作表格</a>
+    <a href="#ch5">五、表格美化</a>
+    <a href="#ch6">六、智能图表</a>
+    <a href="#ch7">七、数据清洗</a>
+    <a href="#ch8">八、数据分析</a>
+    <a href="#ch9">九、公式助手</a>
+    <a href="#ch10">十、数据看板与大屏</a>
+    <a href="#ch11">十一、OCR 图片识别</a>
+    <a href="#ch12">十二、手机扫码录入</a>
+    <a href="#ch13">十三、Word / PPT 表格主题</a>
+    <a href="#ch14">十四、PPT 报告生成</a>
+    <a href="#ch15">十五、代码生成（VBA / Python）</a>
+    <a href="#ch16">十六、技能系统与自建技能</a>
+    <a href="#ch17">十七、知识库（RAG）</a>
+    <a href="#ch18">十八、思考模式与安全策略</a>
+    <a href="#ch19">十九、提问技巧与最佳实践</a>
+    <a href="#ch20">二十、常见问题（FAQ）</a>
+    <a href="#ch21">二十一、附录：常用口令速查表</a>
+  </nav>
+
+  <main>
+    <section id="ch1">
+      <h2>一、产品简介</h2>
+      <p>SmartPilot 将大语言模型与 Office 深度集成，核心特点：</p>
+      <ul>
+        <li><strong>一套助手，三件套通用</strong>：在 Excel、Word、PowerPoint 中体验完全一致，学一次全会用。</li>
+        <li><strong>自然语言驱动</strong>：用日常说话的方式下达指令，AI 自动理解并执行。</li>
+        <li><strong>确定性引擎保障</strong>：数据导出、格式化、筛选等操作由稳定引擎执行，结果可复现。</li>
+        <li><strong>安全分级</strong>：可自定义的脚本操作需在高级模式下确认执行，防止误操作。</li>
+      </ul>
+      <blockquote><p>典型场景：日常报表处理、数据清洗与分析、经营看板制作、汇报 PPT 生成、票据/截图识别、批量文件汇总等。</p></blockquote>
+    </section>
+
+    <section id="ch2">
+      <h2>二、安装与首次配置<span class="tag">入门</span></h2>
+      <h3>2.1 认识功能区入口</h3>
+      <p>安装后，Office 顶部会出现 <strong>SmartPilot</strong> 选项卡，包含五个按钮：</p>
+      <table>
+        <tr><th>按钮</th><th>功能</th></tr>
+        <tr><td><strong>AI Chat</strong></td><td>主对话窗口，绝大多数操作在此完成</td></tr>
+        <tr><td><strong>Image OCR</strong></td><td>识别图片/截图并转为表格</td></tr>
+        <tr><td><strong>AI Model</strong></td><td>配置大语言模型</td></tr>
+        <tr><td><strong>OCR Model</strong></td><td>配置识别引擎</td></tr>
+        <tr><td><strong>Mobile</strong></td><td>手机扫码连接，遥控 Excel</td></tr>
+      </table>
+      <h3>2.2 配置大模型（首次使用）</h3>
+      <ol>
+        <li>点击 <strong>AI Model</strong> 按钮打开设置面板。</li>
+        <li>填入模型服务地址与 API 密钥，选择模型，保存。</li>
+        <li>保存后即可开始对话。</li>
+      </ol>
+      <h3>2.3 切换界面语言</h3>
+      <p>点击右上角 🌐 按钮，或按快捷键 <code>Alt + L</code>，即可在中/英文之间切换，功能区按钮同步更新。</p>
+    </section>
+
+    <section id="ch3">
+      <h2>三、快速开始</h2>
+      <p>三步即可完成第一个任务：</p>
+      <ol>
+        <li><strong>选中数据</strong>：在表格中选中要处理的单元格区域。</li>
+        <li><strong>打开对话</strong>：点击 <strong>AI Chat</strong>，右侧弹出对话窗口。</li>
+        <li><strong>描述需求</strong>：在输入框用自然语言说出你想做的事，回车发送。</li>
+      </ol>
+      <blockquote><p>示例：选中一张数据表后，输入 <code>把这张表美化成商务蓝风格</code>，表格会在瞬间套用配色与格式。</p></blockquote>
+    </section>
+
+    <section id="ch4">
+      <h2>四、自然语言操作表格</h2>
+      <table>
+        <tr><th>需求</th><th>直接说</th></tr>
+        <tr><td>排序</td><td><code>按销售额从高到低排序</code></td></tr>
+        <tr><td>筛选</td><td><code>只保留华东区的数据</code></td></tr>
+        <tr><td>求和汇总</td><td><code>在最后一列加总求和</code></td></tr>
+        <tr><td>补全空值</td><td><code>给这一列补全空值为 0</code></td></tr>
+        <tr><td>拼接字段</td><td><code>把 A 列和 B 列合并成"姓名-部门"</code></td></tr>
+        <tr><td>导出文件</td><td><code>导出为 CSV 到桌面</code></td></tr>
+      </table>
+      <blockquote><p>提示：先选中数据区域再发送指令，AI 能更准确地理解处理对象。导出文件默认保存到桌面。</p></blockquote>
+    </section>
+
+    <section id="ch5">
+      <h2>五、表格美化<span class="tag">高频</span></h2>
+      <p>内置 <strong>8 套配色 × 10 种版式</strong>，可自由组合，也能精细调整细节。</p>
+      <h3>5.1 一键套用配色</h3>
+      <p>直接说出配色名称：<code>把这张表美化成商务蓝风格</code>。</p>
+      <p>可用配色：<code>商务蓝</code>、<code>科技绿</code>、<code>活力橙</code>、<code>优雅紫</code>、<code>极简灰</code>、<code>金融红</code>、<code>墨黑金</code>、<code>晴空青</code>。</p>
+      <h3>5.2 切换版式</h3>
+      <ul>
+        <li><code>商务蓝三线表</code>（学术/正式风）</li>
+        <li><code>商务蓝无边框风格</code>（清爽现代）</li>
+        <li><code>商务蓝卡片条纹</code> / <code>商务蓝下划线表头</code></li>
+      </ul>
+      <p>其他版式：标准网格、深表头、首列聚焦、合计行、紧凑报表、杂志风等。</p>
+      <h3>5.3 细节调整</h3>
+      <p><code>商务蓝美化，首列加粗、末行合计强调、数值右对齐</code></p>
+      <p>可调整项：首列加粗、末行强调、数值右对齐、行高、垂直居中等。</p>
+    </section>
+
+    <section id="ch6">
+      <h2>六、智能图表</h2>
+      <table>
+        <tr><th>需求</th><th>直接说</th></tr>
+        <tr><td>饼图</td><td><code>用饼图按部门展示销售额</code></td></tr>
+        <tr><td>柱状图</td><td><code>用柱状图对比各月营收</code></td></tr>
+        <tr><td>折线图</td><td><code>用折线图看毛利率趋势</code></td></tr>
+        <tr><td>组合图</td><td><code>用组合图：X 轴用月份，柱状显示营收，折线显示毛利率，毛利率放次坐标轴</code></td></tr>
+      </table>
+      <p>支持类型：饼图、环形图、柱状图、条形图、折线图、面积图、雷达图、散点图、气泡图、组合图等。</p>
+      <blockquote><p>技巧：量纲差异大的指标（如“金额 + 百分比”）可要求“放次坐标轴”；也可追加“在图表下方加一句洞察：xxx”。</p></blockquote>
+    </section>
+
+    <section id="ch7">
+      <h2>七、数据清洗</h2>
+      <p>一键处理重复行、空值与格式不统一：<code>清洗这张表：删除重复行、空值补全为 0、统一日期格式</code>。</p>
+      <p>文本规范化：<code>把"男/女性"规范成 M/F</code>、<code>去掉前后空格</code>。</p>
+    </section>
+
+    <section id="ch8">
+      <h2>八、数据分析</h2>
+      <table>
+        <tr><th>能力</th><th>直接说</th></tr>
+        <tr><td>多表合并</td><td><code>把多个工作表合并成一个</code></td></tr>
+        <tr><td>拆分</td><td><code>按部门把数据拆分到不同工作表</code></td></tr>
+        <tr><td>关联</td><td><code>用订单表和客户表按客户 ID 关联</code></td></tr>
+        <tr><td>差异对比</td><td><code>对比新旧两个文件的差异</code></td></tr>
+        <tr><td>描述统计</td><td><code>生成描述性统计：均值、最大最小、标准差</code></td></tr>
+        <tr><td>多文件汇总</td><td><code>汇总这 12 个分公司的月报，出一张总表</code></td></tr>
+      </table>
+    </section>
+
+    <section id="ch9">
+      <h2>九、公式助手</h2>
+      <p>忘记函数语法时，用自然语言描述计算逻辑：</p>
+      <blockquote><p><code>写个公式：如果销售额大于 1 万且是老客户，标记"重点"，否则"普通"</code></p></blockquote>
+      <p>AI 会生成对应公式（如 IF 结合 AND）并写入单元格。也支持 <code>算每个月的环比增长率</code>、<code>写个 SUMIFS 按条件求和</code>。</p>
+    </section>
+
+    <section id="ch10">
+      <h2>十、数据看板与大屏</h2>
+      <p>选中数据，一句话生成可投屏看板：<code>生成一张销售数据分析看板</code>。</p>
+      <p>看板会自动组合核心指标卡、趋势图、占比图等模块。可进一步 <code>生成经营分析大屏</code>、<code>把看板导出成网页/图片用于汇报</code>。</p>
+    </section>
+
+    <section id="ch11">
+      <h2>十一、OCR 图片识别</h2>
+      <ol>
+        <li>点击 <strong>Image OCR</strong>，拖入或选择图片。</li>
+        <li>识别结果以结构化表格呈现，可一键写回 Excel。</li>
+      </ol>
+      <p>识别不准时，可在 <strong>OCR Model</strong> 切换识别引擎重试；版式固定的复杂票据还可定制解析脚本批量提取字段。</p>
+    </section>
+
+    <section id="ch12">
+      <h2>十二、手机扫码录入</h2>
+      <ol>
+        <li>点击 <strong>Mobile</strong>，面板中显示二维码。</li>
+        <li>用手机扫码连接。</li>
+      </ol>
+      <p>连接后，核心用途是<strong>随拍录入</strong>：用手机拍摄纸质表格、单据等现场数据，即可直接录入 Excel，即拍即入，省去手工敲字；同时也支持在手机端进行简单遥控。</p>
+    </section>
+
+    <section id="ch13">
+      <h2>十三、Word / PPT 表格主题</h2>
+      <p>表格美化同样适用于 Word 与 PowerPoint。在 Word / PPT 中选中表格，输入 <code>商务蓝美化</code> 或 <code>活力橙三线表</code>，即可统一风格。</p>
+    </section>
+
+    <section id="ch14">
+      <h2>十四、PPT 报告生成<span class="tag">高阶</span></h2>
+      <h3>14.1 一键生成</h3>
+      <p><code>根据这份数据生成一份 Q3 经营分析 PPT</code>，AI 自动组织封面、核心指标、图表与结论并打开预览。可指定主题 <code>用 business_blue 主题</code>。</p>
+      <h3>14.2 分步构建（复杂/需迭代的报告）</h3>
+      <ol>
+        <li><code>创建 PPT 项目：2026 新品发布会</code></li>
+        <li>逐页添加：<code>加封面页</code>、<code>加目录页</code>、<code>加图表页：营收趋势</code>、<code>加 KPI 页</code>、<code>加时间线页</code>、<code>加致谢页</code></li>
+        <li>随时调整：<code>把第 3 页图表改成组合图</code>、<code>删除第 5 页</code></li>
+        <li>最终生成：<code>重新生成 PPT</code></li>
+      </ol>
+    </section>
+
+    <section id="ch15">
+      <h2>十五、代码生成（VBA / Python）</h2>
+      <p><strong>VBA 宏</strong>：<code>写一个 VBA 宏：批量把工作表按名字排序</code></p>
+      <p><strong>Python 脚本</strong>：<code>写一个 Python 脚本：对销售数据做聚类分析并出图</code></p>
+      <blockquote><p>注意：自定义脚本需在「深度」或「专家」模式下才会执行，日常模式会被安全拦截，防止误操作。</p></blockquote>
+      <p><strong>OCR 解析脚本</strong>：<code>生成发票解析脚本：提取金额、税号、日期</code>，实现复杂票据批量识别。</p>
+    </section>
+
+    <section id="ch16">
+      <h2>十六、技能系统与自建技能</h2>
+      <p>SmartPilot 内置约 26 个技能，按场景分为：表格美化、智能图表、数据清洗、数据分析、文档主题、内容生成、数据工具等。对号入座即可：<strong>要变好看、要做分析、要玩数据，还是要出产物</strong>。</p>
+      <h3>自建技能（SkillCreator）</h3>
+      <p>把重复工作流固化成自己的技能：<code>新建技能：销售表自动清洗并美化为商务蓝加总计行</code>。定义后一句“用我的销售技能处理这张表”即可自动跑完整套流程。</p>
+    </section>
+
+    <section id="ch17">
+      <h2>十七、知识库（RAG）</h2>
+      <ol>
+        <li>导入文档到知识库。</li>
+        <li>直接提问，例如 <code>我们产品的保修政策是什么？</code>，答案会标注来源。</li>
+      </ol>
+    </section>
+
+    <section id="ch18">
+      <h2>十八、思考模式与安全策略</h2>
+      <table>
+        <tr><th>模式</th><th>适用场景</th></tr>
+        <tr><td>快速</td><td>简单改表、排序、筛选</td></tr>
+        <tr><td>标准</td><td>日常分析与格式化</td></tr>
+        <tr><td>深度</td><td>复杂分析、执行自定义脚本</td></tr>
+        <tr><td>专家</td><td>执行自定义 Python 等高风险脚本</td></tr>
+      </table>
+      <blockquote><p>安全分级：自定义脚本在「标准」及以下会被拦截，需切换到「深度」或「专家」才会执行。日常建议保持中低档。</p></blockquote>
+    </section>
+
+    <section id="ch19">
+      <h2>十九、提问技巧与最佳实践</h2>
+      <h3>提问黄金公式</h3>
+      <blockquote><p><strong>清晰目标 + 数据范围 + 期望产出</strong>，例：<code>把选中的销售明细，做一张用饼图展示各部门占比的看板。</code></p></blockquote>
+      <ul>
+        <li>先选数据再提问。</li>
+        <li>复杂任务分步说。</li>
+        <li>导出/格式化/筛选走确定性引擎，报成功即代表已生成、可复现。</li>
+        <li>识别不准换 OCR 引擎，生成慢切「快速」模式。</li>
+      </ul>
+    </section>
+
+    <section id="ch20">
+      <h2>二十、常见问题（FAQ）</h2>
+      <p><strong>Q：切换语言后功能区按钮没变？</strong><br>A：保存工作簿并完全关闭、重开 Office 即可。</p>
+      <p><strong>Q：识别图片不准确？</strong><br>A：在「OCR Model」切换引擎重试；固定版式票据可定制解析脚本。</p>
+      <p><strong>Q：生成速度慢？</strong><br>A：将思考模式切换为「快速」或「标准」。</p>
+      <p><strong>Q：导出成功但找不到文件？</strong><br>A：默认保存到桌面，可在桌面按文件名搜索。</p>
+      <p><strong>Q：自定义脚本无法运行？</strong><br>A：需在「深度」或「专家」模式下执行。</p>
+      <p><strong>Q：一套设置三件套通用吗？</strong><br>A：界面与能力一致；模型、语言按宿主独立保存，可分别配置。</p>
+    </section>
+
+    <section id="ch21">
+      <h2>二十一、附录：常用口令速查表</h2>
+      <table>
+        <tr><th>分类</th><th>常用口令</th></tr>
+        <tr><td>美化</td><td><code>把这张表美化成商务蓝风格</code> / <code>科技绿美化</code> / <code>商务蓝三线表</code></td></tr>
+        <tr><td>数据操作</td><td><code>按销售额从高到低排序</code> / <code>只保留华东区的数据</code> / <code>在最后一列加总求和</code></td></tr>
+        <tr><td>图表</td><td><code>用饼图按部门展示销售额</code> / <code>用组合图：柱状显示营收，折线显示毛利率放次坐标轴</code></td></tr>
+        <tr><td>清洗</td><td><code>清洗这张表：删除重复行、空值补全为0、统一日期格式</code></td></tr>
+        <tr><td>分析</td><td><code>把多个工作表合并成一个</code> / <code>按部门拆分到不同工作表</code> / <code>对比两个文件的差异</code></td></tr>
+        <tr><td>公式</td><td><code>写个公式：销售额大于1万且老客户标记重点</code></td></tr>
+        <tr><td>看板</td><td><code>生成一张销售数据分析看板</code></td></tr>
+        <tr><td>OCR</td><td>拖图到「Image OCR」或 <code>识别这张截图并转成表格</code></td></tr>
+        <tr><td>PPT</td><td><code>根据这份数据生成一份 Q3 经营分析 PPT</code> / <code>用 business_blue 主题</code></td></tr>
+        <tr><td>代码</td><td><code>写一个 VBA 宏：批量重命名工作表</code> / <code>写一个 Python 脚本做聚类分析</code></td></tr>
+        <tr><td>技能</td><td><code>新建技能：销售表自动清洗并美化为商务蓝加总计行</code></td></tr>
+      </table>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <p>SmartPilot 使用教程 · 版本 v1.0 · 更新于 2026-10</p>
+  <p>本教程随产品版本持续更新。配套《A4 一页速查卡》可打印随身使用。</p>
+</footer>
+
+</body>
+</html>

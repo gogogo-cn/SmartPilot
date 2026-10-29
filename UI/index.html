@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPilot 智航</title>
+    <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🤖&lt;/text&gt;&lt;/svg&gt;">
+    <link rel="stylesheet" href="css/styles.css?v=v202610282055">
+    <link rel="stylesheet" href="css/skill-overrides.css?v=v202610282055">
+    <link rel="stylesheet" href="css/task-progress.css?v=v202610282055">
+    <link rel="stylesheet" href="css/chat-v2.css?v=v202610282055">
+<style id="startup-progress-styles">
+                /* 居中容器 */
+                .startup-progress-center {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100%;
+                    padding: 40px 20px;
+                }
+
+                /* 进度卡片 */
+                .startup-progress-card {
+                    width: 100%;
+                    max-width: 420px;
+                    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+                    border-radius: 16px;
+                    padding: 28px 32px;
+                    box-shadow: 
+                        0 4px 24px rgba(0, 0, 0, 0.08),
+                        0 1px 2px rgba(0, 0, 0, 0.04),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                    border: 1px solid rgba(102, 126, 234, 0.12);
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                    animation: spFadeInUp 0.6s ease-out;
+                }
+
+                @keyframes spFadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                .sp-card-inner {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 18px;
+                }
+
+                /* 头部 */
+                .sp-header {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .sp-icon-wrapper {
+                    width: 52px;
+                    height: 52px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 26px;
+                    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+                    transition: all 0.3s ease;
+                }
+
+                .sp-title {
+                    margin: 0;
+                    font-size: 17px;
+                    font-weight: 600;
+                    color: #1a1a2e;
+                    letter-spacing: -0.02em;
+                }
+
+                /* 进度条 */
+                .sp-progress-container {
+                    position: relative;
+                }
+
+                .sp-progress-track {
+                    height: 8px;
+                    background: #e8ecf4;
+                    border-radius: 100px;
+                    overflow: visible;
+                    position: relative;
+                }
+
+                .sp-progress-fill {
+                    height: 100%;
+                    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 100px;
+                    width: 0%;
+                    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                    position: relative;
+                    z-index: 2;
+                }
+
+                .sp-progress-glow {
+                    position: absolute;
+                    top: 50%;
+                    left: 0;
+                    transform: translateY(-50%);
+                    width: 60px;
+                    height: 24px;
+                    background: radial-gradient(ellipse, rgba(102, 126, 234, 0.4), transparent);
+                    filter: blur(8px);
+                    transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                    z-index: 1;
+                    pointer-events: none;
+                }
+
+                /* 状态行 */
+                .sp-status-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .sp-status {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 13px;
+                    color: #555;
+                    font-weight: 500;
+                }
+
+                .sp-spinner-mini {
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid #e0e4ec;
+                    border-top-color: #667eea;
+                    border-radius: 50%;
+                    animation: spSpin 0.8s linear infinite;
+                }
+
+                @keyframes spSpin {
+                    to { transform: rotate(360deg); }
+                }
+
+                .sp-percentage {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #667eea;
+                    min-width: 36px;
+                    text-align: right;
+                    font-variant-numeric: tabular-nums;
+                }
+
+                /* 详情 */
+                .sp-detail {
+                    background: #f0f4ff;
+                    border-radius: 8px;
+                    padding: 10px 14px;
+                    display: none;
+                    animation: spSlideDown 0.25s ease-out;
+                }
+
+                @keyframes spSlideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-4px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                .sp-detail-text {
+                    font-size: 12px;
+                    color: #5a67d8;
+                    line-height: 1.5;
+                }
+
+                /* 完成状态 */
+                .startup-progress-card.completed {
+                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                    border-color: rgba(34, 197, 94, 0.2);
+                }
+
+                .startup-progress-card.completed .sp-icon-wrapper {
+                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+                }
+
+                .startup-progress-card.completed .sp-progress-fill {
+                    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+                }
+
+                .startup-progress-card.completed .sp-spinner-mini {
+                    display: none;
+                }
+
+                .startup-progress-card.completed .sp-percentage {
+                    color: #22c55e;
+                }
+            </style><style id="fsb-styles">
+                .fsb-thin-progress{position:absolute!important;bottom:0!important;left:0!important;width:100%!important;height:3px!important;z-index:99999!important;display:block!important}
+                .fsb-thin-progress-bar{height:100%!important;width:50%!important;background:linear-gradient(90deg,#6366f1,#8b5cf6,#a78bfa)!important;box-shadow:0 0 15px rgba(99,102,241,1)!important;transition:width 0.3s ease-out!important}
+                @keyframes fsb-indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
+                .fsb-thin-progress.indeterminate .fsb-thin-progress-bar{width:30%!important;animation:fsb-indeterminate 1.5s ease-in-out infinite!important}
+                #fixed-status-bar{position:relative!important}
+            </style></head>
+<body>
+    <!-- 版本标记 2026-06-02 v2.6 - 方案A统一文件处理器 + 修复availableSkills作用域 -->
+
+    <!-- ============================================================
+         SmartPilot 初始页面优化：版本常量与早期占位函数
+         ============================================================ -->
+    <script>
+        (function() {
+            'use strict';
+            window.__APP_VERSION__ = 'v202610282055';
+            window.__DEFERRED_LOADED__ = {};
+
+            // 高频 inline onclick 函数占位：在对应模块加载前点击不报错
+            var placeholders = [
+                'sendMessage', 'toggleEditor', 'executeCode', 'clearAllCache',
+                'switchExtensionTab', 'showAddSkillDialog', 'startMcpServer',
+                'refreshMcpStatus', 'clearAttachment', 'undoLastAction', 'redoLastAction',
+                'showAddMcpClientDialog', 'saveMcpClient', 'closeMcpClientDialog'
+            ];
+            placeholders.forEach(function(name) {
+                if (typeof window[name] !== 'function') {
+                    window[name] = function() {
+                        if (window.App && typeof window.App.showToast === 'function') {
+                            window.App.showToast('模块加载中，请稍候…', 'info');
+                        } else {
+                            console.log('[占位] ' + name + ' 被提前调用，模块尚未加载');
+                        }
+                    };
+                }
+            });
+        })();
+    </script>
+    <!-- Tabs -->
+    <div id="top-tabs">
+        <button class="tab-btn active" data-tab="chat" data-i18n="tab.chat">💬对话</button>
+        <button class="tab-btn" data-tab="history" data-i18n="tab.history">📜历史</button>
+        <button class="tab-btn" data-tab="skills" data-i18n="tab.skills">🛠️ 扩展</button>
+        <button class="tab-btn" data-tab="knowledge" data-i18n="tab.knowledge">📚 知识库</button>
+    </div>
+
+    <!-- 撤销/重做：右上角浮动小图标，不占页面行（点击即可撤销/重做，不依赖 Excel 工作表焦点） -->
+    <div id="undo-redo-bar" style="position:fixed;top:4px;left:44px;z-index:500;display:flex;gap:2px;align-items:center;padding:1px 3px;border-radius:8px;background:rgba(247,248,255,.92);box-shadow:0 1px 4px rgba(102,126,234,.18);">
+        <button id="undo-btn" onclick="(async function(){var A=window.App;var t=function(k){try{return A&&A.i18n?A.i18n.t(k):k;}catch(e){return k;}};var b=A&&A.excelBridge;if(!b){alert(t('undo.noHost'));return;}try{var r=await b.UndoLastAction();var m=t('undo.ok');try{var d=typeof r==='string'?JSON.parse(r):r;if(d&&d.message)m=d.message;}catch(e){}if(A&&A.showToast){A.showToast(m,'info');}else{alert(m);}}catch(e){var em=e&&e.message?e.message:e;if(A&&A.showToast){A.showToast(t('undo.fail')+': '+em,'error');}else{alert(t('undo.fail')+': '+em);}}})()" title="撤销插件上一步（不是工作表里的 Ctrl+Z）" data-i18n-title="nav.undo" onmouseover="this.style.background='rgba(102,126,234,.12)'" onmouseout="this.style.background='transparent'" style="padding:2px 9px;border:none;border-radius:6px;background:transparent;color:#667eea;font-size:16px;line-height:1.4;cursor:pointer;">↶</button>
+        <button id="redo-btn" onclick="(async function(){var A=window.App;var t=function(k){try{return A&&A.i18n?A.i18n.t(k):k;}catch(e){return k;}};var b=A&&A.excelBridge;if(!b){alert(t('undo.noHost'));return;}try{var r=await b.RedoLastAction();var m=t('redo.ok');try{var d=typeof r==='string'?JSON.parse(r):r;if(d&&d.message)m=d.message;}catch(e){}if(A&&A.showToast){A.showToast(m,'info');}else{alert(m);}}catch(e){var em=e&&e.message?e.message:e;if(A&&A.showToast){A.showToast(t('redo.fail')+': '+em,'error');}else{alert(t('redo.fail')+': '+em);}}})()" title="重做插件上一步（不是工作表里的 Ctrl+Y）" data-i18n-title="nav.redo" onmouseover="this.style.background='rgba(102,126,234,.12)'" onmouseout="this.style.background='transparent'" style="padding:2px 9px;border:none;border-radius:6px;background:transparent;color:#667eea;font-size:16px;line-height:1.4;cursor:pointer;">↷</button>
+    </div>
+
+    <!-- 主应用容器 -->
+    <div id="app-container">
+        <!-- 侧边可折叠工具栏 -->
+        <div id="side-toolbar" style="--tool-scale: 1.000;">
+            <button class="side-toolbar-toggle" id="side-toolbar-toggle" onclick="toggleSideToolbar()" title="收起 / 展开工具栏" aria-label="收起 / 展开工具栏" data-i18n-title="nav.collapseToolbar">‹</button>
+            <div id="connection-status" title="检测中" data-i18n-title="status.detecting" style="position: relative; display: block; min-width: 30px;">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text" data-i18n="status.detecting">检测中</span>
+            </div>
+            <button class="side-tool-arrow up" id="side-tool-up" title="向上滚动" aria-label="向上滚动" data-i18n-title="nav.scrollUp" onclick="toolbarScroll(-1)" style="display:none;"></button>
+            <div class="side-tool-scroll">
+                <div class="side-tool-section">
+                    <div class="side-tool-btn active" data-nav="chat" title="对话" data-i18n-title="nav.chat" onclick="sideToolbarNav('chat')">💬</div>
+                    <div class="side-tool-btn" data-nav="ocr" title="识图入表" data-i18n-title="help.start.1.a" onclick="openOcrPanel()">📷</div>
+                    <div class="side-tool-btn" data-nav="history" title="历史" data-i18n-title="nav.history" onclick="sideToolbarNav('history')">📜</div>
+                    <div class="side-tool-btn" id="side-account-btn" title="账户 / 订阅" data-i18n-title="nav.account" onclick="openAccountPanel()">👤</div>
+                    <div class="side-tool-btn" title="设置" data-i18n-title="nav.settings" onclick="openAiSettings()">⚙️</div>
+                    <div class="side-tool-btn" title="帮助 (F1)" data-i18n-title="nav.help" onclick="showProductHelp()">❓</div>
+                    <div class="side-tool-btn" id="side-more-btn" title="更多" data-i18n-title="nav.more" onclick="toggleSideMore(event)">⋯</div>
+                </div>
+            </div>
+            <button class="side-tool-arrow down" id="side-tool-down" title="向下滚动" aria-label="向下滚动" data-i18n-title="nav.scrollDown" onclick="toolbarScroll(1)" style="display:none;"></button>
+            
+        </div>
+        <!-- 左侧代码编辑器面板 -->
+        <div id="left-panel" class="">
+            <div id="editor-panel" style="">
+                <div id="editor-header">
+                    <span id="editor-title" style="display: none;" class="is-hidden">
+                        <svg class="editor-title-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="editor-icon-grad" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#8E2DE2"></stop>
+                                    <stop offset="1" stop-color="#4A00E0"></stop>
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#editor-icon-grad)" d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"></path>
+                            <path fill="#4A00E0" d="M14.3 6 9.7 18h2l4.6-12h-2z"></path>
+                        </svg>
+                        <span class="editor-title-text" data-i18n="editor.title">代码编辑器</span>
+                    </span>
+                    <select id="editor-language" onchange="switchEditorLanguage(this.value)" style="display: none;" title="切换编程语言" data-i18n-title="editor.lang" class="is-hidden">
+                        <option value="vba">VBA</option>
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                    </select>
+                </div>
+                <div id="editor-actions" style="display: none;" class="is-hidden">
+                    <button class="editor-btn secondary" onclick="clearEditor()" title="清空编辑器" data-i18n-title="editor.clear">
+                        <svg class="editor-btn-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                    </button>
+                    <button class="editor-btn secondary" onclick="formatEditorCode()" title="格式化代码" data-i18n-title="editor.format">
+                        <svg class="editor-btn-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37-1.34-1.34a.9959.9959 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96c.39-.39.39-1.02 0-1.41z"></path></svg>
+                    </button>
+                    <button class="editor-btn secondary" onclick="saveCodeSnippet()" title="保存代码片段" data-i18n-title="editor.saveSnippet">
+                        <svg class="editor-btn-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"></path></svg>
+                    </button>
+                    <button class="editor-btn secondary" onclick="App.showCodeLibrary()" title="代码库" data-i18n-title="editor.library">
+                        <svg class="editor-btn-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path></svg>
+                    </button>
+                    <button class="editor-btn primary" onclick="executeCode()" title="执行代码" data-i18n-title="editor.run">
+                        <svg class="editor-btn-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"></path></svg>
+                    </button>
+                    <button class="editor-btn debug" onclick="App.openDebugWindow()" title="打开调试器窗口" data-i18n-title="editor.debug">
+                        <svg class="editor-btn-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5s-.96.06-1.41.17L8.41 3 7 4.41l1.63 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8z"></path></svg>
+                    </button>
+                </div>
+                <div id="code-with-lines" style="display: none;" class="is-hidden">
+                    <div id="breakpoint-column"></div>
+                    <div id="line-numbers" style="width: 43px; height: auto;"><div class="line-number" data-line="1"><span class="line-number-text">1</span></div></div>
+                    <div id="code-editor-wrapper">
+                        <pre id="code-highlight-overlay" aria-hidden="true"><code id="code-highlight-content"><div class="code-line" data-line="0" style="">&nbsp;</div></code></pre>
+                        <textarea id="code-editor" placeholder="在此粘贴或编辑 VBA 代码..." data-i18n-placeholder="editor.placeholder" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务规划面板 -->
+            <div id="task-planner-panel" style="display: none;" class="">
+                <div id="tp-header" style="display:flex;align-items:center;justify-content:space-between;padding:0 0 8px 0;">
+                    <span style="font-weight:600;font-size:14px;color:#d32f2f;" data-i18n="tp.title">📋 任务规划</span>
+                    <button onclick="toggleTaskPlanner()" style="background:none;border:none;cursor:pointer;font-size:18px;color:#999;padding:4px 8px;">×</button>
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#555;margin-bottom:10px;cursor:pointer;user-select:none;">
+                    <input type="checkbox" id="tp-autoexec-toggle" onchange="TaskPlanner.toggleAutoBypass(this.checked)" style="width:15px;height:15px;accent-color:#d32f2f;cursor:pointer;"> <span data-i18n="tp.autoBypass">自动化免确认（定时任务执行时不再弹确认框）</span>
+                </label>
+                
+                <div id="tp-content">
+                    <div style="display:flex;gap:6px;margin-bottom:10px;">
+                        <button onclick="TaskPlanner.openCreateForm()" style="flex:1;padding:7px;border:none;border-radius:6px;background:#d32f2f;color:#fff;cursor:pointer;font-size:12px;font-weight:600;" data-i18n="tp.newTask">+ 新建任务</button>
+                        <button onclick="TaskPlanner.refresh()" style="padding:7px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;" data-i18n="tp.refresh">🔄 刷新</button>
+                        <button title="打开独立任务列表（启动独立服务 + 打开独立页，Excel 关闭后仍可执行）" data-i18n-title="tp.standaloneTitle" data-i18n="tp.standalone" onclick="openStandaloneTaskPlanner()" style="padding:7px 12px;border:1px solid #d32f2f;border-radius:6px;background:#fff;color:#d32f2f;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">🗂 打开独立任务列表</button>
+                    </div>
+                    <div id="tp-stats" style="display:flex;gap:8px;margin-bottom:10px;">
+                <div style="flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                    <div style="font-size:22px;font-weight:700;color:#d32f2f;" id="tp-stat-all">0</div>
+                    <div style="font-size:11px;color:#888;margin-top:2px;" data-i18n="tp.all">全部</div>
+                </div>
+                <div style="flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                    <div style="font-size:22px;font-weight:700;color:#4caf50;" id="tp-stat-running">0</div>
+                    <div style="font-size:11px;color:#888;margin-top:2px;" data-i18n="tp.running">运行中</div>
+                </div>
+                <div style="flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                    <div style="font-size:22px;font-weight:700;color:#ff9800;" id="tp-stat-paused">0</div>
+                    <div style="font-size:11px;color:#888;margin-top:2px;" data-i18n="tp.paused">已暂停</div>
+                </div>
+            </div>
+                    <div id="tasks-list" style="min-height:100px;"><div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;" data-i18n="tp.empty">暂无定时任务</div></div>
+                </div>
+                <div id="tp-inline-form" style="display: none;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                        <span id="tp-form-title" style="font-weight:600;font-size:13px;color:#222;" data-i18n="tp.formTitle">新建定时任务</span>
+                        <button onclick="hideInlineForm()" style="background:none;border:none;cursor:pointer;font-size:16px;color:#999;">×</button>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;" data-i18n="tp.taskName">任务名称</label>
+                        <input type="text" id="tp-name" placeholder="如：每日数据清洗" data-i18n-placeholder="tp.taskNamePh" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box;">
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:8px;">
+                        <div style="flex:1;">
+                            <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;" data-i18n="tp.freq">执行频率</label>
+                            <select id="tp-frequency" onchange="onTpFreqChange()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box;">
+                                <option value="daily" data-i18n="tp.freqDaily">每天</option>
+                                <option value="hourly" data-i18n="tp.freqHourly">每小时</option>
+                                <option value="weekdays" data-i18n="tp.freqWeekdays">工作日每天</option>
+                                <option value="weekly" data-i18n="tp.freqWeekly">每周一</option>
+                                <option value="once" data-i18n="tp.freqOnce">仅一次</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;" id="tp-time-group">
+                            <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;" data-i18n="tp.time">执行时间</label>
+                            <input type="time" id="tp-time" value="09:00" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;" data-i18n="tp.command">执行指令</label>
+                        <textarea id="tp-command" placeholder="如：清洗当前工作表数据" data-i18n-placeholder="tp.commandPh" rows="2" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;" data-i18n="tp.model">执行模型（选填；不选=使用上方「默认执行模型」；和聊天栏选法完全一致）</label>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <select id="tp-task-model" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box;background:#fff;">
+                                <option value="" data-i18n="tp.modelAuto">AUTO（跟随默认执行模型）</option>
+                            </select>
+                            <button type="button" onclick="TaskPlanner.refreshTaskModelSelect('tp-task-model', this)" title="重新检测 Ollama 本地模型 / 刷新云端模型列表" data-i18n-title="tp.modelRefreshTitle" data-i18n="tp.refreshBtn" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;white-space:nowrap;">🔄 刷新</button>
+                        </div>
+                        <div id="tp-task-model-hint" style="margin-top:3px;font-size:11px;color:#888;" data-i18n="tp.modelHint">选填：给这个任务单独指定执行模型，比如本地 Ollama 跑 qwen2.5、推理跑 deepseek-r1</div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;" data-i18n="tp.targetFile">目标 Excel 文件（独立执行时使用，可选）</label>
+                        <div style="display:flex;gap:6px;">
+                            <input type="text" id="tp-target-file" data-i18n-placeholder="tp.targetFilePh" placeholder="如：C:\Users\...\销售报表.xlsx   Excel 关闭后由独立服务直接操作此文件" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box;font-family:inherit;" />
+                            <button type="button" onclick="window.pickInlineTargetFile()" style="padding:7px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;white-space:nowrap;" data-i18n="tp.browse">📁 浏览</button>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <button onclick="hideInlineForm()" style="padding:7px 16px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;" data-i18n="tp.cancel">取消</button>
+                        <button id="tp-save-btn" onclick="TaskPlanner.submitInlineForm()" style="padding: 7px 16px; border: none; border-radius: 4px; background: rgb(211, 47, 47); color: rgb(255, 255, 255); cursor: pointer; font-size: 12px; font-weight: 600; opacity: 1;" data-i18n="tp.save">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 代码库对话框 -->
+        <div id="code-library-dialog" class="dialog-overlay" style="display:none;">
+            <div class="dialog-content" style="max-width: 500px; max-height: 70vh;">
+                <div class="dialog-header">
+                    <h3 data-i18n="snippet.libraryTitle">代码库</h3>
+                    <button class="dialog-close" onclick="closeCodeLibrary()">×</button>
+                </div>
+                <div class="dialog-body" style="padding: 0;">
+                    <div id="code-library-list" style="max-height: 50vh; overflow-y: auto; padding: 16px;"></div>
+                </div>
+                <div class="dialog-footer">
+                    <button class="btn-secondary" onclick="closeCodeLibrary()" data-i18n="snippet.close">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 保存代码片段对话框 -->
+        <div id="snippet-save-dialog" class="dialog-overlay" style="display:none;">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h3 data-i18n="snippet.saveTitle">保存代码片段</h3>
+                    <button class="dialog-close" onclick="closeSnippetDialog()">×</button>
+                </div>
+                <div class="dialog-body">
+                    <input type="hidden" id="snippet-edit-id">
+                    <div class="form-group">
+                        <label data-i18n="snippet.name">名称</label>
+                        <input type="text" id="snippet-input-name" data-i18n-placeholder="snippet.namePh" placeholder="例如：批量处理数据">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="snippet.desc">描述（可选）</label>
+                        <input type="text" id="snippet-input-desc" data-i18n-placeholder="snippet.descPh" placeholder="简要描述这段代码的功能">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="snippet.code">代码</label>
+                        <textarea id="snippet-input-code" rows="10" data-i18n-placeholder="snippet.codePh" placeholder="VBA 代码..."></textarea>
+                    </div>
+                    <div class="form-group" style="overflow: hidden;">
+                        <label style="display: flex; align-items: flex-start; cursor: pointer; gap: 8px; width: 100%;">
+                            <input type="checkbox" id="snippet-save-as-skill" style="margin-top: 2px; width: 16px; height: 16px; flex: 0 0 16px;">
+                            <span style="flex: 1; line-height: 1.4; word-break: break-word; min-width: 0;" data-i18n="snippet.saveAsSkill" data-i18n-html>
+                                同时保存为 Skill（推荐，可配置关键词匹配）<br>
+                                <small style="color: #666;">保存为 Skill 后，可以通过自然语言描述直接调用这段代码</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <button class="btn-secondary" onclick="closeSnippetDialog()" data-i18n="snippet.cancel">取消</button>
+                    <button class="btn-primary" onclick="confirmSaveSnippet()" data-i18n="snippet.save">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧主内容面板 -->
+        <div id="right-panel">
+            <!-- Main Content -->
+            <div id="main-content">
+                <!-- Chat Panel -->
+                <div id="chat-panel" class="panel active">
+                    <div id="chat-messages"></div>
+                </div>
+
+                <!-- History Panel -->
+                <div id="history-panel" class="panel">
+                    <div class="history-toolbar">
+                        <input type="text" id="search-box" placeholder="搜索历史记录..." data-i18n-placeholder="history.search">
+                        <button class="toolbar-btn" id="history-select-btn" title="多选删除" data-i18n-title="history.multiSelect" onclick="toggleHistorySelectMode()">☑️</button>
+                        <button class="toolbar-btn" id="history-delete-selected-btn" title="删除所选" data-i18n-title="history.deleteSelected" onclick="deleteSelectedHistory()" style="display:none;">🗑️</button>
+                        <button class="toolbar-btn" id="export-chat-btn" title="导出当前会话" data-i18n-title="nav.export" onclick="promptExportConversation()">📤</button>
+                        <button class="toolbar-btn" id="clear-all-btn" title="清空所有记录" data-i18n-title="history.clearAll">🗑️</button>
+                    </div>
+                    <div id="history-select-bar" class="history-select-bar" style="display:none;">
+                        <label class="history-select-all"><input type="checkbox" id="history-select-all" onchange="toggleSelectAllHistory(this.checked)"> <span data-i18n="history.selectAll">全选</span></label>
+                        <span id="history-selected-count" class="history-selected-count" data-i18n="history.selectedCount">已选 0 条</span>
+                        <button type="button" class="history-select-cancel" onclick="toggleHistorySelectMode(false)" data-i18n="history.done">完成</button>
+                    </div>
+                    <div id="storage-mode-indicator" class="storage-indicator" style="display: none; font-size: 11px; color: #999; text-align: center; padding: 4px; margin-bottom: 8px; background: #f5f5f5; border-radius: 4px;" data-i18n="history.tempStorage">
+                        💡 当前使用临时存储，刷新后历史将重置
+                    </div>
+                    <div id="history-list"></div>
+                </div>
+
+                <!-- Skills / Extensions Panel -->
+                <div id="skills-panel" class="panel">
+                    <!-- 面板介绍 -->
+                    <div class="panel-intro" style="padding: 12px 14px; background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #6366f1;">
+                        <div style="font-weight: 600; font-size: 14px; color: #4338ca; margin-bottom: 6px;" data-i18n="ext.title">🛠️ 扩展中心</div>
+                        <div style="font-size: 12px; color: #555; line-height: 1.7;">
+                            <span data-i18n="ext.intro">通过 Skills 创建自定义技能（VBA / AI 视觉 / 混合模式），通过 MCP 连接外部工具服务，扩展 AI 能力边界。</span>
+                            <span style="color: #6366f1;" data-i18n="ext.tip">💡 提示：在对话中说「帮我创建一个 xxx 的 Skill」即可快速生成专属技能。</span>
+                        </div>
+                    </div>
+
+                    <!-- 扩展子标签 -->
+                    <div style="display: flex; border-bottom: 2px solid #e0e0e0;">
+                        <div id="ext-tab-skills" class="skill-tab active" onclick="switchExtensionTab('skills')" data-i18n="ext.tabSkills" style="flex: 1 1 0%; text-align: center; padding: 8px 6px; cursor: pointer; border-bottom: 2px solid rgb(255, 152, 0); margin-bottom: -2px; font-weight: 500; font-size: 13px; color: rgb(255, 152, 0);">
+                            🛠️ Skills
+                        </div>
+                        <div id="ext-tab-mcp" class="skill-tab" onclick="switchExtensionTab('mcp')" data-i18n="ext.tabMcp" style="flex: 1 1 0%; text-align: center; padding: 8px 6px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; font-size: 13px; color: rgb(102, 102, 102);">
+                            🔌 MCP
+                        </div>
+                    </div>
+
+                    <!-- Skills 内容 -->
+                    <div id="ext-panel-skills" style="display: block;" class="">
+                        <div id="skills-content">
+                            <div id="custom-skills-panel" class="skills-sub-panel active">
+                                <div id="skill-list-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MCP 内容 (从设置扩展移入) -->
+                    <div id="ext-panel-mcp" style="display: none; padding: 12px 0;" class="is-hidden">
+                        <!-- MCP Server -->
+                        <div style="padding: 14px; background: #f0f7ff; border-radius: 8px; border: 1px solid #d0e3ff; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-weight: 600; font-size: 14px;" data-i18n="mcp.server">🖥️ MCP Server</span>
+                                <span id="mcp-server-status-badge" style="padding: 3px 8px; border-radius: 10px; font-size: 11px; background: #eee; color: #999;" data-i18n="mcp.notRunning">未运行</span>
+                            </div>
+                            <div style="font-size: 11px; color: #666; margin-bottom: 8px;" data-i18n="mcp.serverDesc">将 Excel 操作为 MCP 工具供外部 AI 调用</div>
+                            <div id="mcp-server-info" style="margin-bottom: 8px; font-size: 12px; color: #666;">
+                                <span data-i18n="mcp.portTools">端口</span>: <b id="mcp-server-port">9527</b> | <span data-i18n="mcp.toolsLabel">工具</span>: <b id="mcp-server-tools">0</b>
+                            </div>
+                            <button id="btn-start-mcp-server" class="btn-save" onclick="startMcpServer()" style="width: 100%; background: rgb(76, 175, 80); font-size: 13px; display: block;" data-i18n="mcp.start">▶ 启动 Server</button>
+                            <button id="btn-stop-mcp-server" class="btn-save" onclick="stopMcpServer()" style="width: 100%; background: #f44336; font-size: 13px; display: none;" data-i18n="mcp.stop">⏹ 停止 Server</button>
+                        </div>
+
+                        <!-- MCP Clients -->
+                        <div style="padding: 14px; background: #f5f0ff; border-radius: 8px; border: 1px solid #d0c3ff; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-weight: 600; font-size: 14px;" data-i18n="mcp.clients">🔗 MCP Clients</span>
+                                <button class="btn-add-skill" onclick="showAddMcpClientDialog()" style="font-size: 11px; padding: 4px 10px;" data-i18n="mcp.add">+ 添加</button>
+                            </div>
+                            <div style="font-size: 11px; color: #666; margin-bottom: 8px;" data-i18n="mcp.clientsDesc">连接外部 MCP Server 扩展 AI 能力</div>
+                            <div id="mcp-clients-list" style="max-height: 260px; overflow-y: auto;"><div style="text-align: center; color: #999; padding: 20px; font-size: 13px;" data-i18n="mcp.noClients">暂无已连接的 MCP Client</div></div>
+                        </div>
+
+                        <!-- 工具列表 -->
+                        <div style="padding: 14px; background: #f5f5f5; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;"><span data-i18n="mcp.availableTools">🛠️ 可用工具</span> (<span id="mcp-tools-count">0</span>)</div>
+                            <div id="mcp-tools-list" style="max-height: 200px; overflow-y: auto; font-size: 12px;"><div style="text-align: center; color: #999; padding: 20px;" data-i18n="mcp.noTools">暂无可用工具</div></div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button class="btn-save" onclick="autoReconnectMcpClients()" style="flex: 1; font-size: 13px; padding: 8px; background: #ff9800;" data-i18n="mcp.reconnect">🔗 重新连接</button>
+                            <button class="btn-save" onclick="refreshMcpStatus(true)" style="flex: 1; font-size: 13px; padding: 8px; background: #666;" data-i18n="mcp.refresh">🔄 刷新</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 知识库管理面板 -->
+                <div id="knowledge-panel" class="panel">
+                    <!-- 面板介绍 -->
+                    <div class="panel-intro" style="padding: 12px 14px; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%); border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #10b981;">
+                        <div style="font-weight: 600; font-size: 14px; color: #047857; margin-bottom: 6px;" data-i18n="kb.title">📚 知识库 (RAG)</div>
+                        <div style="font-size: 12px; color: #555; line-height: 1.7;">
+                            <span data-i18n="kb.intro">将企业文档（PDF / Word / Excel）导入知识库，AI 对话时自动检索相关内容作为参考。</span>
+                            <span style="color: #059669;" data-i18n="kb.flow">💡 使用流程：新建知识库 → 导入文档 → 检索测试 → 开启对话增强</span>
+                        </div>
+                    </div>
+
+                    <!-- 子导航 - 与扩展面板一致 -->
+                    <div class="knowledge-sub-tabs">
+                        <div class="sub-tab active" data-subtab="kb-list" onclick="App.rag.switchSubTab('kb-list')" data-i18n="kb.tabList">📚 知识库列表</div>
+                        <div class="sub-tab" data-subtab="doc-manage" onclick="App.rag.switchSubTab('doc-manage')" data-i18n="kb.tabDocs">📄 文档管理</div>
+                        <div class="sub-tab" data-subtab="search-test" onclick="App.rag.switchSubTab('search-test')" data-i18n="kb.tabSearch">🔍 检索测试</div>
+                        <div class="sub-tab" data-subtab="rag-settings" onclick="App.rag.switchSubTab('rag-settings')" data-i18n="kb.tabSettings">⚙️ RAG 设置</div>
+                    </div>
+
+                    <!-- 知识库列表面板 -->
+                    <div id="subtab-kb-list" class="subtab-content">
+                        <div class="rag-env-guide-slot" style="margin-bottom: 16px;"></div>
+                        <div class="kb-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 600;" data-i18n="kb.listTitle">知识库列表</h3>
+                            <button id="btn-create-kb" onclick="App.rag.toggleCreateForm()" style="padding: 6px 16px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;" data-i18n="kb.create">+ 新建知识库</button>
+                        </div>
+
+                        <!-- 新建知识库表单（默认隐藏） -->
+                        <div id="kb-create-form" style="display: none; background: #f0f7ff; border: 1px solid #90caf9; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 13px; font-weight: 500; color: #333; margin-bottom: 4px;"><span data-i18n="kb.name">名称</span> <span style="color: #f44336;">*</span></label>
+                                <input type="text" id="kb-name-input" placeholder="例如：公司产品手册" data-i18n-placeholder="kb.namePh" style="width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 13px; font-weight: 500; color: #333; margin-bottom: 4px;" data-i18n="kb.desc">描述（可选）</label>
+                                <textarea id="kb-desc-input" placeholder="简要描述这个知识库的用途..." data-i18n-placeholder="kb.descPh" rows="2" style="width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; resize: vertical;"></textarea>
+                            </div>
+                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                <button onclick="App.rag.toggleCreateForm()" style="padding: 6px 16px; background: white; color: #666; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px;" data-i18n="kb.cancel">取消</button>
+                                <button onclick="App.rag.createKnowledgeBase()" style="padding: 6px 20px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;" data-i18n="kb.createBtn">创建</button>
+                            </div>
+                        </div>
+
+                        <div id="kb-list-container" style="min-height: 200px;"><div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">  <div style="flex:1;min-width:200px;">    <input id="kb-search-input" type="text" data-i18n-placeholder="kb.searchKbPh" placeholder="🔍 搜索知识库名称或描述..." value="" style="width:100%;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;" onkeyup="if(event.keyCode===13)App.rag.onSearchKnowledgeBases()">  </div>  <div>    <select id="kb-filter-status" onchange="App.rag.onFilterKnowledgeBases(this.value)" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;background:white;"><option value="all" selected="" data-i18n="kb.filterAll">全部状态</option><option value="active" data-i18n="kb.filterActive">✓ 活跃</option><option value="pending" data-i18n="kb.filterPending">⏳ 待同步</option><option value="archived" data-i18n="kb.filterArchived">📦 已归档</option>    </select>  </div></div><div style="text-align: center; color: #999; padding: 40px 20px; font-size: 13px;" data-i18n="kb.emptyHint" data-i18n-html>暂无知识库<br><br>点击右上角 "+ 新建知识库" 开始使用</div></div>
+                    </div>
+
+                    <!-- 文档管理面板 -->
+                    <div id="subtab-doc-manage" class="subtab-content" style="display: none;">
+                        <div class="rag-env-guide-slot" style="margin-bottom: 16px;"></div>
+                        <div class="doc-header" style="margin-bottom: 16px;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;" data-i18n="kb.docsTitle">文档管理</h3>
+                            <div class="doc-upload-area" style="background: #f5f5f5; padding: 16px; border-radius: 8px; border: 1px dashed #ccc;">
+                                <p style="margin: 0 0 8px 0; font-size: 13px; color: #666;" data-i18n="kb.docsHint">粘贴本地文件路径或 OSS URL 导入文档：</p>
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <input type="text" id="oss-url-input" placeholder="本地路径如 C:\docs\file.pdf，或 OSS URL" data-i18n-placeholder="kb.pathPh" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                                    <button onclick="App.rag.browseLocalFile()" style="padding: 8px 10px; background: #f0f0f0; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap;" data-i18n="kb.browse">浏览…</button>
+                                    <select id="target-kb-select" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 120px;"><option value="" data-i18n="kb.selectKb">-- 请选择知识库 --</option></select>
+                                    <button onclick="App.rag.importDocument()" style="padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap;" data-i18n="kb.import">导入文档</button>
+                                    <button onclick="App.rag.refreshDocuments()" style="padding: 8px 10px; background: #f0f0f0; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap;" data-i18n="kb.refreshDocs">🔄 刷新</button>
+                                </div>
+                                <p style="margin: 8px 0 0 0; font-size: 11px; color: #999;" data-i18n="kb.docsHint2">支持格式：PDF / Word / Excel / CSV / TXT / MD。导入后自动解析分块并向量化，处理期间列表会自动刷新。</p>
+                            </div>
+                        </div>
+                        <div id="doc-list-container" style="min-height: 200px;"></div>
+                    </div>
+
+                    <!-- 检索测试面板 -->
+                    <div id="subtab-search-test" class="subtab-content" style="display: none;">
+                        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;" data-i18n="kb.searchTitle">检索测试台</h3>
+                        <div class="test-query-area" style="margin-bottom: 16px;">
+                            <textarea id="rag-test-question" placeholder="输入测试问题..." data-i18n-placeholder="kb.queryPh" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; resize: vertical; box-sizing: border-box;"></textarea>
+                            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                                <select id="test-kb-select" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;"><option value="" data-i18n="kb.selectKb">-- 请选择知识库 --</option></select>
+                                <button onclick="App.rag.testQuery()" style="padding: 8px 24px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap;" data-i18n="kb.runSearch">执行检索</button>
+                            </div>
+                        </div>
+                        <div id="rag-test-results" style="min-height: 200px;"></div>
+                    </div>
+
+                    <!-- RAG 设置面板 -->
+                    <div id="subtab-rag-settings" class="subtab-content" style="display: none;">
+                        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;" data-i18n="kb.ragConfig">RAG 配置</h3>
+
+                        <!-- Embedding 设置 -->
+                        <fieldset style="border: 1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <legend style="font-size: 14px; font-weight: 600; padding: 0 8px;" data-i18n="kb.embedding">向量化服务 (Embedding)</legend>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.provider">默认 Provider:</label>
+                                <select id="rag-embedding-provider" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                                    <option value="local_bge" data-i18n="kb.embLocalBge">本地 BGE (Ollama)</option>
+                                    <option value="qianwen" data-i18n="kb.embQianwen">通义千问</option>
+                                    <option value="zhipu" data-i18n="kb.embZhipu">智谱 AI</option>
+                                    <option value="openai">OpenAI</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.ollamaEndpoint">本地 Ollama Endpoint:</label>
+                                <input type="text" id="rag-local-endpoint" value="http://localhost:11434" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.localModel">本地模型名:</label>
+                                <input type="text" id="rag-local-model" value="bge-m3" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.cloudEndpoint">云端 Endpoint（Provider 选云端时使用）:</label>
+                                <input type="text" id="rag-cloud-endpoint" placeholder="例如：https://dashscope.aliyuncs.com/api/v1" data-i18n-placeholder="kb.cloudEndpointPh" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.cloudApiKey">云端 API Key:</label>
+                                <input type="password" id="rag-cloud-apikey" placeholder="留空表示不修改" data-i18n-placeholder="kb.apiKeyKeepPh" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.cloudModel">云端模型名:</label>
+                                <input type="text" id="rag-cloud-model" value="text-embedding-v3" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                        </fieldset>
+
+                        <!-- Qdrant 设置 -->
+                        <fieldset style="border: 1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <legend style="font-size: 14px; font-weight: 600; padding: 0 8px;" data-i18n="kb.qdrant">向量数据库 (Qdrant)</legend>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;">Endpoint:</label>
+                                <input type="text" id="rag-qdrant-endpoint" value="http://localhost:6333" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.apiKeyOpt">API Key (可选):</label>
+                                <input type="password" id="rag-qdrant-apikey" placeholder="留空则不使用认证" data-i18n-placeholder="kb.apiKeyPh" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                        </fieldset>
+
+                        <!-- 对话增强设置 -->
+                        <fieldset style="border: 1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <legend style="font-size: 14px; font-weight: 600; padding: 0 8px;" data-i18n="kb.chatEnhance">对话增强</legend>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;">
+                                    <input type="checkbox" id="rag-enable-chat" checked=""> <span data-i18n="kb.enableRag">在对话中启用 RAG 增强</span>
+                                </label>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.defaultKb">默认知识库（对话时自动检索）:</label>
+                                <select id="rag-default-kb-select" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;"><option value="" data-i18n="kb.defaultKbNone">-- 不使用（关闭对话增强）--</option></select>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.topk">默认检索数量 (TopK):</label>
+                                <input type="number" id="rag-topk" value="5" min="1" max="20" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.threshold">相似度阈值 (0-1):</label>
+                                <input type="number" id="rag-threshold" value="0.7" min="0" max="1" step="0.05" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500;" data-i18n="kb.maxChunks">注入上下文的最大块数:</label>
+                                <input type="number" id="rag-max-chunks" value="3" min="1" max="10" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                            </div>
+                        </fieldset>
+
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" id="rag-save-btn" onclick="App.rag.saveSettings()" style="flex: 1; padding: 10px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; transition: transform 0.12s ease, filter 0.12s ease, background 0.2s ease;" onmousedown="this.style.transform='translateY(1px)';this.style.filter='brightness(0.92)'" onmouseup="this.style.transform='';this.style.filter=''" onmouseleave="this.style.transform='';this.style.filter=''" data-i18n="kb.saveCfg">保存配置</button>
+                            <button onclick="App.rag.testConnections()" style="flex: 1; padding: 10px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px;" data-i18n="kb.testConn">测试连接</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill 编辑对话 -->
+    <div id="skill-edit-dialog" class="dialog-overlay" style="display:none;">
+        <div class="dialog-content skill-dialog-content">
+            <div class="dialog-header">
+                <h3 id="skill-dialog-title" data-i18n="skill.addTitle">添加 Skill</h3>
+                <a id="skill-source-link" href="#" class="skill-source-link" target="_blank" onclick="openSkillSourceFile(); return false;" data-i18n="skill.viewSource">📄 查看MD源文件</a>
+                <button class="dialog-close" onclick="closeSkillDialog()">×</button>
+            </div>
+            
+            <!-- 标签页切换 -->
+            <div class="skill-tabs">
+                <button class="skill-tab active" data-tab="form" onclick="switchSkillTab('form')" data-i18n="skill.tabForm">表单编辑</button>
+                <button class="skill-tab" data-tab="json" onclick="switchSkillTab('json')" data-i18n="skill.tabJson">JSON源码</button>
+            </div>
+            
+            <div class="dialog-body skill-dialog-body">
+                <input type="hidden" id="skill-edit-name">
+                
+                <!-- 表单编辑模式 -->
+                <div id="skill-tab-form" class="skill-tab-content active">
+                    <!-- 基础信息 -->
+                    <div class="form-section">
+                        <div class="section-title" data-i18n="skill.basicInfo">基础信息</div>
+                        <div class="form-group">
+                            <label data-i18n="skill.name">Skill 名称（英文标识）</label>
+                            <input type="text" id="skill-input-name" data-i18n-placeholder="skill.namePh" placeholder="例如：MyCustomSkill">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="skill.displayName">显示名称</label>
+                            <input type="text" id="skill-input-display" data-i18n-placeholder="skill.displayPh" placeholder="例如：我的自定义操作">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="skill.desc">描述</label>
+                            <input type="text" id="skill-input-desc" data-i18n-placeholder="skill.descPh" placeholder="描述这个 Skill 的功能">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="skill.keywords">关键词（用逗号分隔）</label>
+                            <input type="text" id="skill-input-keywords" data-i18n-placeholder="skill.keywordsPh" placeholder="例如：自定义,操作,处理">
+                        </div>
+                    </div>
+                    
+                    <!-- 处理配置 -->
+                    <div class="form-section">
+                        <div class="section-title" data-i18n="skill.processing">处理配置</div>
+                        <div class="form-group">
+                            <label data-i18n="skill.procMode">处理模式</label>
+                            <select id="skill-input-processing-mode" onchange="onProcessingModeChange()">
+                                <option value="0" data-i18n="skill.procVba">VBA代码 - 传统Excel 宏</option>
+                                <option value="1" data-i18n="skill.procLlm">多模态LLM - AI视觉模型</option>
+                                <option value="2" data-i18n="skill.procHybrid">混合模式 - 自动选择</option>
+                                <option value="3" data-i18n="skill.procOcr">本地OCR - PaddleOCR引擎</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="skill-code-group">
+                            <label data-i18n="skill.codeTpl">代码模板</label>
+                            <textarea id="skill-input-code" rows="6" data-i18n-placeholder="skill.codePh" placeholder="在这里编写代码
+VBA 示例：
+Sub MyMacro()
+  ' 你的逻辑
+End Sub"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="skill.examples">示例输入（用逗号分隔）</label>
+                            <input type="text" id="skill-input-examples" data-i18n-placeholder="skill.examplesPh" placeholder="例如：执行我的操作，运行自定义宏">
+                        </div>
+                    </div>
+
+                    <!-- Spec 参数配置（动态渲染） -->
+                    <div class="form-section advanced-section" id="skill-spec-fields-section" style="display:none;">
+                        <div class="section-title collapsible" onclick="toggleAdvancedSection(this)">
+                            <span data-i18n="skill.specParams">Spec 参数</span>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div class="advanced-content" id="skill-spec-fields-container"></div>
+                    </div>
+                    
+                    <!-- 高级选项（可折叠） -->
+                    <div class="form-section advanced-section">
+                        <div class="section-title collapsible" onclick="toggleAdvancedSection(this)">
+                            <span data-i18n="skill.advanced">高级选项</span>
+                            <span class="toggle-icon">▶</span>
+                        </div>
+                        <div class="advanced-content" id="skill-advanced-content">
+                            <div class="form-group">
+                                <label data-i18n="skill.llmSysPrompt">LLM 系统提示</label>
+                                <textarea id="skill-input-llm-prompt" rows="6" data-i18n-placeholder="skill.llmSysPh" placeholder="你是一个专业的AI助手。请根据用户输入执行相应任务...
+
+【规则】
+1. ...
+2. ..."></textarea>
+                                <small class="form-hint" data-i18n="skill.llmSysHint">定义 AI 的角色和行为准则（多模态 LLM 模式使用）</small>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="skill.llmUserTpl">LLM 用户提示词模板</label>
+                                <textarea id="skill-input-llm-user-template" rows="3" data-i18n-placeholder="skill.llmUserPh" placeholder="请处理以下内容：{input}"></textarea>
+                                <small class="form-hint" data-i18n="skill.llmUserHint">使用 {input} 作为用户输入的占位符</small>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group half">
+                                    <label data-i18n="skill.outputFormat">输出格式</label>
+                                    <select id="skill-input-output-format">
+                                        <option value="text" data-i18n="skill.outText">纯文本 (text)</option>
+                                        <option value="json" data-i18n="skill.outJson">JSON 格式</option>
+                                        <option value="markdown">Markdown</option>
+                                        <option value="vba" data-i18n="skill.outVba">VBA 代码</option>
+                                        <option value="htmlBrowser" data-i18n="skill.outHtmlBrowser">HTML 浏览器展示</option>
+                                        <option value="html" data-i18n="skill.outHtml">HTML 输出</option>
+                                        <option value="table" data-i18n="skill.outTable">表格</option>
+                                        <option value="chart" data-i18n="skill.outChart">图表</option>
+                                        <option value="pivotTable" data-i18n="skill.outPivot">数据透视表</option>
+                                    </select>
+                                </div>
+                                <div class="form-group half">
+                                    <label data-i18n="skill.version">版本</label>
+                                    <input type="number" id="skill-input-version" value="1" min="1">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="skill.tags">标签（用逗号分隔）</label>
+                                <input type="text" id="skill-input-tags" data-i18n-placeholder="skill.tagsPh" placeholder="例如：OCR,图像处理,AI">
+                            </div>
+                            <div class="form-row checkboxes">
+                                <label class="checkbox-label" title="启用后，用户可以在对话中上传图片，AI将识别并处理图片内容（适用于OCR、图像分析等场景）" data-i18n-title="skill.supportsImageTitle">
+                                    <input type="checkbox" id="skill-input-supports-image">
+                                    <span data-i18n="skill.supportsImage">支持图片输入</span>
+                                </label>
+                                <label class="checkbox-label" title="启用后，用户可以上传文件（如Excel、PDF等），AI将读取并分析文件内容" data-i18n-title="skill.supportsFileTitle">
+                                    <input type="checkbox" id="skill-input-supports-file">
+                                    <span data-i18n="skill.supportsFile">支持文件输入</span>
+                                </label>
+                                <label class="checkbox-label checkbox-quick" title="标记后，该Skill将显示在欢迎面板的快捷入口区域，方便用户快速调用常用功能" data-i18n-title="skill.quickShortcutTitle">
+                                    <input type="checkbox" id="skill-input-quick-shortcut">
+                                    <span data-i18n="skill.quickShortcut">⭐ 加入快捷入口</span>
+                                </label>
+                            </div>
+                            <div class="form-group skill-quick-config" id="skill-quick-shortcut-config" style="display:none;">
+                                <label data-i18n="skill.quickConfig">快捷入口设置</label>
+                                <div class="form-row">
+                                    <div class="form-group half">
+                                        <label class="sub-label" data-i18n="skill.quickIcon">图标（emoji）</label>
+                                        <input type="text" id="skill-input-quick-icon" placeholder="⚡" maxlength="4" class="quick-icon-input">
+                                    </div>
+                                    <div class="form-group half">
+                                        <label class="sub-label" data-i18n="skill.quickPrompt">点击提示文本</label>
+                                        <input type="text" id="skill-input-quick-prompt" data-i18n-placeholder="skill.quickPromptPh" placeholder="留空则使用第一个示例">
+                                    </div>
+                                </div>
+                                <small class="form-hint form-hint-muted" data-i18n="skill.quickHint">设置后此 Skill 将出现在欢迎面板的「快捷提示词」区域，点击即可快速触发</small>
+                            </div>
+                            
+                            <!-- UI按钮配置 -->
+                            <div class="form-group">
+                                <label data-i18n="skill.uiButtons">UI操作按钮配置</label>
+                                <div class="form-row checkboxes">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="skill-ui-show-copy" checked="">
+                                        <span data-i18n="skill.uiCopy">📋 复制</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="skill-ui-show-save-md">
+                                        <span data-i18n="skill.uiSaveMd">💾 保存MD</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="skill-ui-show-regenerate" checked="">
+                                        <span data-i18n="skill.uiRegenerate">🔄 重新生成</span>
+                                    </label>
+                                </div>
+                                <small class="form-hint" data-i18n="skill.uiHint">控制AI消息底部显示的按钮（仅Skill配置类建议开启"保存MD"）</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- JSON源码模式 -->
+                <div id="skill-tab-json" class="skill-tab-content">
+                    <div class="form-group">
+                        <label data-i18n="skill.jsonLabel">Skill JSON 配置</label>
+                        <textarea id="skill-input-json" rows="20" placeholder="{
+  &quot;Name&quot;: &quot;MySkill&quot;,
+  &quot;DisplayName&quot;: &quot;我的技能&quot;,
+  ...
+}"></textarea>
+                        <div id="skill-json-error" class="skill-json-error"></div>
+                    </div>
+                    <div class="skill-json-actions">
+                        <button type="button" class="btn-secondary" onclick="formatSkillJson()" data-i18n="skill.formatJson">格式化 JSON</button>
+                        <button type="button" class="btn-secondary" onclick="validateSkillJson()" data-i18n="skill.validateJson">验证 JSON</button>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn-secondary" onclick="closeSkillDialog()" data-i18n="skill.cancel">取消</button>
+                <button class="btn-secondary btn-warning" onclick="restoreCurrentSkill()" data-i18n="skill.restoreDefault">恢复默认</button>
+                <button class="btn-primary" onclick="saveSkill()" data-i18n="skill.save">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP Client 编辑对话框 -->
+    <div id="mcp-client-dialog" class="dialog-overlay" style="display:none;">
+        <div class="dialog-content" style="max-width: 550px; max-height: 85vh;">
+            <div class="dialog-header">
+                <h3 id="mcp-client-dialog-title" data-i18n="mcpsrv.addTitle">添加 MCP Server</h3>
+                <button class="dialog-close" onclick="closeMcpClientDialog()">×</button>
+            </div>
+            <div class="dialog-body" style="max-height: 60vh; overflow-y: auto;">
+                <input type="hidden" id="mcp-client-edit-name">
+                <div class="form-group">
+                    <label data-i18n="mcpsrv.name">Server 名称</label>
+                    <input type="text" id="mcp-client-name" data-i18n-placeholder="mcpsrv.namePh" placeholder="例如：filesystem, sqlite">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="mcpsrv.desc">描述</label>
+                    <input type="text" id="mcp-client-description" data-i18n-placeholder="mcpsrv.descPh" placeholder="描述此 MCP Server 的功能">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="mcpsrv.transport">传输类型</label>
+                    <select id="mcp-client-transport" onchange="onMcpTransportChange()">
+                        <option value="stdio" data-i18n="mcpsrv.stdio">stdio（本地进程通信）</option>
+                        <option value="http" data-i18n="mcpsrv.http">HTTP SSE（远程服务器）</option>
+                    </select>
+                </div>
+                <div id="mcp-client-stdio-settings">
+                    <div class="form-group">
+                        <label data-i18n="mcpsrv.command">命令</label>
+                        <input type="text" id="mcp-client-command" data-i18n-placeholder="mcpsrv.commandPh" placeholder="例如：npx, uvx, python">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="mcpsrv.args">参数（每行一个）</label>
+                        <textarea id="mcp-client-args" rows="4" placeholder="-y
+@modelcontextprotocol/server-filesystem
+C:\Users"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="mcpsrv.env">环境变量（每行一个，格式：KEY=VALUE）</label>
+                        <textarea id="mcp-client-env" rows="3" placeholder="AZURE_CLIENT_ID=your-client-id
+AZURE_CLIENT_SECRET=your-secret
+AZURE_TENANT_ID=your-tenant-id"></textarea>
+                    </div>
+                </div>
+                <div id="mcp-client-http-settings" style="display:none;">
+                    <div class="form-group">
+                        <label>URL</label>
+                        <input type="text" id="mcp-client-url" placeholder="https://mcp-server.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="mcpsrv.headers">Headers（每行一个，格式：Key=Value）</label>
+                        <textarea id="mcp-client-headers" rows="3" placeholder="Authorization=Bearer xxx
+X-Custom-Header=value"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="mcpsrv.envHttp">环境变量（每行一个，格式：KEY=VALUE）</label>
+                        <textarea id="mcp-client-env-http" rows="3" placeholder="API_KEY=your-api-key
+BASE_URL=https://api.example.com"></textarea>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="mcp-client-enabled" checked="" style="width: 16px; height: 16px; flex-shrink: 0;">
+                    <span style="font-size: 12px; color: #666; white-space: nowrap;" data-i18n="mcpsrv.enabled">启用</span>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn-secondary" onclick="closeMcpClientDialog()" data-i18n="mcpsrv.cancel">取消</button>
+                <button class="btn-secondary" onclick="testMcpClientFromDialog()" data-i18n="mcpsrv.test">🧪 测试连接</button>
+                <button class="btn-primary" onclick="saveMcpClient()" data-i18n="mcpsrv.save">保存并连接</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 常驻快捷图标栏（模型选择器上方，发消息后不消失） -->
+    <div id="quick-shortcut-bar" style="">
+        <div class="qs-bar-inner" id="quick-shortcut-bar-inner"><span class="qs-empty-hint" data-i18n="quick.barHint">在 Skill 管理中标记「⭐快捷入口」即可在此显示</span></div>
+    </div>
+
+    <!-- Model Selector -->
+    <div id="model-selector-area" style="">
+        <select id="chat-model-select" onchange="onChatModelChange()" style="display: block;"><option value="AUTO" data-provider="auto" style="font-weight: bold; color: rgb(102, 126, 234); background-color: rgb(240, 244, 255);">🤖 AUTO (智能自动选择)</option><option value="" disabled="" style="font-weight: bold; background-color: rgb(245, 245, 245);">─── Ollama 本地 ───</option><option value="qwen3-vl:4b" data-provider="ollama" style="color: rgb(74, 144, 217);">🖥️👁️🧠 qwen3-vl</option><option value="gemma3:4b" data-provider="ollama" style="color: rgb(74, 144, 217);">🖥️👁️ gemma3</option><option value="deepseek-r1:8b" data-provider="ollama">🖥️🧠 deepseek-r1</option><option value="qwen2.5:7b" data-provider="ollama">🖥️ qwen2.5</option></select>
+        <button id="refresh-models-btn" onclick="refreshModelsList()" title="刷新模型列表" data-i18n-title="model.refreshTitle" style="
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 14px;
+            padding: 4px;
+        ">🔄</button>
+
+        
+        <!-- 思考模式选择器 -->
+        <select id="thinking-mode-select" onchange="onThinkingModeChange()" style="
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #d9d9d9;
+            background: #fafafa;
+            font-size: 13px;
+            color: #595959;
+            cursor: pointer;
+            transition: all 0.2s;
+        " title="选择思考模式" data-i18n-title="think.selectTitle">
+            <option value="AUTO" data-i18n="think.auto">AUTO（智能自动选择）</option>
+            <option value="Quick" data-i18n="think.quick">⚡快速模式</option>
+            <option value="Standard" data-i18n="think.standard">📝标准模式</option>
+            <option value="Deep" data-i18n="think.deep">🔍深度模式</option>
+            <option value="Expert" data-i18n="think.expert">👑专家模式</option>
+        </select>
+    </div>
+
+    <!-- Input Area -->
+    <div id="input-area" style="">
+        <div id="attachment-preview">
+            <!-- 单图片缩略图区域 -->
+            <div class="attachment-thumbnail" id="attachment-thumbnail" style="display:none;">
+                <img id="thumbnail-img" src="" alt="缩略图">
+            </div>
+
+            <!-- 附件列表：支持多文件，每项带独立删除按钮 -->
+            <div class="attachment-list" id="attachment-list">
+                <!-- 动态生成的附件项 -->
+            </div>
+
+            <!-- AI分析状态区 -->
+            <div class="attachment-analysis-status" id="attachment-analysis-status" style="display:none;">
+                <div class="analysis-spinner"></div>
+                <span id="analysis-status-text" data-i18n="input.analyzing">AI正在分析...</span>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="attachment-actions" id="attachment-actions">
+                <!-- 动态生成的操作按钮 -->
+            </div>
+        </div>
+
+        <!-- 引用区域面板 -->
+        <div id="reference-area-panel" style="display: none;">
+            <div class="reference-section">
+                <div id="reference-add-hint" class="reference-hint" style="display:none;" data-i18n="input.pickRange">请在 Excel 中选择区域，选择完成后自动添加...</div>
+                <div class="reference-list" id="reference-list"></div>
+            </div>
+        </div>
+
+        <div id="agent-phase-status" class="agent-phase-status" style="display:none;" aria-live="polite"></div>
+        <div id="app-error-banner" class="app-error-banner" style="display:none;" role="alert" aria-live="assertive"></div>
+        <div class="input-wrapper" style="position: relative;">
+            <input type="file" id="file-input" style="display:none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" multiple="" onchange="handleFileSelect(event)">
+            <button id="upload-btn" onclick="document.getElementById('file-input').click()" title="上传文件（支持多选）" data-i18n-title="input.upload">
+                📎
+            </button>
+            <button id="reference-add-btn-inline" class="reference-add-inline-btn" title="添加引用区域（点击后在 Excel 中选择区域）" data-i18n-title="input.reference">
+                🔗
+            </button>
+            <textarea id="message-input" placeholder="描述您的需求，或粘贴图片/表格...（可批量选择多个文件）" data-i18n-placeholder="input.placeholder" rows="1" style="height: 32px;"></textarea>
+            <button id="send-btn" onclick="sendMessage()" data-i18n="input.send">发送</button>
+            
+            <!-- 快捷指令菜单 -->
+            <div id="quick-command-menu" class="quick-command-menu">
+                <div class="quick-command-header" data-i18n="input.quickCmd">快捷指令 - 输入 / 选择功能</div>
+                <div id="quick-command-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 固定状态栏（底部） -->
+    <div id="fixed-status-bar" class="">
+        <div class="fsb-container">
+            <div class="fsb-content">
+                <div class="fsb-text" id="fsb-text">
+                    <div class="fsb-spinner"></div>
+                    <span class="fsb-text-content"><span style="color:#3b82f6;font-size:16px;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-right:4px;vertical-align:text-bottom;">●</span><span data-i18n="status.ready">系统就绪</span><span style="color:#999;font-size:11px;margin-left:6px;"> v202610100802</span></span>
+                </div>
+                <div class="fsb-progress" id="fsb-progress" style="display: none;">
+                    <div class="fsb-progress-bar">
+                        <div class="fsb-progress-fill" id="fsb-progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="fsb-percentage" id="fsb-percentage">0%</div>
+                </div>
+                <div class="fsb-selection" id="fsb-selection"></div>
+            </div>
+        </div>
+        <div class="fsb-thin-progress" id="fsb-thin-progress" style="position: absolute; bottom: 0px; left: 0px; width: 100%; height: 3px; background: rgba(255, 0, 0, 0.2); overflow: hidden; z-index: 99999; display: block !important;">
+            <div class="fsb-thin-progress-bar" id="fsb-thin-progress-bar" style="height: 100%; width: 100% !important; background: linear-gradient(90deg, rgb(30, 64, 175) 0%, rgb(59, 130, 246) 50%, rgb(96, 165, 250) 100%) !important; box-shadow: rgb(99, 102, 241) 0px 0px 15px; transition: width 0.5s ease-out !important; animation: auto ease 0s 1 normal none running none !important;"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Markdown 渲染库（必须在 app.js 之前加载） -->
+    <script src="js/marked.min.js"></script>
+    <!-- ECharts 图表库 -->
+    <script src="lib/echarts.min.js"></script>
+    <script>if (typeof echarts === 'undefined') { var s = document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js'; document.head.appendChild(s); }</script>
+
+    <!-- 加载启动进度条 -->
+    <script src="js/startup-progress.js"></script>
+
+    <!-- 加载任务进度面板（用于展示AI任务执行步骤） -->
+    <script src="js/task-progress.js"></script>
+
+    <!-- ============================================================
+         加载应用脚本（模块化拆分后按依赖顺序加载）
+         【v202610092039-优化】分为同步关键组与 defer 延迟组：
+         - 同步组：首屏对话必需，阻塞渲染
+         - defer 组：非首屏模块，不阻塞首屏 paint
+         ============================================================ -->
+
+    <!-- Phase 1: 关键基础设施（同步） -->
+    <script src="js/app-endpoints.js?v=v202610282055"></script>
+    <script src="js/host-context.js?v=v202610282055"></script>
+    <script src="config/models-config.js?v=v202610282055"></script>
+    <script src="js/i18n.js?v=v202610282055"></script>
+    <script src="js/ui-locale-switch.js?v=v202610282055"></script>
+    <script src="js/app-bootstrap.js?v=v202610282055"></script>
+    <script src="js/bridge-accessor.js?v=v202610282055"></script>
+    <script src="js/storage-db.js?v=v202610282055"></script>
+
+    <!-- Phase 2: 对话核心模块（同步） -->
+    <script src="js/app-utils.js?v=v202610282055"></script>
+    <script src="js/app-history.js?v=v202610282055"></script>
+    <script src="js/app-config.js?v=v202610282055"></script>
+    <script src="js/app-model.js?v=v202610282055"></script>
+
+    <!-- Phase 3: chat-v2 新架构（同步） -->
+    <script src="js/context-engine.js?v=v202610282055"></script>
+    <script src="js/capability-profile.js?v=v202610282055"></script>
+    <!-- 旧 AI 链路已删除（app-ai-context.js / app-ai-calls.js / app-chat-ui.js 等 18 个文件） -->
+    <!-- task-agent 实验已暂停（依赖已删除的 callAIUnified），将由 chat-v2 替代 -->
+
+    <!-- AI 辅助层 -->
+    <script src="js/app-context-awareness.js?v=v202610282055"></script>
+
+    <!-- 旧 AI 链路已删除（app-ai-pipeline.js / app-ai-send.js / app-ai-core.js） -->
+
+    <!-- Phase 4: 初始化收尾（同步） -->
+    <script src="js/reference-area-manager.js?v=v202610282055"></script>
+    <script src="js/js-app-init.js?v=v202610282055"></script>
+
+    <!-- Phase 5: 非首屏模块（defer，不阻塞首屏） -->
+    <!-- OCR / 识别 / 文件处理 -->
+    <!-- 本地 OCR 每日免费额度：必须在任何调用 OCR 桥的模块之前加载 -->
+    <script defer="" src="js/ocr-quota.js?v=v202610282055"></script>
+    <script defer="" src="js/app-ocr.js?v=v202610282055"></script>
+    <script defer="" src="js/app-recognition.js?v=v202610282055"></script>
+    <script defer="" src="js/app-image-table.js?v=v202610282055"></script>
+    <script defer="" src="js/app-file-batch.js?v=v202610282055"></script>
+    <script defer="" src="js/app-document-unified.js?v=v202610282055"></script>
+
+    <!-- 编辑器 / Skill 管理 / MCP / RAG（面板级模块） -->
+    <script defer="" src="js/app-editor.js?v=v202610282055"></script>
+    <script defer="" src="js/app-skill-mgmt.js?v=v202610282055"></script>
+    <script defer="" src="js/app-skill-mgmt.code-library.js?v=v202610282055"></script>
+    <script defer="" src="js/app-mcp.js?v=v202610282055"></script>
+    <script defer="" src="js/app-rag.js?v=v202610282055"></script>
+
+    <!-- 附件与 UI 增强 -->
+    <script defer="" src="js/app-attachment-manager.js?v=v202610282055"></script>
+    <script defer="" src="js/fixed-status-bar.js?v=v202610282055"></script>
+
+    <!-- 旧 AI 辅助模块已删除（app-ai-dom-throttler/message-queue/content-processor/render-manager/stream-parser/protocol/state-machine） -->
+    <script defer="" src="js/app-ai-file-processor.js?v=v202610282055"></script>
+    <script defer="" src="js/shared-utils.js?v=v202610282055"></script>
+    <script defer="" src="js/skill-dom-fixer.js?v=v202610282055"></script>
+
+    <!-- 功能增强模块（已移除未接线的 enhanced-context-manager / batch-processor / data-validator / operation-history） -->
+    <script defer="" src="js/error-handler.js?v=v202610282055"></script>
+    <script defer="" src="js/product-help.js?v=v202610282055"></script>
+    <script defer="" src="js/keyboard-shortcuts.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-context.js?v=v202610282055"></script>
+    <script defer="" src="js/skill-executor.js?v=v202610282055"></script>
+
+    <!-- ============================================================
+         chat-v2 — 新版 AI 子系统（分层架构）
+         加载顺序：services → agentLoop → pipelines → orchestrator → renderer → entry → index
+         所有 chat-v2 脚本均使用 defer，确保在依赖模块（app-mcp/app-skill-mgmt）之后执行
+         ============================================================ -->
+    <script defer="" src="js/chat-v2/services/session-store.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/range-resolver.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/compaction.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/trajectory-replay.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/stream-processor.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/llm-stream-receiver.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/content-extractor.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/llm-client.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/agent-events.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/agent-loop/chart-gate.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/agent-loop/zero-tool-guards.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/agent-loop/file-delivery-gate.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/agent-loop/tool-execution.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/agent-loop.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/tool-registry.util.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/tool-envelope.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/turn-goal.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/tool-registry.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/attachment-read-tool.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/config/skill-domain.js?v=v202610282055"></script>
+    <!-- 表格样式方案预设（三宿主共享：版式 × 配色 × 行高）；必须在 mcp-dispatcher / skill-spec-engine 之前 -->
+    <script defer="" src="js/chat-v2/config/table-style-presets.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/mcp-dispatcher.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/pipeline-registry.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/prompt-builder.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/vba-template-engine.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/ppt-requirement-parser.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/skill-spec-engine.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/dashboard-blueprint-engine.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/dashboard-html-renderer.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/dashboard-excel-renderer.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/dashboard-one-click.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/intent-config.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/intent-detector.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/task-planner.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/render-html.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/task-execution.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/script-generator.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/json-utils.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/llm-io.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/intent-analyzer.js?v=v202610282055"></script>
+    <!-- 多步骤管道组件（依赖顺序：基础 → 复合 → 编排） -->
+    <script defer="" src="js/chat-v2/services/TaskScheduler.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/ProgressTracker.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/StepExecutor.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/TaskPlanner.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/ResultAggregator.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/services/MultiStepEngine.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/text-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/python-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/html-display-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/image-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/skill/skill-shared-util.js?v=v202610282055"></script>
+                    <script defer="" src="js/chat-v2/pipelines/doc-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/skill/skill-constants.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/skill/skill-clean-crud.js?v=v202610282055"></script>
+                    <script defer="" src="js/chat-v2/pipelines/skill/skill-spec-build.js?v=v202610282055"></script>
+                    <script defer="" src="js/chat-v2/pipelines/skill/skill-steps-panel.js?v=v202610282055"></script>
+                    <script defer="" src="js/chat-v2/pipelines/skill/skill-spec-execute.js?v=v202610282055"></script>
+                    <script defer="" src="js/chat-v2/pipelines/skill/skill-steps-execute.js?v=v202610282055"></script>
+                    <script defer="" src="js/chat-v2/pipelines/skill-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pipelines/code-pipeline.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/config/routing-constants.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/chat-orchestrator.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/steps-plan.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/code-block.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/json.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/tool-card.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/syntax-highlight.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/markdown.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/inline-chart.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/renderers/suggestions.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/ui/chat-renderer.js?v=v202610282055"></script>
+    <!-- pdf.js 3.11.174：本地 vendor，扫描页渲染不依赖 CDN -->
+    <script defer="" src="vendor/pdfjs/pdf.min.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/pdf-page-render.js?v=v202610282055"></script>
+    <script defer="" src="js/license.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/chat-entry.js?v=v202610282055"></script>
+    <script defer="" src="js/chat-v2/index.js?v=v202610282055"></script>
+    <script defer="" src="js/quick-prompts-config.js?v=v202610282055"></script>
+    <script defer="" src="js/side-toolbar.js?v=v202610282055"></script>
+    <!-- Excel 连接入口组件（网页版/本地桥 9527 共用；读取 ExcelBridgeConfig.defaultBridgeUrl） -->
+    <script defer="" src="js/excel-connection-widget.js?v=v202610282055"></script>
+    <script defer="" src="js/task-planner.js?v=v202610282055"></script>
+
+    <!-- 兼容层：为已删除的旧 Chat API 提供最小可用实现，供 app-editor.js / app-recognition.js / app-image-table.js 等保留模块调用 -->
+    <script defer="" src="js/app-chat-compat.js?v=v202610282055"></script>
+
+    <!-- 文件选择处理 -->
+    <script>
+        // selectedFiles 已在 app-config.js 中声明
+
+        // HTML 转义辅助函数
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        /**
+         * 处理文件选择事件
+         * @param {Event} event - file input 的 change 事件
+         */
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            // 存储选中的文件 — 同步到所有存储位置
+            selectedFile = files[0];
+            selectedFiles = files;
+            // 同步到 App 命名空间（拆分后模块通过 App.* 读取）
+            if (typeof window.App !== 'undefined' && window.App !== null) {
+                window.App.selectedFile = files[0];
+                window.App.selectedFiles = files;
+            }
+            window.__backupSelectedFile = files[0];
+            window.__backupSelectedFiles = files;
+
+            // 显示第一个文件的预览
+            if (files.length > 0) {
+                const file = files[0];
+                showAttachmentPreview(file, files.length, files);
+            }
+
+            // 重置 file input 以便重复选择相同文件
+            event.target.value = '';
+        }
+        
+        /**
+         * 显示附件预览（兼容层，实际渲染由 app-file-batch.js / chat-entry.js 接管）
+         * @param {File} file - 文件对象
+         * @param {number} totalCount - 文件总数
+         * @param {File[]} [allFiles] - 所有文件对象（用于DOM存储）
+         */
+        function showAttachmentPreview(file, totalCount = 1, allFiles) {
+            const preview = document.getElementById('attachment-preview');
+            const filesToStore = allFiles || [file];
+
+            // 优先使用模块化的统一附件列表渲染
+            if (typeof App !== 'undefined' && typeof App.renderAttachmentList === 'function') {
+                App.renderAttachmentList(filesToStore);
+            } else {
+                // 降级：仅显示文件数量提示
+                const list = document.getElementById('attachment-list');
+                if (list) {
+                    list.innerHTML = `<div class="attachment-item">
+                        <span class="attachment-icon">📎</span>
+                        <div class="attachment-info">
+                            <span class="attachment-name">${escapeHtml(file.name)} ${totalCount > 1 ? `（共 ${totalCount} 个文件）` : ''}</span>
+                        </div>
+                    </div>`;
+                    list.style.display = 'flex';
+                }
+            }
+
+            // 显示预览区域并存储文件引用
+            preview.style.display = 'flex';
+            preview._storedFiles = Array.prototype.slice.call(filesToStore);
+            preview.dataset.fileCount = String(filesToStore.length);
+
+            // 多文件提示
+            const actions = document.getElementById('attachment-actions');
+            if (actions && totalCount > 1) {
+                actions.innerHTML = `<span style="color: #666; font-size: 12px;">已选择 ${totalCount} 个文件</span>`;
+            }
+        }
+        
+        /**
+         * 清除附件
+         */
+        function clearAttachment() {
+            const preview = document.getElementById('attachment-preview');
+            if (preview) {
+                preview.style.display = 'none';
+                // 清理 DOM 存储
+                delete preview._storedFiles;
+                delete preview.dataset.fileCount;
+            }
+
+            // 清理附件列表
+            const list = document.getElementById('attachment-list');
+            if (list) list.innerHTML = '';
+
+            // 清理缩略图
+            const thumbnail = document.getElementById('attachment-thumbnail');
+            const thumbnailImg = document.getElementById('thumbnail-img');
+            if (thumbnailImg && thumbnailImg.src) {
+                try { URL.revokeObjectURL(thumbnailImg.src); } catch(e) {}
+                thumbnailImg.src = '';
+            }
+            if (thumbnail) thumbnail.style.display = 'none';
+
+            // 清理所有变量存储
+            selectedFile = null;
+            selectedFiles = [];
+            if (typeof window.App !== 'undefined' && window.App !== null) {
+                window.App.selectedFile = null;
+                window.App.selectedFiles = [];
+            }
+            window.__backupSelectedFile = null;
+            window.__backupSelectedFiles = [];
+        }
+        
+        /**
+         * 获取文件类型
+         * @param {File} file - 文件对象
+         * @returns {string} 文件类型
+         */
+        function getFileType(file) {
+            const type = file.type.toLowerCase();
+            const name = file.name.toLowerCase();
+            
+            if (type.startsWith('image/')) return 'image';
+            if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+            if (type.includes('excel') || type.includes('spreadsheet') || 
+                name.endsWith('.xls') || name.endsWith('.xlsx')) return 'excel';
+            if (type.includes('word') || type.includes('document') ||
+                name.endsWith('.doc') || name.endsWith('.docx')) return 'word';
+            if (type.includes('presentation') || type.includes('powerpoint') ||
+                name.endsWith('.ppt') || name.endsWith('.pptx')) return 'ppt';
+            if (type.startsWith('text/') || name.endsWith('.txt') || 
+                name.endsWith('.csv')) return 'text';
+            
+            return 'unknown';
+        }
+        
+        /**
+         * 获取文件类型标签
+         * @param {string} fileType - 文件类型
+         * @returns {string} 类型标签文本
+         */
+        function getFileTypeLabel(fileType) {
+            const labels = {
+                'image': '🖼️ 图片',
+                'pdf': '📄 PDF',
+                'excel': '📊 Excel',
+                'word': '📝 Word',
+                'ppt': '📽️ PPT',
+                'text': '📃 文本',
+                'unknown': '📁 文件'
+            };
+            return labels[fileType] || labels['unknown'];
+        }
+        
+        /**
+         * 格式化文件大小
+         * @param {number} bytes - 文件大小（字节）
+         * @returns {string} 格式化后的大小
+         */
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+    
+    <!-- 配置热重载处理（依赖的增强模块已移至上方 defer 组加载）-->
+    <script>
+        /**
+         * 配置变更处理函数（由后端触发         */
+        window.onConfigChanged = function(configType, fileName) {
+            console.log(`[配置热重载] ${configType} - ${fileName}`);
+            
+            // 显示提示
+            if (window.showToast) {
+                showToast(`配置已更新: ${fileName}`, 'info');
+            }
+            
+            // 根据配置类型执行对应刷新逻辑
+            switch(configType) {
+                case 'AppSettings':
+                    // 重新加载应用设置
+                    if (window.loadSettings) {
+                        loadSettings();
+                    }
+                    break;
+
+                case 'Skills':
+                    // 重新加载技能列表
+                    if (window.refreshSkills) {
+                        refreshSkills();
+                    }
+                    break;
+
+                case 'DataType':
+                    // 重新加载数据类型配置
+                    if (window.loadDataTypes) {
+                        loadDataTypes();
+                    }
+                    break;
+                    
+                default:
+                    console.log(`[配置热重载] 未知配置类型: ${configType}`);
+            }
+        };
+        
+        console.log('[配置热重载] 前端处理函数已注入');
+    </script>
+    
+    <!-- 
+    错误处理使用示例:
+    
+    // 方式1: 直接显示错误
+    window.ErrorHandler.showError(error, '图片上传');
+    
+    // 方式2: 获取用户友好消息
+    const userMessage = window.ErrorHandler.getUserFriendlyMessage(error, 'OCR识别');
+    
+    // 方式3: 包装异步函数
+    const safeUpload = window.ErrorHandler.withErrorHandling(uploadImage, '图片上传');
+    await safeUpload(file);
+    -->
+
+<!-- 图片放大遮罩层 -->
+<div class="image-zoom-overlay" id="image-zoom-overlay">
+    <img src="" alt="放大图片" id="zoom-image">
+</div>
+
+
+
+
+<div class="side-quick-popover" id="side-quick-popover" style="display: none; left: 44px; top: 217px;">
+                <div class="side-quick-browse" id="side-quick-browse" style="display: flex; flex-direction: column; min-height: 0; flex: 1;">
+                    <div class="side-quick-title">
+                        <span data-i18n="quick.title">⚡ 快捷提示词</span>
+                        <button type="button" class="sq-mgmt-entry" onclick="toggleQuickMgmt(event)" title="管理快捷提示词" data-i18n-title="quick.manageTitle" data-i18n="quick.manage">⚙️ 管理</button>
+                    </div>
+                    <div class="side-quick-list" id="side-quick-list"></div>
+                    <div class="side-quick-add">
+                        <span class="sq-search-icon">🔍</span>
+                        <input type="text" id="side-quick-input" data-i18n-placeholder="quick.searchPh" placeholder="搜索提示词">
+                    </div>
+                </div>
+                <div class="side-quick-mgmt" id="side-quick-mgmt" style="display: none; flex-direction: column; min-height: 0; flex: 1;">
+                    <div class="side-quick-title">
+                        <span data-i18n="quick.manageTitle">⚙️ 管理快捷提示词</span>
+                        <span class="sq-mgmt-head-ops">
+                            <button type="button" class="sq-mgmt-btn primary" onclick="addQuickPrompt()" title="新增快捷提示词" data-i18n-title="quick.addTitle" data-i18n="quick.add">＋ 新增</button>
+                            <button type="button" class="sq-mgmt-btn" onclick="resetQuickPrompts()" title="恢复默认配置" data-i18n-title="quick.resetTitle">↺</button>
+                            <button type="button" class="sq-mgmt-btn" onclick="showQuickBrowse()" data-i18n="quick.done">完成</button>
+                        </span>
+                    </div>
+                    <div class="side-quick-mgmt-list" id="side-quick-mgmt-list"></div>
+                    <div class="side-quick-add">
+                        <span class="sq-search-icon">🔍</span>
+                        <input type="text" id="side-quick-mgmt-input" data-i18n-placeholder="quick.searchPh" placeholder="搜索提示词">
+                    </div>
+                </div>
+            </div>
+    <div id="side-more-popover" class="side-more-popover">
+        <button type="button" class="side-more-item" onclick="closeSideMore();sideToolbarCall('newChat')" data-i18n="nav.newChat">新建对话</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();toggleTaskPlanner()" data-i18n="nav.taskPlanner">任务规划</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();sideToolbarCall('toggleEditor')" data-i18n="nav.editor">代码编辑器</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();toggleQuickPrompts(event)" data-i18n="nav.quickPrompts">快捷提示词</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();openStandalonePomodoro(event)" data-i18n="nav.pomodoroShort">番茄钟</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();sideToolbarNav('skills')" data-i18n="nav.skills">扩展</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();sideToolbarNav('knowledge')" data-i18n="nav.knowledge">知识库</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();openPptThemeEditor()" data-i18n="nav.pptTheme">PPT 主题模板</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();promptExportConversation()" data-i18n="nav.export">导出当前会话</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();sideToolbarCall('clearAllCache')" data-i18n="nav.clearCache">清空缓存</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();openOcrSettings()" data-i18n="nav.ocrModel">OCR 模型</button>
+        <button type="button" class="side-more-item" onclick="closeSideMore();openMobileFromMenu()" data-i18n="nav.mobile">手机遥控</button>
+        <button type="button" class="side-more-item" id="side-lang-btn" onclick="toggleUiLanguage()"><span data-i18n="nav.language">切换界面语言</span><span class="side-lang-tag" data-locale-indicator>中</span></button>
+    </div>
+
+</body></html>

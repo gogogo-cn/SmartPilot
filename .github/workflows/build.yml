@@ -1,0 +1,240 @@
+# Excel AI VSTO AddIn - CI/CD Build Pipeline
+# VB.NET .NET Framework 4.7.2 + VSTO Office AddIn
+
+name: Build & Validate
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths-ignore:
+      - 'Docs/**'
+      - '**.md'
+      - '.gitignore'
+  pull_request:
+    branches: [main, master]
+    paths-ignore:
+      - 'Docs/**'
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build VSTO AddIn
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+
+    - name: Setup VSTO Build Tools
+      shell: powershell
+      run: |
+        # Check if VSTO/Office build targets are available
+        $vstoPath1 = "${env:ProgramFiles(x86)}\MSBuild\Microsoft\VisualStudio\v17.0\OfficeTools"
+        $vstoPath2 = "${env:ProgramFiles}\MSBuild\Microsoft\VisualStudio\v17.0\OfficeTools"
+        $vstoPath3 = "${env:MSBuildExtensionsPath}\Microsoft\VisualStudio\v17.0\OfficeTools"
+
+        if (Test-Path $vstoPath1) {
+          Write-Host "VSTO targets found at: $vstoPath1"
+        } elseif (Test-Path $vstoPath2) {
+          Write-Host "VSTO targets found at: $vstoPath2"
+        } elseif (Test-Path $vstoPath3) {
+          Write-Host "VSTO targets found at: $vstoPath3"
+        } else {
+          Write-Warning "VSTO OfficeTools not found - build may fail on VSTO-specific targets."
+          Write-Host "Install Visual Studio 2022 with 'Office/SharePoint development' workload."
+        }
+
+    - name: NuGet Restore
+      run: nuget restore ExcelAIVSTOAddIn.vbproj
+
+    - name: Build Project
+      run: |
+        msbuild ExcelAIVSTOAddIn.vbproj `
+          /p:Configuration=Release `
+          /p:Platform="AnyCPU" `
+          /p:VSTOAllowDisabledTargets=true `
+          /p:DeployExtension=false `
+          /t:Build `
+          /m `
+          /v:minimal `
+          /p:RunCodeAnalysis=false
+
+    - name: Verify Build Output
+      shell: powershell
+      run: |
+        $outputDir = "bin\Release"
+        if (Test-Path $outputDir) {
+          Write-Host "Build output directory exists: $outputDir"
+          Get-ChildItem $outputDir -Recurse -File | Select-Object Name, Length | Format-Table -AutoSize
+        } else {
+          Write-Host "Checking bin directory..."
+          Get-ChildItem bin -Directory | ForEach-Object { Write-Host "  $_" }
+        }
+
+    - name: Validate Frontend JS Syntax
+      shell: powershell
+      run: |
+        Write-Host "Checking JavaScript syntax for all UI modules (recursive)..."
+        # 递归收集 UI/js 下所有 .js 做语法校验（chat-v2 等子目录）
+        $jsDir = "UI\js"
+        $errors = @()
+
+        Get-ChildItem $jsDir -Recurse -Filter *.js | ForEach-Object {
+          $result = node -c $_.FullName 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            $errors += "$($_.Name): SYNTAX ERROR"
+            Write-Host "ERROR: $($_.Name) - $result" -ForegroundColor Red
+          }
+        }
+
+        if ($errors.Count -gt 0) {
+          Write-Host "`nSYNTAX ERRORS FOUND:" -ForegroundColor Red
+          $errors | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+          exit 1
+        }
+
+        Write-Host "All JS files pass syntax check." -ForegroundColor Green
+
+    - name: Check JS Module Count
+      shell: powershell
+      run: |
+        $count = (Get-ChildItem UI\js -Filter *.js).Count
+        Write-Host "Frontend JS modules: $count"
+        if ($count -lt 15) {
+          Write-Warning "Module count seems low - verify build artifacts"
+          exit 1
+        }
+
+    - name: Check MCP Tools Consistency
+      shell: powershell
+      run: |
+        # 构建后闸门：校验 VB 注册名 == excel_tools.json 名、前端无硬编码显示名映射、JSON 元数据完整
+        # 退出码非 0 时使本步骤失败（脚本内部 exit 1）。excel_tools.json 是唯一数据源，改动需三者同步。
+        .\Tools\check-tools-consistency.ps1
+
+    - name: Generate Host Skills Buckets
+      shell: powershell
+      run: |
+        # 由 Skills/*.md 的 hosts: frontmatter 重新生成各宿主技能桶（word_skills.json / ppt_skills.json）
+        $py = @('python','python3','py') | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue } | Select-Object -First 1
+        if (-not $py) { Write-Error 'Python 未找到，无法生成宿主技能桶'; exit 1 }
+        & $py Hosts\Shared\Config\gen_host_skills.py
+
+    - name: Check Host Skills Consistency
+      shell: powershell
+      run: |
+        # 构建后闸门：防止 Excel-only 技能（SkillSpec / ExcelBridge）误入 Word/PPT 桶导致卡死。
+        # 依赖上一步生成的 word_skills.json / ppt_skills.json。
+        .\Tools\check-host-skills-consistency.ps1
+
+    - name: Commercial hygiene gate
+      shell: powershell
+      run: |
+        # 日常 CI：法务文档、发布目录密钥、三宿主版本、工具一致性。
+        # 临时证书与空 InstallUrl 在 -Ci 下降为警告；打 tag 或手动跑 Release gate 才阻断。
+        .\Tools\release-check.ps1 -SkipTests -Ci
+
+    - name: Check Intent Config Consistency
+      shell: powershell
+      run: |
+        # 构建后闸门：校验 intent_config.json 为唯一事实源，前端/后端内嵌兜底与其一致，
+        # 核心检测引擎无内嵌关键词字面量（防止"换词就失效"回归）。
+        node Tools/check-intent-consistency.js
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "INTENT CONFIG INCONSISTENT" -ForegroundColor Red
+          exit 1
+        }
+
+  test:
+    name: Run Automated Tests
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    # 前端/服务端 node:test 套件（单进程运行器，无 spawn）
+    - name: Run JS Unit Tests
+      shell: powershell
+      run: |
+        node Tests/run-tests.js
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "JS TEST FAILURES DETECTED" -ForegroundColor Red
+          exit 1
+        }
+        Write-Host "All JS test suites passed." -ForegroundColor Green
+
+    # 后端 COM-free 纯逻辑单元测试（共享源文件模式，零 add-in 依赖，可离线构建）
+    - name: Run VB Core Tests
+      shell: powershell
+      run: |
+        dotnet run --project Tests\VbTests\ExcelMcpCoreUtils.Tests.vbproj -c Release
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "VB CORE TEST FAILURES DETECTED" -ForegroundColor Red
+          exit 1
+        }
+        Write-Host "All VB core tests passed." -ForegroundColor Green
+
+  lint:
+    name: Frontend Quality Checks
+    runs-on: ubuntu-latest
+    # 零依赖静态检查：语法 + 规则子集（Tools/lint.js），无需 npm install / npx 联网
+    # 退出码非 0 即失败（硬闸门）；语法错误阻塞，规则警告仅提示。
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Lint
+      run: node Tools/lint.js
+
+  release-gate:
+    name: Release gate (strict)
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Strict release check
+      shell: powershell
+      run: |
+        # 无 -Ci：临时证书、空 InstallUrl 为阻断。购买正式证书并填写更新地址后才会通过。
+        .\Tools\release-check.ps1

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机遥控 OCR</title>
+    <link rel="icon" href="data:,">
+    <script src="js/qrcode-2026072515.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .ocr-header {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+            flex-shrink: 0;
+        }
+        .ocr-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ocr-header .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .ocr-header .close-btn:hover { background: rgba(255, 255, 255, 0.35); }
+
+        .tab-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        /* 服务状态 */
+        #mobile-status-box {
+            margin-bottom: 16px;
+            padding: 14px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border-left: 4px solid #9e9e9e;
+        }
+        #mobile-status-box .status-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+        #mobile-status-text {
+            font-size: 13px;
+            color: #333;
+            margin-top: 6px;
+        }
+
+        /* QR 码显示区 */
+        #mobile-qr-section {
+            display: none;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        #mobile-qr-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            padding: 12px;
+            display: inline-block;
+        }
+        #mobile-qr-container img, #mobile-qr-container canvas {
+            display: block;
+        }
+        #mobile-url-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        /* 操作按钮 */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:active { opacity: 0.8; }
+        .btn-start { background: #4caf50; color: white; }
+        .btn-start:hover { background: #43a047; }
+        .btn-stop { background: #f44336; color: white; }
+        .btn-stop:hover { background: #d32f2f; }
+        .btn-refresh { background: #2196f3; color: white; }
+        .btn-refresh:hover { background: #1976d2; }
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+        .btn-sm:hover { background: #e0e0e0; }
+
+        /* 使用说明 */
+        .help-box {
+            margin-top: 20px;
+            padding: 14px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        .help-box .help-title {
+            font-size: 13px;
+            color: #1565c0;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .help-box .help-content {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="ocr-header">
+        <h2 data-i18n="mobile.title">📱 手机遥控 OCR</h2>
+        <button class="close-btn" onclick="closePanel()">×</button>
+    </div>
+
+    <div class="tab-content">
+        <!-- 服务状态 -->
+        <div id="mobile-status-box">
+            <div class="status-label" data-i18n="mobile.status">服务状态</div>
+            <div id="mobile-status-text" data-i18n="mobile.stopped">未启动</div>
+        </div>
+
+        <!-- QR 码显示区 -->
+        <div id="mobile-qr-section">
+            <div id="mobile-qr-container"></div>
+            <div id="mobile-url-text"></div>
+            <a id="mobile-url-link" href="#" target="_blank" style="display:none;font-size:12px;color:#2196f3;word-break:break-all;margin-top:4px;" data-i18n="mobile.openBrowser">在浏览器打开</a>
+            <button id="btn-copy-url" class="btn btn-sm" onclick="copyMobileUrl()" style="display:none;margin-top:8px;width:100%;" data-i18n="mobile.copyLink">📋 复制链接</button>
+            <div id="mobile-qr-error" style="display:none;color:#f44336;font-size:12px;margin-top:8px;"></div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="btn-row">
+            <button id="btn-mobile-start" class="btn btn-start" onclick="App.mobileStart()" data-i18n="mobile.start">▶ 启动服务</button>
+            <button id="btn-mobile-stop" class="btn btn-stop" onclick="App.mobileStop()" style="display: none;" data-i18n="mobile.stop">⏹ 停止服务</button>
+        </div>
+        <button id="btn-mobile-refresh" class="btn btn-refresh" onclick="App.mobileRefresh()" style="width: 100%; display: none;" data-i18n="mobile.refreshQr">🔄 刷新 QR 码</button>
+
+        <!-- 使用说明 -->
+        <div class="help-box">
+            <div class="help-title" data-i18n="mobile.helpTitle">💡 使用说明</div>
+            <div class="help-content" data-i18n="mobile.help">1. 确保手机和电脑在同一 WiFi 网络<br>2. 点击「启动服务」按钮<br>3. 手机扫描二维码，打开拍照页面<br>4. 拍照后自动上传并 OCR 识别<br>5. 识别结果实时显示在手机上</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/i18n.js?v=v202610191933"></script>
+<script src="js/ui-locale-switch.js?v=v202610191933"></script>
+    <script>
+        var _mobileRunning = false;
+
+        function closePanel() {
+            if (window.chrome && window.chrome.webview && window.chrome.webview.hostObjects && window.chrome.webview.hostObjects.excelBridge) {
+                window.chrome.webview.hostObjects.excelBridge.CloseMobilePanel();
+            }
+        }
+
+        function initMobileControl() {
+            try { if (window.App && App.i18n) { App.i18n.apply(document); document.title = App.i18n.t('mobile.title'); } } catch (e) {}
+
+            (async function () {
+                try {
+                    var bridge = getBridge();
+                    if (bridge) {
+                        var resultStr = await bridge.GetMobileControlStatus();
+                        var result = resultStr ? JSON.parse(resultStr.toString()) : null;
+                        if (result && result.success) {
+                            updateMobileUI(result.isRunning, result.url, result.ip, result.port);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[MobileControl] 获取手机遥控状态失败:', e);
+                }
+            })();
+        }
+
+        function getBridge() {
+            if (window.chrome && window.chrome.webview && window.chrome.webview.hostObjects && window.chrome.webview.hostObjects.excelBridge) {
+                return window.chrome.webview.hostObjects.excelBridge;
+            } else if (window.excelBridge) {
+                return window.excelBridge;
+            } else if (window.App && window.App.bridge) {
+                return window.App.bridge;
+            }
+            return null;
+        }
+
+        function updateMobileUI(running, url, ip, port) {
+            _mobileRunning = running;
+            var statusText = document.getElementById('mobile-status-text');
+            var statusBox = document.getElementById('mobile-status-box');
+            var qrSection = document.getElementById('mobile-qr-section');
+            var startBtn = document.getElementById('btn-mobile-start');
+            var stopBtn = document.getElementById('btn-mobile-stop');
+            var refreshBtn = document.getElementById('btn-mobile-refresh');
+
+            if (running) {
+                statusText.textContent = '● 服务运行中 - ' + (url || '');
+                statusBox.style.borderLeftColor = '#4caf50';
+                qrSection.style.display = 'block';
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                refreshBtn.style.display = 'block';
+
+                if (url) {
+                    document.getElementById('mobile-url-text').textContent = url;
+                    var link = document.getElementById('mobile-url-link');
+                    if (link) {
+                        link.href = url;
+                        link.style.display = 'inline-block';
+                    }
+                    var copyBtn = document.getElementById('btn-copy-url');
+                    if (copyBtn) copyBtn.style.display = 'inline-block';
+                    generateMobileQR(url);
+                }
+            } else {
+                statusText.textContent = '未启动';
+                statusBox.style.borderLeftColor = '#9e9e9e';
+                qrSection.style.display = 'none';
+                startBtn.style.display = 'block';
+                stopBtn.style.display = 'none';
+                refreshBtn.style.display = 'none';
+            }
+        }
+
+        var _mobileQRCode = null;
+
+        function generateMobileQR(text) {
+            var container = document.getElementById('mobile-qr-container');
+            var errorBox = document.getElementById('mobile-qr-error');
+            if (errorBox) errorBox.style.display = 'none';
+            if (!container || typeof QRCode === 'undefined') {
+                if (errorBox) {
+                    errorBox.textContent = 'QRCode 库未加载';
+                    errorBox.style.display = 'block';
+                }
+                return;
+            }
+            try {
+                console.log('[MobileControl] 生成二维码:', text);
+                // 清空容器，避免旧二维码残留
+                container.innerHTML = '';
+                _mobileQRCode = new QRCode(container, {
+                    text: text,
+                    width: 280,
+                    height: 280,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                console.log('[MobileControl] 二维码已生成');
+            } catch (e) {
+                console.error('[MobileControl] QR 码生成失败:', e);
+                if (errorBox) {
+                    errorBox.textContent = '二维码生成失败: ' + e.message;
+                    errorBox.style.display = 'block';
+                }
+            }
+        }
+
+        function copyMobileUrl() {
+            var url = document.getElementById('mobile-url-text').textContent;
+            if (!url) return;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function () {
+                    showToast('链接已复制');
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = url;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('链接已复制');
+            }
+        }
+
+        async function callMobileBridge(method, args) {
+            try {
+                var bridge = getBridge();
+                if (!bridge) {
+                    console.error('[MobileControl] Bridge 未连接');
+                    return { success: false, error: 'Bridge 未连接，请刷新页面' };
+                }
+                var resultStr = args !== undefined ? await bridge[method](args) : await bridge[method]();
+                var result = resultStr ? JSON.parse(resultStr.toString()) : null;
+                return result;
+            } catch (e) {
+                console.error('[MobileControl] Bridge.' + method + ' 失败:', e);
+                return { success: false, error: e.message };
+            }
+        }
+
+        window.App = window.App || {};
+
+        window.App.mobileStart = function () {
+            var statusText = document.getElementById('mobile-status-text');
+            statusText.textContent = '⏳ 启动中';
+            (async function () {
+                try {
+                    var result = await callMobileBridge('StartMobileControl', -1);
+                    if (result && result.success) {
+                        updateMobileUI(true, result.url, result.ip, result.port);
+                    } else {
+                        var errMsg = (result && result.error) || '启动失败';
+                        statusText.textContent = '✕ 启动失败: ' + errMsg;
+                        document.getElementById('mobile-status-box').style.borderLeftColor = '#f44336';
+                        alert('启动移动端服务失败:\n' + errMsg);
+                    }
+                } catch (e) {
+                    statusText.textContent = '✕ 启动失败';
+                    alert('启动失败: ' + e.message);
+                }
+            })();
+        };
+
+        window.App.mobileStop = function () {
+            if (!confirm('确定要停止移动端遥控服务吗？')) return;
+            (async function () {
+                try {
+                    var result = await callMobileBridge('StopMobileControl');
+                    if (result && result.success) {
+                        updateMobileUI(false);
+                    } else {
+                        alert('停止服务失败');
+                    }
+                } catch (e) {
+                    alert('停止失败: ' + e.message);
+                }
+            })();
+        };
+
+        window.App.mobileRefresh = function () {
+            (async function () {
+                try {
+                    var result = await callMobileBridge('GetMobileControlStatus');
+                    if (result && result.success) {
+                        updateMobileUI(result.isRunning, result.url, result.ip, result.port);
+                    }
+                } catch (e) {
+                    console.error('[MobileControl] 刷新状态失败:', e);
+                }
+            })();
+        };
+
+        function showToast(msg) {
+            var toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(function () { toast.classList.remove('show'); }, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initMobileControl();
+        });
+    </script>
+</body>
+</html>

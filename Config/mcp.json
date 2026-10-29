@@ -1,0 +1,24 @@
+{
+  "_comment": "默认 MCP 配置 - 使用环境变量占位符，会在加载时自动展开为当前系统路径。个人修改请写 mcp.user.json 以避免被编译覆盖。",
+  "mcpServers": {
+    "filesystem": {
+      "name": "filesystem",
+      "description": "文件系统访问工具（本地文件读写）",
+      "transport": "stdio",
+      "command": "%PROGRAMFILES%\\nodejs\\node.exe",
+      "args": ["%APPDATA%\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js", "%USERPROFILE%"],
+      "enabled": true
+    },
+    "ms365": {
+      "name": "ms365",
+      "description": "Softeria MS 365 MCP Server - 通过 Graph API 访问邮件、日历、OneDrive、Excel 等 Microsoft 365 服务",
+      "transport": "stdio",
+      "command": "%PROGRAMFILES%\\nodejs\\node.exe",
+      "args": ["%APPDATA%\\npm\\node_modules\\@softeria\\ms-365-mcp-server\\dist\\index.js"],
+      "enabled": true
+    }
+  },
+  "serverPort": 9527,
+  "serverEnabled": true,
+  "autoStartClients": false
+}

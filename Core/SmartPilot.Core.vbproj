@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7C4E1A92-5D3B-4F81-9A62-8E1D4C7B3F55}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <!-- 【关键】RootNamespace 与 Excel 主工程保持一致，使链接进来的 OCR 源码
+         仍产生 ExcelAIVSTOAddIn.Services.* / ExcelAIVSTOAddIn.Bridges.* 命名空间。
+         这样各宿主（含 Excel 自己）改为引用本库时，既有代码无需任何命名空间改动。 -->
+    <RootNamespace>ExcelAIVSTOAddIn</RootNamespace>
+    <AssemblyName>SmartPilot.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <!-- PackageReference 还原需要显式声明 RuntimeIdentifier，否则报
+         "Your project file doesn't list 'win' as a RuntimeIdentifier"。 -->
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
+    <!-- 【条件编译常量】在共享源码里用 #If Not SMARTPLOT_CORE Then 圈住 Excel 专属逻辑
+         （如 TaskPaneManager 通知），使同一份源码既能编进 Excel，也能编进与 Excel 解耦的 Core。 -->
+    <DefineConstants>SMARTPLOT_CORE</DefineConstants>
+    <!-- 【关键】必须强名称签名：PPT 宿主是已签名（strong-named）程序集，
+         运行时会拒绝加载未签名（PublicKeyToken=null）的 Core，
+         报 HRESULT 0x80131044「需要强名称程序集」。
+         签名对未签名的 Word/Excel 无副作用（它们可正常引用强名称程序集）。 -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Hosts\PptAIVSTOAddIn\PptAIVSTOAddIn.snk</AssemblyOriginatorKeyFile>
+    <FileUpgradeFlags />
+    <OldToolsVersion>16.0</OldToolsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>bin\Debug\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>41999,42016,42358,42017,42018,42019,42032,42036</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <!-- ProtectedData / DataProtectionScope（EncryptionHelper 加密 API Key 用） -->
+    <Reference Include="System.Security" />
+    <!-- ZipFile（PythonBootstrapper 解压嵌入式 Python 用） -->
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <!-- ╔══════════════════════════════════════════════════════════════╗
+         ║ Newtonsoft.Json 显式 Reference（HintPath 兜底）                  ║
+         ║                                                                ║
+         ║ 为什么：本项目用 RestoreProjectStyle=PackageReference，          ║
+         ║ 但在 legacy .NET Framework v4.7.2 csproj 上，                   ║
+         ║ PackageReference 写入 project.assets.json 后，                   ║
+         ║ MSBuild 没自动把 dll 加进 vbc /reference 参数，                   ║
+         ║ 导致 BC40056 "Import 找不到命名空间"。                            ║
+         ║                                                                ║
+         ║ 显式 Reference + HintPath 直接告诉编译器 dll 在哪，               ║
+         ║ 同时保留 PackageReference（NUSD 版本锁定）——双保险。               ║
+         ╚══════════════════════════════════════════════════════════════╝ -->
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(UserProfile)\.nuget\packages\newtonsoft.json\13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.IO" />
+    <Import Include="System.IO.Compression" />
+    <Import Include="System.Security.Cryptography" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Text" />
+    <Import Include="System.Threading" />
+    <Import Include="System.Threading.Tasks" />
+  </ItemGroup>
+
+  <!-- ========================================================================
+       OCR 引擎 + 支撑设施：以「链接」方式引用主工程现有源码文件，不做物理搬移。
+       好处：单一物理来源；删除/移动风险为零；主工程与各宿主共用同一份代码。
+       ======================================================================== -->
+  <ItemGroup>
+    <Compile Include="..\Services\OcrFormatResult.vb">
+      <Link>Ocr\OcrFormatResult.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrEngineProcess.vb">
+      <Link>Ocr\OcrEngineProcess.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\RapidOcrService.vb">
+      <Link>Ocr\RapidOcrService.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\PaddleOcrService.vb">
+      <Link>Ocr\PaddleOcrService.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\CloudOcrService.vb">
+      <Link>Ocr\CloudOcrService.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrServiceManager.vb">
+      <Link>Ocr\OcrServiceManager.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrFormatFormatter.vb">
+      <Link>Ocr\OcrFormatFormatter.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrTableParser.vb">
+      <Link>Ocr\OcrTableParser.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\GdtSymbolRecognizer.vb">
+      <Link>Ocr\GdtSymbolRecognizer.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\DrawingDimensionGrouper.vb">
+      <Link>Ocr\DrawingDimensionGrouper.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\LeaderInk.vb">
+      <Link>Ocr\LeaderInk.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\DomainPack\DomainPackManifest.vb">
+      <Link>Ocr\DomainPack\DomainPackManifest.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\DomainPack\DomainPackLoader.vb">
+      <Link>Ocr\DomainPack\DomainPackLoader.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\DomainPack\DomainPackRegistry.vb">
+      <Link>Ocr\DomainPack\DomainPackRegistry.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\DomainPack\DomainPackPythonRunner.vb">
+      <Link>Ocr\DomainPack\DomainPackPythonRunner.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\DomainPack\CorrectionProfile.vb">
+      <Link>Ocr\DomainPack\CorrectionProfile.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrBatchProcessor.vb">
+      <Link>Ocr\OcrBatchProcessor.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\PythonBootstrapper.vb">
+      <Link>Ocr\PythonBootstrapper.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\ConfigConstants.vb">
+      <Link>Ocr\ConfigConstants.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\PathHelper.vb">
+      <Link>Ocr\PathHelper.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\PythonLocator.vb">
+      <Link>Ocr\PythonLocator.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\EncryptionHelper.vb">
+      <Link>Ocr\EncryptionHelper.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\PerformanceMonitor.vb">
+      <Link>Ocr\PerformanceMonitor.vb</Link>
+    </Compile>
+    <!-- 【边界说明】Core 只承载「OCR 识别引擎」，刻意不纳入：
+         - Bridges/OcrBridge.vb  → 它依赖 ParseScriptManager
+         - Services/ParseScriptManager.vb → 依赖 Skills.SkillDefinition / WorkflowResult
+         - Skills/** → WorkflowEngine 又会级联 SkillManager + MultimodalLLMEngine，
+           把整个技能引擎与大模型层拖进来，远超 OCR 边界（且技能层有 Excel 耦合）。
+         因此「解析脚本 / 公式OCR安装 / Ollama 本地模型」等次要能力在各宿主仍走
+         HostBridgeBase 的兜底占位，不影响核心识别。 -->
+    <!-- ====================================================================
+         完整对齐 Excel 的 OCR 能力：
+         ParseScriptManager 仅依赖 SkillDefinition（干净 POCO）与 WorkflowResult
+         （已从 Excel 耦合的 WorkflowEngine.vb 拆出为独立文件），
+         因此无需并入整套技能引擎即可下沉；OllamaImageService 需要 ChatLogger。
+         刻意不并入：SkillManager / WorkflowEngine / SkillExecutionRouter 等 ——
+         它们强依赖 Microsoft.Office.Interop.Excel，会让 PPT/Word 无法承载。
+         ==================================================================== -->
+    <Compile Include="..\Skills\Engine\SkillDefinition.vb">
+      <Link>Ocr\SkillDefinition.vb</Link>
+    </Compile>
+    <Compile Include="..\Skills\Engine\WorkflowResult.vb">
+      <Link>Ocr\WorkflowResult.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\ParseScriptManager.vb">
+      <Link>Ocr\ParseScriptManager.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OllamaImageService.vb">
+      <Link>Ocr\OllamaImageService.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\LogLevel.vb">
+      <Link>Utils\LogLevel.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\ChatLogger.vb">
+      <Link>Ocr\ChatLogger.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\AppLogger.vb">
+      <Link>Ocr\AppLogger.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\LogServiceManager.vb">
+      <Link>Ocr\LogServiceManager.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\ILogService.vb">
+      <Link>Ocr\ILogService.vb</Link>
+    </Compile>
+    <Compile Include="..\Bridges\OcrBridge.vb">
+      <Link>Ocr\OcrBridge.vb</Link>
+    </Compile>
+    <Compile Include="..\Utils\ConfigurationManager.vb">
+      <Link>Ocr\ConfigurationManager.vb</Link>
+    </Compile>
+    <Compile Include="..\Bridges\IBridges.vb">
+      <Link>Ocr\IBridges.vb</Link>
+    </Compile>
+    <Compile Include="..\Bridges\BridgeRegistry.vb">
+      <Link>Ocr\BridgeRegistry.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrHostGate.vb">
+      <Link>Ocr\OcrHostGate.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrHostClient.vb">
+      <Link>Ocr\OcrHostClient.vb</Link>
+    </Compile>
+    <Compile Include="..\Services\OcrScriptPaths.vb">
+      <Link>Ocr\OcrScriptPaths.vb</Link>
+    </Compile>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionCompare>Binary</OptionCompare>
+    <OptionStrict>Off</OptionStrict>
+    <!-- 【关键】必须与主工程一致设为 On：OCR 源码大量使用
+         For Each row In ... / For Each path In ... 这类隐式声明的循环变量。
+         Infer=Off 时 VB 不会隐式声明它们，会把 path 解析成 System.IO.Path 类
+         而报 BC30109“Path 是类类型，不能用作表达式”、row/ext“未声明”。 -->
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+</Project>

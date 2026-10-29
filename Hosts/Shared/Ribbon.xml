@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ============================================================================
+     SmartPilot 智航 - 功能区布局（Excel / PowerPoint / Word 三宿主共用同一份）
+     原先每个宿主各存一份 Ribbon.xml，加一个按钮要改三个文件，极易遗漏不同步。
+     现统一到本文件：各工程以 <EmbeddedResource Include="...Hosts\Shared\Ribbon.xml">
+     <Link>Ribbon.xml</Link> 方式嵌入，清单资源名仍为 "<RootNamespace>.Ribbon.xml"，
+     因此各宿主 GetCustomUI 的既有查找逻辑无需改动。
+
+     回调说明：onAction / getImage 指向的方法由共享基类 HostRibbonBase
+     （Hosts\Shared\HostRibbon.vb）统一提供，三端行为一致。
+     ============================================================================ -->
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="OnLoad">
+  <ribbon startFromScratch="false">
+    <tabs>
+      <tab id="tabSmartPilot" getLabel="GetControlLabel">
+        <group id="groupMain" getLabel="GetControlLabel">
+          <button id="btnToggleSidebar"
+                  getLabel="GetControlLabel"
+                  size="large"
+                  onAction="OnToggleSidebar"
+                  getImage="GetChatImage"
+                  getSupertip="GetControlSupertip"/>
+          <button id="btnImageOcr"
+                  getLabel="GetControlLabel"
+                  size="large"
+                  onAction="OnToggleOcrPanel"
+                  getImage="GetOcrImage"
+                  getSupertip="GetControlSupertip"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

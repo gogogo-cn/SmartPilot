@@ -1,0 +1,24 @@
+{
+  "pro_monthly": {
+    "amount": 19,
+    "perSeat": false,
+    "period": "月",
+    "label": "专业版 · 月付",
+    "note": "一口价，含 1 个席位"
+  },
+  "pro_yearly": {
+    "amount": 199,
+    "perSeat": false,
+    "period": "年",
+    "label": "专业版 · 年付",
+    "note": "一口价，含 1 个席位"
+  },
+  "team": {
+    "amount": 129,
+    "perSeat": true,
+    "period": "年",
+    "minSeats": 5,
+    "label": "团队版（5人以上）",
+    "note": "按席位计价：金额 = 129 × 席位数（5 人起订，每人一个独立激活码）"
+  }
+}

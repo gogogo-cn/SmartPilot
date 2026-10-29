@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "description": "意图识别与聚合关键词唯一事实源（Single Source of Truth）。前后端加载器均从此文件读取；改词只需改本文件，无需改代码。结构：keyword 数组由加载器拼装为正则；re 字段为可直接编译的正则源串。",
+
+  "chartTypes": [
+    { "keywords": ["饼图", "扇形图", "占比图", "占比", "饼"], "label": "饼图", "enum": "xlPie" },
+    { "keywords": ["圆环图", "环形图", "环形"], "label": "圆环图", "enum": "xlDoughnut" },
+    { "keywords": ["柱状图", "柱形图", "分组柱", "对比图", "柱状"], "label": "柱状图", "enum": "xlColumnClustered" },
+    { "keywords": ["堆叠柱", "堆积柱", "stacked column", "stackedcolumn"], "label": "堆叠柱", "enum": "xlColumnStacked", "flags": "i" },
+    { "keywords": ["条形图", "横向柱状图", "横向柱", "条形"], "label": "条形图", "enum": "xlBarClustered" },
+    { "keywords": ["折线图", "趋势图", "折线"], "label": "折线图", "enum": "xlLine" },
+    { "keywords": ["面积图", "面积"], "label": "面积图", "enum": "xlArea" },
+    { "keywords": ["散点图", "散点"], "label": "散点图", "enum": "xlXYScatter" },
+    { "keywords": ["雷达图", "雷达"], "label": "雷达图", "enum": "xlRadar" },
+    { "keywords": ["漏斗图", "漏斗"], "label": "漏斗图", "enum": "xlFunnel" },
+    { "keywords": ["瀑布图", "瀑布"], "label": "瀑布图", "enum": "xlWaterfall" }
+  ],
+
+  "chartWords": [
+    "饼图", "柱状图", "柱形图", "条形图", "横向柱状图", "折线图", "散点图", "面积图", "雷达图",
+    "瀑布图", "漏斗图", "圆环图", "柱状", "柱形", "条形", "折线", "散点", "面积", "雷达", "圆环", "饼"
+  ],
+
+  "chartSplitWords": [
+    "表格", "图表", "饼图", "柱状图", "条形图", "折线图", "散点图", "面积图", "雷达图",
+    "图形", "视图", "数据", "列表", "明细"
+  ],
+
+  "chartSpec": {
+    "description": "skill-spec-engine 图表 spec 规范化路径的映射（与检测侧 chartTypes 有意分离：检测侧 折线→xlLine，本处 折线→xlLineMarkers）",
+    "zhMap": [
+      { "keywords": ["柱状", "柱形", "柱状图"], "enum": "xlColumnClustered" },
+      { "keywords": ["条形", "条形图"], "enum": "xlBarClustered" },
+      { "keywords": ["折线", "折线图", "趋势"], "enum": "xlLineMarkers" },
+      { "keywords": ["面积", "面积图"], "enum": "xlArea" },
+      { "keywords": ["饼", "饼图"], "enum": "xlPie" },
+      { "keywords": ["环形", "圆环"], "enum": "xlDoughnut" },
+      { "keywords": ["散点", "散点图"], "enum": "xlXYScatter" },
+      { "keywords": ["雷达", "雷达图"], "enum": "xlRadar" },
+      { "keywords": ["漏斗", "漏斗图"], "enum": "xlFunnel" },
+      { "keywords": ["瀑布", "瀑布图"], "enum": "xlWaterfall" },
+      { "keywords": ["箱线", "箱线图"], "enum": "xlBoxwhisker" },
+      { "keywords": ["树状", "树状图"], "enum": "xlTreemap" },
+      { "keywords": ["旭日", "旭日图"], "enum": "xlSunburst" },
+      { "keywords": ["直方", "直方图", "分布"], "enum": "xlHistogram" },
+      { "keywords": ["气泡", "气泡图"], "enum": "xlBubble" }
+    ],
+    "semanticMap": [
+      { "re": "占比|构成|比例|份额|pie", "enum": "xlPie", "flags": "i" },
+      { "re": "趋势|走势|变化|时序|line|trend", "enum": "xlLineMarkers", "flags": "i" },
+      { "re": "对比|比较|排名|bar|column", "enum": "xlColumnClustered", "flags": "i" },
+      { "re": "分布|频率|histogram", "enum": "xlHistogram", "flags": "i" }
+    ],
+    "displayMap": [
+      { "enum": "xlPie", "name": "饼图", "icon": "🥧", "category": "占比构成", "keywords": ["pie", "饼"] },
+      { "enum": "xlDoughnut", "name": "圆环图", "icon": "🍩", "category": "占比构成", "keywords": ["doughnut", "donut", "圆环", "环形"] },
+      { "enum": "xlColumnClustered", "name": "分组柱状图", "icon": "📊", "category": "对比分析", "keywords": ["column", "clustered", "柱状", "柱形"] },
+      { "enum": "xlColumnStacked", "name": "堆叠柱状图", "icon": "📊", "category": "累积构成", "keywords": ["stacked", "堆叠"] },
+      { "enum": "xlColumnStacked100", "name": "100%堆叠柱", "icon": "📊", "category": "占比构成", "keywords": ["stacked100"] },
+      { "enum": "xlBarClustered", "name": "分组条形图", "icon": "📊", "category": "对比分析", "keywords": ["bar", "条形"] },
+      { "enum": "xlBarStacked", "name": "堆叠条形图", "icon": "📊", "category": "累积构成", "keywords": ["barstacked", "堆叠条"] },
+      { "enum": "xlBarStacked100", "name": "100%堆叠条", "icon": "📊", "category": "占比构成", "keywords": ["barstacked100"] },
+      { "enum": "xlLine", "name": "折线图", "icon": "📈", "category": "趋势时序", "keywords": ["line", "折线"] },
+      { "enum": "xlLineMarkers", "name": "折线带点图", "icon": "📈", "category": "趋势时序", "keywords": ["marker", "折线", "趋势"] },
+      { "enum": "xlArea", "name": "面积图", "icon": "📈", "category": "趋势时序", "keywords": ["area", "面积"] },
+      { "enum": "xlXYScatter", "name": "散点图", "icon": "✳️", "category": "相关性", "keywords": ["scatter", "散点"] },
+      { "enum": "xlRadar", "name": "雷达图", "icon": "🕸️", "category": "多维评估", "keywords": ["radar", "雷达"] },
+      { "enum": "xlRadarFilled", "name": "填充雷达图", "icon": "🕸️", "category": "多维评估", "keywords": ["radarfilled"] },
+      { "enum": "xlBubble", "name": "气泡图", "icon": "🫧", "category": "相关性", "keywords": ["bubble", "气泡"] },
+      { "enum": "xlSunburst", "name": "旭日图", "icon": "🌞", "category": "层级构成", "keywords": ["sunburst", "旭日"] },
+      { "enum": "xlTreemap", "name": "树状图", "icon": "🌳", "category": "层级构成", "keywords": ["treemap", "树状"] },
+      { "enum": "xlHistogram", "name": "直方图", "icon": "📊", "category": "分布分析", "keywords": ["histogram", "直方", "分布"] },
+      { "enum": "xlBoxwhisker", "name": "箱线图", "icon": "📦", "category": "分布分析", "keywords": ["box", "箱线"] },
+      { "enum": "xlFunnel", "name": "漏斗图", "icon": "🔻", "category": "转化分析", "keywords": ["funnel", "漏斗"] },
+      { "enum": "xlWaterfall", "name": "瀑布图", "icon": "💧", "category": "增减分析", "keywords": ["waterfall", "瀑布"] }
+    ]
+  },
+
+  "browserDisplayKeywords": ["浏览器", "网页", "html", "HTML", "在浏览器中", "用浏览器", "浏览器展示", "网页展示", "html展示", "用.*展示", "展示.*数据", "打开.*查看", "网页表格", "表格.*查看"],
+
+  "aggregateIntent": {
+    "groupPrefixes": ["按", "依照", "根据", "每个", "每", "各"],
+    "aggWords": ["汇总", "求和", "总计", "合计", "累计", "相加"],
+    "avgWords": ["平均", "均值", "平均数", "平均值"],
+    "minMaxWords": ["最大", "最小", "最多", "最少", "最高", "最低"],
+    "countWords": ["计数", "统计", "数量", "个数", "多少", "几条"],
+    "groupWords": ["分组", "聚合", "group", "aggregate"],
+    "displayWords": ["展示", "显示", "查看", "分析", "对比", "排名", "绘制", "画", "生成", "做"],
+    "valueWords": ["利润", "销售(?:额)?", "成本", "数量", "客户(?:数)?", "金额", "产值", "产量", "人数", "人次", "订单", "销售额"]
+  },
+
+  "advancedPatterns": [
+    { "re": "前\\s*(?:[一二三四五六七八九十百]+|\\d+)\\s*[名条个行项记录页]|TOP\\s*\\d+|top\\s*\\d+|排名前|排行前|前几名|前几位", "type": "topn", "label": "Top N" },
+    { "re": "同比|环比|年同比|月环比|同期|去年同期|对比.*去年|对比.*上期", "type": "compare", "label": "同比环比" },
+    { "re": "按月|按季|按年|按月份|按季度|按年份|按月汇总|按周汇总|按日期", "type": "date_group", "label": "日期分组" },
+    { "re": "筛选|过滤|满足|条件|其中|只统计|只汇总|仅统计|仅汇总", "type": "filtered", "label": "筛选汇总" }
+  ],
+
+  "aggFuncs": [
+    { "keywords": ["求和", "总计", "合计", "汇总", "累计", "相加", "加总"], "func": "sum", "label": "求和" },
+    { "keywords": ["平均", "均值", "平均数", "平均值", "avg", "average"], "func": "avg", "label": "平均", "flags": "i" },
+    { "keywords": ["最大", "最多", "最高", "max"], "func": "max", "label": "最大", "flags": "i" },
+    { "keywords": ["最小", "最少", "最低", "min"], "func": "min", "label": "最小", "flags": "i" },
+    { "keywords": ["计数", "统计数量", "个数", "多少条", "count"], "func": "count", "label": "计数", "flags": "i" }
+  ],
+
+  "dimColumns": [
+    { "keywords": ["部门", "科室", "组", "小组", "团队"], "label": "部门" },
+    { "keywords": ["地区", "区域", "城市", "省份", "省", "市", "县"], "label": "地区" },
+    { "keywords": ["产品", "商品", "SKU", "品类", "类别", "分类"], "label": "产品" },
+    { "keywords": ["日期", "时间", "月份", "季度", "年份", "月", "年", "周"], "label": "日期" },
+    { "keywords": ["人员", "员工", "职工", "姓名", "业务员"], "label": "人员" },
+    { "keywords": ["渠道", "方式", "途径", "来源"], "label": "渠道" },
+    { "keywords": ["类型", "种类", "性质", "状态"], "label": "类型" }
+  ],
+
+  "valueColumns": [
+    { "keywords": ["利润", "盈利", "收益", "毛利"], "label": "利润" },
+    { "keywords": ["销售", "营收", "收入", "营业额", "销售额"], "label": "销售额" },
+    { "keywords": ["成本", "费用", "支出", "花费"], "label": "成本" },
+    { "keywords": ["数量", "件数", "箱数", "吨数", "产量", "销量"], "label": "数量" },
+    { "keywords": ["客户", "用户", "顾客", "人数", "人次", "会员"], "label": "客户数" },
+    { "keywords": ["金额", "总额", "总值", "总计额"], "label": "金额" },
+    { "keywords": ["平均", "均值", "单价", "价格", "费用率", "利率"], "label": "平均值" }
+  ],
+
+  "targetSheet": {
+    "verbs": ["放到", "写入", "写到", "存到", "保存到", "放入", "写进", "另存为", "落到", "放在", "放进"],
+    "nouns": ["工作表", "sheet", "表格", "工作簿", "页(?:面)?"],
+    "exclude": ["公式", "函数", "数据", "图表", "图片", "内容", "结果", "输出", "信息", "文字", "文本", "数字", "数值", "标题", "备注", "说明", "描述", "注释", "摘要", "总结", "结论", "意见", "建议", "方案", "配置", "设置", "参数", "条件", "规则", "格式", "样式", "模板", "代码", "脚本", "宏", "程序", "文件", "文档", "附件", "链接", "地址", "路径", "名称", "类型", "大小", "颜色", "字体", "边框", "背景", "前景", "位置", "方向", "长度", "宽度", "高度", "面积", "体积", "容量", "数量", "质量", "重量", "速度", "时间", "日期", "年份", "月份", "星期", "小时", "分钟", "秒", "毫秒", "桌面", "下载", "文件夹", "目录", "临时", "本地", "当前目录", "磁盘", "U盘", "网盘", "云盘", "服务器", "邮箱", "剪贴板", "内存"]
+  },
+
+  "displayMode": {
+    "bothRe": "表格|数据(?:和|及|与|并|同时|都|两边|两个)(?:图|图表|视图)|既.*表.*又.*图|图和表|表格和图表|都展示|同时展示",
+    "chartRe": "饼图|柱状图|条形图|折线图|图表|图形|图\\b|视图|可视化|柱形|画图|画图展示|用图",
+    "tableRe": "表格|表盘|数据表|列表|明细|原始数据|作为表格|表格形式"
+  },
+
+  "quickPass": ["你好", "嗨", "hi", "hello", "hey", "你好呀", "您好", "早上好", "下午好", "晚上好", "再见", "拜拜", "谢谢", "感谢", "好的", "ok", "嗯", "在吗", "你在吗", "今天", "现在几点", "你叫什么", "你是谁", "你能做什么"],
+
+  "readOpKeywords": ["读取", "读一下", "读入", "读数据", "查看", "查找", "搜索", "分析", "看看", "浏览", "研究", "评估", "对比", "检查", "判断", "找出", "识别", "了解", "查看一下", "读出来", "分析一下", "看一下"],
+
+  "toolKeywords": {
+    "read": ["读取", "读一下", "查看", "查找", "搜索", "看看", "浏览", "研究", "评估", "对比", "检查", "找出", "判断", "识别", "了解", "查看一下", "看一下"],
+    "write": ["写入", "填写", "填入", "改", "修改", "设置", "写", "保存到", "存到", "放到", "复制到", "写到", "放进", "写入到", "另存为"],
+    "create": ["创建", "新建", "生成", "新增", "添加"],
+    "format": ["美化", "格式化", "设置格式", "调整", "对齐"],
+    "delete": ["删除", "清空", "移除", "去掉"],
+    "analyze": ["分析", "统计", "汇总", "计算", "求和", "平均", "最大", "最小", "看看", "研究", "评估", "对比", "找出", "判断", "识别", "了解", "分析一下"],
+    "chart": ["图表", "画图", "折线图", "柱状图", "饼图"],
+    "merge": ["合并", "关联", "匹配"],
+    "split": ["拆分", "分割", "分开"],
+    "send": ["发送", "邮件", "通知", "消息"]
+  },
+
+  "singleStepKeywords": [
+    "^(读取|读一下|查看|打开)",
+    "^(写入|填写|填入|设置为)",
+    "^(删除|清空|移除)",
+    "^(创建|新建|生成)(一个|一张|一份)?(新)?(工作簿|工作表|表格)",
+    "^(美化|格式化)(一下)?(这个)?(表格|选区)",
+    "^(求和|平均|统计|计算)(一下)?"
+  ],
+
+  "toolMapping": [
+    { "keywords": ["图表", "柱状图", "折线图", "饼图", "面积图", "散点图", "雷达图", "环形图", "画图", "chart"], "tool": "excel_create_chart", "flags": "i" },
+    { "keywords": ["按年", "按季度", "按月", "按周", "按日", "日期分组", "时间分组", "年度", "季度", "月度", "周度", "财年", "year", "quarter", "month", "week", "day"], "tool": "excel_date_group", "flags": "i" },
+    { "keywords": ["汇总", "聚合", "统计", "求和", "分组", "分类", "平均", "计数", "合计", "分析", "最高", "最低", "count", "sum", "aggregate", "analyze"], "tool": "excel_aggregate", "flags": "i" },
+    { "keywords": ["格式化", "美化", "设置格式", "format"], "tool": "excel_format_range", "flags": "i" },
+    { "keywords": ["读取", "查看", "读一下", "read"], "tool": "excel_read_range", "flags": "i" },
+    { "keywords": ["复制", "粘贴", "copy", "paste"], "tool": "excel_copy_range", "flags": "i" },
+    { "keywords": ["新建工作表", "创建工作表", "新建表", "创建表", "create_sheet"], "tool": "excel_create_sheet", "flags": "i" },
+    { "keywords": ["重命名", "改名", "rename"], "tool": "excel_rename_sheet", "flags": "i" },
+    { "keywords": ["写入", "填写", "填入", "write"], "tool": "excel_write_range", "flags": "i" },
+    { "keywords": ["删除", "清空", "清除", "delete", "clear"], "tool": "excel_clear_range", "flags": "i" }
+  ],
+
+  "columnHints": {
+    "textHints": ["部门", "姓名", "名字", "名称", "地址", "电话", "邮箱", "性别", "备注", "描述", "说明", "类别", "分类", "name", "department", "address", "phone", "email", "note", "desc", "category", "group"],
+    "categoryHints": ["部门", "地区", "区域", "大区", "分类", "类别", "类型", "产品", "商品", "品类", "渠道", "来源", "城市", "省份", "客户", "供应商", "业务", "项目", "department", "region", "city", "province", "channel", "product", "category", "group"],
+    "nonCategoryHints": ["日期", "时间", "年份", "月份", "数量", "金额", "价格", "销售额", "利润", "成本", "收入", "费用", "合计", "小计", "总额", "总计", "占比", "客户数", "人数", "次数", "个数", "date", "time", "year", "month", "amount", "price", "quantity", "total", "revenue", "profit", "cost", "sales"],
+    "numericHints": ["金额", "价格", "数量", "销售额", "利润", "总额", "总计", "数值", "数字", "收入", "成本", "费用", "合计", "小计", "sum", "amount", "price", "quantity", "total", "revenue", "profit", "value", "sales", "count", "avg", "average"],
+    "nonTextHints": ["部门", "姓名", "名字", "名称", "日期", "月份", "年份", "时间", "地址", "电话", "邮箱", "性别", "备注", "描述", "说明", "类别", "分类"]
+  },
+
+  "backend": {
+    "moneyHints": ["销售额", "销售", "利润", "成本", "收入", "金额", "价格", "单价", "费用", "毛利", "净利", "合计", "总额", "总计", "产值", "业绩", "revenue", "sales", "profit", "cost", "amount", "price", "income"],
+    "nonNumericColumns": ["编号", "姓名", "名称", "日期", "时间", "备注"],
+    "dimensionFallback": ["部门", "地区", "区域", "大区", "分类", "类别", "类型", "产品", "商品", "品类", "渠道", "来源", "城市", "省份"],
+    "dimensionExclude": ["日期", "时间", "编号", "销售额", "成本", "利润", "金额", "数量", "客户数", "单价", "价格", "收入", "备注"],
+    "synonyms": {
+      "销售额": ["月度业绩", "业绩", "销售收入", "营业额", "收入", "销售额"],
+      "业绩": ["月度业绩", "业绩", "销售收入", "营业额", "收入", "销售额"],
+      "提成": ["提成", "基础提成", "最终实发提成", "实发提成"],
+      "部门": ["部门", "科室", "组", "小组", "团队", "所属部门", "部门名称"],
+      "员工": ["员工", "员工姓名", "姓名", "人员", "职工", "业务员"],
+      "数量": ["数量", "人数", "个数"],
+      "金额": ["金额", "数额", "数值"],
+      "地区": ["地区", "区域", "大区", "地域", "省市", "省份", "城市"],
+      "日期": ["日期", "时间", "月份", "季度", "年份", "年度", "年月", "月", "年", "周"],
+      "产品": ["产品", "商品", "sku", "品类", "类别", "分类", "产品分类", "产品类别", "商品分类", "商品类别"],
+      "渠道": ["渠道", "方式", "途径", "来源"]
+    }
+  },
+
+  "rag": {
+    "semanticFallback": {
+      "enabled": true,
+      "threshold": 0.62,
+      "topK": 3,
+      "description": "字面/同义词匹配失败时，用 EmbeddingService 对用户词与配置概念做余弦相似度检索，命中阈值则采用语义最接近的概念（解决'换词就失效'）。"
+    }
+  }
+}

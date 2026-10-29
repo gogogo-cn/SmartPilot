@@ -1,0 +1,622 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 模型设置</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .settings-header {
+            background: linear-gradient(135deg, #4a90d9, #357abd);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(74, 144, 217, 0.3);
+            flex-shrink: 0;
+        }
+
+        .settings-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .settings-header .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .settings-header .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .settings-container {
+            flex: 1;
+            overflow-y: auto;
+            background: #f5f7fa;
+        }
+
+        #settings-panel {
+            display: block !important;
+            padding: 0;
+            height: auto;
+            min-height: 0;
+        }
+
+        .btn-save,
+        .btn-secondary {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-save:hover,
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            filter: brightness(1.05);
+        }
+
+        .btn-save:active,
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-loading {
+            opacity: 0.8;
+            cursor: wait;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-success-state {
+            background: #4caf50 !important;
+            animation: pulse-success 0.5s ease;
+        }
+
+        .btn-error-state {
+            background: #f44336 !important;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes pulse-success {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+    </style>
+</head>
+
+<body style="display: flex; flex-direction: column; height: 100vh;">
+    <div class="settings-header">
+        <h2 data-i18n="settings.title">🤖 AI 模型设置</h2>
+        <button class="close-btn" onclick="closePanel()" data-i18n-title="settings.closeEsc" title="关闭 (Esc)">×</button>
+    </div>
+
+    <div class="settings-container">
+        <div id="settings-panel" class="panel" style="position: relative; padding: 0;">
+            <!-- 连接配置卡片 -->
+            <div class="settings-card">
+                <div class="settings-card-header" data-i18n="settings.conn">🔌 连接配置</div>
+                <div class="settings-card-body">
+                    <div class="settings-row">
+                        <label class="settings-label" data-i18n="settings.provider">AI 提供商</label>
+                        <select class="setting-select" id="api-type" onchange="onProviderChange()">
+                            <option value="openai">OpenAI</option>
+                            <option value="azure">Azure OpenAI</option>
+                            <option value="ollama" data-i18n="settings.provider.ollama">Ollama (本地)</option>
+                            <option value="llamacpp" data-i18n="settings.provider.llamacpp">llama.cpp (本地)</option>
+                            <option value="wenxin" data-i18n="settings.provider.wenxin">百度文心一言</option>
+                            <option value="qianwen" data-i18n="settings.provider.qianwen">阿里通义千问</option>
+                            <option value="zhipu" data-i18n="settings.provider.zhipu">智谱 AI (ChatGLM)</option>
+                            <option value="xunfei" data-i18n="settings.provider.xunfei">讯飞星火</option>
+                            <option value="moonshot" data-i18n="settings.provider.moonshot">Moonshot (月之暗面)</option>
+                            <option value="deepseek" data-i18n="settings.provider.deepseek">深度求索 (DeepSeek)</option>
+                            <option value="volcengine" data-i18n="settings.provider.volcengine">火山引擎 (豆包)</option>
+                            <option value="custom" data-i18n="settings.provider.custom">自定义 API</option>
+                        </select>
+                    </div>
+                    <div class="settings-row" id="api-url-group">
+                        <label class="settings-label" data-i18n="settings.apiUrl">API 地址</label>
+                        <input type="text" class="setting-input" id="api-url"
+                            placeholder="https://api.openai.com/v1">
+                    </div>
+                    <div class="settings-row" id="api-key-group">
+                        <label class="settings-label" data-i18n="settings.apiKey">API 密钥</label>
+                        <input type="password" class="setting-input" id="api-key" placeholder="输入您的 API 密钥" data-i18n-placeholder="settings.apiKeyPh">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 本地模型安装引导卡片（仅 Ollama / llama.cpp 提供商显示） -->
+            <div class="settings-card" id="local-model-guide" style="display:none;">
+                <div class="settings-card-header" data-i18n="settings.localGuide.title">📥 本地模型安装引导</div>
+                <div class="settings-card-body" style="font-size:12px;color:#334155;line-height:1.6;">
+                    <div id="local-guide-status"
+                        style="margin:0 0 10px;padding:8px 10px;background:#eef4fb;border:1px solid #cfe1f5;border-radius:4px;color:#1f4e79;"
+                        data-i18n="settings.localGuide.statusNone">尚未检测到本地模型。安装完成后点「检测本地模型」。</div>
+
+                    <!-- Ollama 安装引导 -->
+                    <div id="local-guide-ollama">
+                        <p style="margin:0 0 10px;" data-i18n="settings.localGuide.ollamaHint">Ollama 免费开源，安装后模型的下载与推理都在本机完成，断网也能用。</p>
+                        <ol style="margin:0;padding-left:20px;">
+                            <li style="margin-bottom:10px;">
+                                <span data-i18n="settings.localGuide.ollamaStep1">下载并安装 Ollama（Windows 安装包约 700MB），按提示装完即可。</span><br>
+                                <button type="button" class="btn-secondary" style="margin-top:4px;"
+                                    onclick="openLocalModelDownload('https://ollama.com/download')"
+                                    data-i18n="settings.localGuide.downloadOllama">⬇ 下载 Ollama</button>
+                            </li>
+                            <li style="margin-bottom:10px;">
+                                <span data-i18n="settings.localGuide.ollamaStep2">打开 PowerShell，拉取一个模型（首次下载约 1～4GB）：</span><br>
+                                <code style="display:inline-block;background:#f5f5f5;padding:4px 8px;border-radius:3px;margin-top:4px;"
+                                    data-i18n="settings.localGuide.ollamaPullCmd">ollama pull qwen2.5:7b</code>
+                                <button type="button" class="btn-secondary" style="margin-top:4px;"
+                                    onclick="copyGuideCommand(this, 'ollama pull qwen2.5:7b')"
+                                    data-i18n="settings.localGuide.copy">复制</button>
+                            </li>
+                            <li>
+                                <span data-i18n="settings.localGuide.ollamaStep3">Ollama 装好后会常驻后台自启。若仍提示无法连接，先手动启动服务：</span><br>
+                                <code style="display:inline-block;background:#f5f5f5;padding:4px 8px;border-radius:3px;margin-top:4px;"
+                                    data-i18n="settings.localGuide.ollamaServeCmd">ollama serve</code>
+                                <button type="button" class="btn-secondary" style="margin-top:4px;"
+                                    onclick="copyGuideCommand(this, 'ollama serve')"
+                                    data-i18n="settings.localGuide.copy">复制</button>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <!-- llama.cpp 安装引导 -->
+                    <div id="local-guide-llamacpp" style="display:none;">
+                        <p style="margin:0 0 10px;" data-i18n="settings.localGuide.llamacppHint">llama.cpp 免费开源，通过 llama-server 提供 OpenAI 兼容接口（默认 http://localhost:8080）。</p>
+                        <ol style="margin:0;padding-left:20px;">
+                            <li style="margin-bottom:10px;">
+                                <span data-i18n="settings.localGuide.llamacppStep1">下载 llama.cpp Release（Windows 压缩包，解压即用）：</span><br>
+                                <button type="button" class="btn-secondary" style="margin-top:4px;"
+                                    onclick="openLocalModelDownload('https://github.com/ggml-org/llama.cpp/releases')"
+                                    data-i18n="settings.localGuide.downloadLlamacpp">⬇ 下载 llama.cpp</button>
+                            </li>
+                            <li style="margin-bottom:10px;">
+                                <span data-i18n="settings.localGuide.llamacppStep2">从 Hugging Face 下载 GGUF 模型文件，放入解压目录的 models 文件夹。</span>
+                            </li>
+                            <li>
+                                <span data-i18n="settings.localGuide.llamacppStep3">在解压目录打开 PowerShell 启动服务，保持窗口开启：</span><br>
+                                <code style="display:inline-block;background:#f5f5f5;padding:4px 8px;border-radius:3px;margin-top:4px;word-break:break-all;"
+                                    data-i18n="settings.localGuide.llamacppServeCmd">llama-server -m models\qwen2.5-7b-instruct-q4_k_m.gguf --port 8080</code>
+                                <button type="button" class="btn-secondary" style="margin-top:4px;"
+                                    onclick="copyGuideCommand(this, 'llama-server -m models\\qwen2.5-7b-instruct-q4_k_m.gguf --port 8080')"
+                                    data-i18n="settings.localGuide.copy">复制</button>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <button type="button" class="btn-save btn-save-sm" onclick="detectLocalModels()"
+                            style="width:auto;padding:6px 16px;font-size:13px;background:#2196f3;"
+                            data-i18n="settings.localGuide.detectNow">🔍 检测本地模型</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模型选择卡片 -->
+            <div class="settings-card" id="model-group">
+                <div class="settings-card-header" data-i18n="settings.modelCard">🧠 模型选择</div>
+                <div class="settings-card-body">
+                    <div class="settings-row">
+                        <label class="settings-label" data-i18n="settings.modelName">模型名称</label>
+                        <div class="settings-input-group">
+                            <input type="text" class="setting-input" id="model" value="gpt-4"
+                                placeholder="选择或输入模型名" data-i18n-placeholder="settings.modelPh">
+                            <button class="settings-btn-detect" id="detect-btn" onclick="detectLocalModels()"
+                                style="display:none;" data-i18n="settings.detectLocal">
+                                🔍 检测本地模型
+                            </button>
+                        </div>
+                    </div>
+                    <div class="model-list" id="model-list"></div>
+                </div>
+            </div>
+
+            <!-- 参数配置卡片 -->
+            <div class="settings-card">
+                <div class="settings-card-header" data-i18n="settings.params">⚙️ 参数配置</div>
+                <div class="settings-card-body">
+                    <div class="settings-row">
+                        <label class="settings-label" data-i18n="settings.temperature">温度</label>
+                        <div class="settings-input-group">
+                            <input type="range" id="temperature-range" value="0.7" min="0" max="2" step="0.1"
+                                aria-label="温度参数滑块"
+                                oninput="document.getElementById('temperature').value=this.value" style="flex:1;">
+                            <input type="number" class="setting-input setting-input-sm" id="temperature" value="0.7"
+                                min="0" max="2" step="0.1"
+                                onchange="document.getElementById('temperature-range').value=this.value"
+                                style="width:70px;text-align:center;">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <label class="settings-label" data-i18n="settings.context">上下文长度</label>
+                        <select class="setting-select" id="context-mode" title="选择上下文长度模式">
+                            <option value="auto" data-i18n="settings.ctx.auto">自动（推荐）</option>
+                            <option value="short" data-i18n="settings.ctx.short">简短（最近 1 轮）</option>
+                            <option value="medium" data-i18n="settings.ctx.medium">中等（最近 3 轮）</option>
+                            <option value="long" data-i18n="settings.ctx.long">长对话（最近 10 轮）</option>
+                            <option value="unlimited" data-i18n="settings.ctx.unlimited">完整历史</option>
+                        </select>
+                    </div>
+                    <div class="settings-row" style="margin-top:10px;">
+                        <label class="settings-label" for="ui-locale" data-i18n="settings.uiLocale">界面语言</label>
+                        <select class="setting-select" id="ui-locale" data-locale-select title="UI language" onchange="onUiLocaleChange(this.value)">
+                            <option value="zh" data-i18n="settings.uiLocale.zh">中文</option>
+                            <option value="en" data-i18n="settings.uiLocale.en">English</option>
+                        </select>
+                    </div>
+                    <div class="settings-row" style="align-items:flex-start;margin-top:10px;">
+                        <label class="settings-label" for="danger-always-ask" data-i18n="settings.dangerAsk">危险操作</label>
+                        <div style="flex:1;">
+                            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#334155;cursor:pointer;line-height:1.45;">
+                                <input type="checkbox" id="danger-always-ask" style="margin-top:2px;flex-shrink:0;">
+                                <span><span data-i18n="settings.dangerAskLabel">始终询问确认</span><br><span style="font-size:11px;color:#94a3b8;" data-i18n="settings.dangerAskHint">开启后，本轮内每次删除/清空等危险操作都会再次弹窗，不再沿用「允许」。</span></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="context-stats" style="margin-top:8px;font-size:11px;color:#666;"></div>
+                </div>
+            </div>
+
+            <!-- 连接测试卡片 -->
+            <div class="settings-card settings-card-test">
+                <div class="settings-card-header"
+                    style="display:flex;justify-content:space-between;align-items:center;">
+                    <span data-i18n="settings.testCard">连接测试</span>
+                    <button class="btn-save btn-save-sm" onclick="testAIConfig()"
+                        style="width:auto;padding:6px 16px;font-size:13px;background:#2196f3;" data-i18n="settings.testBtn">
+                        测试连接
+                    </button>
+                </div>
+                <div class="settings-card-body" style="border-top:1px solid #e8e8e8;padding-top:10px;">
+                    <div id="test-result" style="display:none;"></div>
+                    <div id="test-result-empty" style="font-size:12px;color:#999;" data-i18n="settings.testHint">点击上方按钮测试 API 连接是否正常</div>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <div class="settings-card-header" data-i18n="settings.dataCard">数据与风险说明</div>
+                <div class="settings-card-body" style="font-size:12px;color:#334155;line-height:1.55;">
+                    <p style="margin:0 0 8px;" data-i18n="settings.data.cloud">使用云端模型时，你输入的文字、当前选中的表格或文档片段、以及近期对话会发送到你填写的 API 地址。该地址可能在本机以外，也可能在境外。</p>
+                    <p style="margin:0 0 8px;" data-i18n="settings.data.local">提供商选 Ollama 或 llama.cpp，且地址指向本机时，提示词默认留在本机。把地址改成远程服务器后，数据会发往该服务器。</p>
+                    <p style="margin:0 0 8px;" data-i18n="settings.data.tools">部分工具会修改当前工作簿、文档或幻灯片，导出文件，或在本机运行 VBA / Python。删除、清空一类操作会先请你确认。</p>
+                    <p style="margin:0 0 8px;" data-i18n="settings.data.keys">API 密钥只保存在本机当前用户下，不会打进安装包。请勿把 llm_config.json 发给他人。企业可把自定义 API 指到私有化模型。</p>
+                    <p style="margin:0 0 10px;" data-i18n="settings.undoNote">聊天窗格上的撤销是插件自己的上一步，撤不回你在工作表里用 Ctrl+Z 能撤的编辑。</p>
+                    <button type="button" id="btn-clear-local-data" class="btn-secondary" onclick="clearLocalUserData()" data-i18n="settings.deleteLocal">删除本机密钥和识别记录</button>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="saveSettings()"
+                style="width: 100%; margin-top: 12px; font-size: 15px; padding: 12px;" data-i18n="settings.save">💾 保存 AI 设置</button>
+        </div>
+    </div>
+
+    <script src="js/host-context.js?v=v202610221930"></script>
+    <script src="config/models-config.js?v=v202610221930"></script>
+    <script src="js/i18n.js?v=v202610221930"></script>
+    <script src="js/ui-locale-switch.js?v=v202610221930"></script>
+    <script src="js/app-bootstrap.js?v=v202610221930"></script>
+    <script src="js/bridge-accessor.js?v=v202610221930"></script>
+    <script src="js/app-utils.js?v=v202610221930"></script>
+    <script src="js/bridge-config.js?v=v202610221930"></script>
+    <script src="js/app-config.js?v=v202610221930"></script>
+    <!-- 旧 AI 链路已删除（app-ai-core/context/stream-ui/calls）；测试连接走 app-model.testAIConfig 直连 fetch -->
+    <script src="js/app-endpoints.js?v=v202610221930"></script>
+    <script src="js/app-model.js?v=v202610221930"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            var fns = [
+                'saveSettings', 'onProviderChange', 'detectLocalModels', 'testAIConfig',
+                'selectModel'
+            ];
+            fns.forEach(function (fn) {
+                if (typeof App[fn] === 'function' && typeof window[fn] !== 'function') {
+                    window[fn] = App[fn];
+                }
+            });
+
+            // app-utils 的复制函数供「本地模型安装引导」的命令复制按钮使用
+            if (window.App && App.utils && typeof App.utils.copyToClipboard === 'function'
+                && typeof window.copyToClipboard !== 'function') {
+                window.copyToClipboard = App.utils.copyToClipboard;
+            }
+
+            if (typeof App.showToast === 'function' && typeof window.showToast !== 'function') {
+                window.showToast = App.showToast;
+            }
+
+            try {
+                if (typeof App.loadConfig === 'function') await App.loadConfig();
+            } catch (e) { console.warn('加载配置失败:', e); }
+
+            try {
+                if (typeof App.onProviderChange === 'function') App.onProviderChange();
+            } catch (e) { console.warn('初始化提供商失败:', e); }
+
+            setTimeout(function () {
+                try {
+                    if (typeof App.detectLocalModels === 'function') App.detectLocalModels();
+                } catch (e) { console.warn('检测本地模型失败:', e); }
+            }, 1000);
+
+            console.log('[AiSettingsPanel] AI 模型设置面板初始化完成');
+        });
+
+        var _clearLocalArmed = false;
+
+        function settingsText(key, fallback) {
+            try {
+                if (window.App && App.i18n && typeof App.i18n.t === 'function') {
+                    var s = App.i18n.t(key);
+                    if (s && s !== key) return s;
+                }
+            } catch (_) { /* ignore */ }
+            return fallback;
+        }
+
+        async function clearLocalUserData() {
+            var btn = document.getElementById('btn-clear-local-data');
+            if (!_clearLocalArmed) {
+                _clearLocalArmed = true;
+                if (btn) btn.textContent = settingsText('settings.deleteLocalConfirm', '再点一次，确认删除');
+                setTimeout(function () {
+                    _clearLocalArmed = false;
+                    if (btn) btn.textContent = settingsText('settings.deleteLocal', '删除本机密钥和识别记录');
+                }, 4000);
+                return;
+            }
+            _clearLocalArmed = false;
+            if (btn) btn.textContent = settingsText('settings.deleteLocal', '删除本机密钥和识别记录');
+            try { localStorage.removeItem('ocr_recognition_history'); } catch (_) { /* ignore */ }
+            var bridge = null;
+            try {
+                if (window.BridgeAccessor && typeof BridgeAccessor.getBridge === 'function') bridge = BridgeAccessor.getBridge();
+            } catch (_) { /* ignore */ }
+            if (!bridge) {
+                try {
+                    bridge = window.chrome && chrome.webview && chrome.webview.hostObjects && chrome.webview.hostObjects.excelBridge;
+                } catch (_) { bridge = null; }
+            }
+            var ok = false;
+            try {
+                if (bridge && typeof bridge.ClearLocalUserData === 'function') {
+                    var raw = await bridge.ClearLocalUserData();
+                    var data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                    ok = !!(data && data.success);
+                }
+            } catch (e) {
+                console.warn('ClearLocalUserData failed', e);
+            }
+            var keyInput = document.getElementById('api-key');
+            if (keyInput) keyInput.value = '';
+            var msg = ok
+                ? settingsText('settings.deleteLocalDone', '已删除本机密钥和识别记录。工作簿里已写入的内容还在。')
+                : settingsText('settings.deleteLocalFail', '删除没有完成，请稍后再试。');
+            if (typeof window.showToast === 'function') window.showToast(msg, ok ? 'info' : 'error');
+            else alert(msg);
+        }
+
+        function closePanel() {
+            // 内嵌抽屉：通知父页面关闭
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'smartpilot:ai-settings-close' }, '*');
+                    return;
+                }
+            } catch (e) { /* ignore */ }
+            if (window.chrome && window.chrome.webview && window.chrome.webview.hostObjects && window.chrome.webview.hostObjects.excelBridge) {
+                window.chrome.webview.hostObjects.excelBridge.CloseSettingsPanel();
+            }
+        }
+
+        // 内嵌模式：保存成功后通知父页面刷新配置
+        window.notifyParentSettingsSaved = function () {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'smartpilot:ai-settings-saved' }, '*');
+                }
+            } catch (e) { /* ignore */ }
+        };
+
+        /**
+         * 语言切换即时生效：改下拉框立刻刷新界面（含父窗口 / 其它窗口），不必点「保存」。
+         * 内存里的 config.uiLocale 同步写回，之后点保存仍然会持久化同一份语言设置。
+         */
+        window.onUiLocaleChange = function (value) {
+            try {
+                var api = window.App && window.App.i18n;
+                if (!api || typeof api.setLocale !== 'function') return;
+                var loc = typeof api.normalizeLocale === 'function' ? api.normalizeLocale(value) : (value === 'en' ? 'en' : 'zh');
+                try { if (window.App && App.config) App.config.uiLocale = loc; } catch (e) { /* ignore */ }
+                api.setLocale(loc, { apply: true, reloadWelcome: true, reloadHistory: true });
+            } catch (e) { /* ignore */ }
+        };
+
+        /**
+         * 待回包的「代开链接」请求：token → url。父页面回包失败或超时未回包时，
+         * 按失败处理并给出可手动复制的链接。
+         */
+        var _pendingGuideOpen = {};
+
+        /**
+         * 「本地模型安装引导」：打开外部下载页。
+         * 内嵌抽屉里本页面是 file:// iframe（与主页面的虚拟主机源跨域），
+         * 拿不到 WebView2 宿主桥——必须 postMessage 转交父页面代开；
+         * 独立打开 / 浏览器调试时才直连宿主桥，最后回退 window.open。
+         * 全部失败时在状态行给出可手动复制的链接，绝不做无反应点击。
+         */
+        window.openLocalModelDownload = function (url) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    var token = 'od' + Date.now() + Math.random();
+                    _pendingGuideOpen[token] = url;
+                    // 父页面 3 秒未回包（旧版主界面无此消息处理）→ 按失败给出可复制链接
+                    setTimeout(function () {
+                        if (_pendingGuideOpen[token]) {
+                            delete _pendingGuideOpen[token];
+                            showGuideOpenFail(url);
+                        }
+                    }, 3000);
+                    window.parent.postMessage({ type: 'smartpilot:open-external-url', url: url, token: token }, '*');
+                    return;
+                }
+            } catch (e) { /* ignore，走下面的直连 */ }
+            try {
+                var bridge = (window.App && App.excelBridge)
+                    || (window.BridgeAccessor && typeof BridgeAccessor.getBridge === 'function' ? BridgeAccessor.getBridge() : null);
+                if (bridge && typeof bridge.OpenExternalUrl === 'function') {
+                    Promise.resolve(bridge.OpenExternalUrl(url)).then(function (raw) {
+                        var r = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                        if (r && r.success === false) showGuideOpenFail(url, r.error);
+                    }).catch(function () { showGuideOpenFail(url); });
+                    return;
+                }
+            } catch (e) { /* ignore，走下面的回退 */ }
+            try { window.open(url, '_blank'); } catch (e) { showGuideOpenFail(url); }
+        };
+
+        /**
+         * 打开链接失败时把链接写进引导卡片状态行（可手动选中复制），并弹提示。
+         */
+        function showGuideOpenFail(url, reason) {
+            var msg = settingsText('settings.localGuide.openFail', '无法自动打开浏览器，请手动复制链接到浏览器打开：') + ' ' + url;
+            if (typeof window.showToast === 'function') window.showToast(msg, 'error');
+            var el = document.getElementById('local-guide-status');
+            if (el) {
+                el.textContent = msg;
+                el.style.background = '#fff3cd';
+                el.style.borderColor = '#f0c36d';
+                el.style.color = '#8a6d3b';
+            }
+        }
+
+        /**
+         * 「本地模型安装引导」：复制安装命令。
+         * 内嵌抽屉里 file:// iframe 的剪贴板 API 可能被权限策略拦，优先请父页面代复制；
+         * 父页面 800ms 未回话再本地尝试，全部失败时按钮明确提示手动选择。
+         */
+        var _pendingGuideCopy = {};
+        window.copyGuideCommand = function (btn, cmd) {
+            var okText = settingsText('settings.localGuide.copied', '已复制');
+            var failText = settingsText('settings.localGuide.copyFail', '复制失败，请手动选择命令');
+            var old = btn.textContent;
+            var settle = function (ok) {
+                btn.textContent = ok ? okText : failText;
+                setTimeout(function () { btn.textContent = old; }, 1500);
+            };
+            var localCopy = function () {
+                var viaExec = function () {
+                    try {
+                        var ta = document.createElement('textarea');
+                        ta.value = cmd;
+                        ta.style.position = 'fixed';
+                        ta.style.opacity = '0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        var ok = document.execCommand('copy');
+                        document.body.removeChild(ta);
+                        settle(!!ok);
+                    } catch (e) { settle(false); }
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(cmd).then(function () { settle(true); }).catch(viaExec);
+                } else {
+                    viaExec();
+                }
+            };
+            try {
+                if (window.parent && window.parent !== window) {
+                    var token = 'gc' + Date.now() + Math.random();
+                    _pendingGuideCopy[token] = function (ok) {
+                        delete _pendingGuideCopy[token];
+                        settle(ok);
+                    };
+                    window.parent.postMessage({ type: 'smartpilot:copy-text', text: cmd, token: token }, '*');
+                    setTimeout(function () {
+                        if (_pendingGuideCopy[token]) {
+                            delete _pendingGuideCopy[token];
+                            localCopy();
+                        }
+                    }, 800);
+                    return;
+                }
+            } catch (e) { /* ignore，走本地复制 */ }
+            localCopy();
+        };
+
+        // 父页面代复制的结果回包（内嵌抽屉模式）
+        window.addEventListener('message', function (e) {
+            var data = e && e.data;
+            if (!data || typeof data !== 'object') return;
+            if (data.type === 'smartpilot:copy-text-result') {
+                var cb = _pendingGuideCopy[data.token];
+                if (cb) cb(!!data.ok);
+                return;
+            }
+            // 父页面代开链接的结果回包：失败时给出可手动复制的链接
+            if (data.type === 'smartpilot:open-external-url-result') {
+                var pendingUrl = _pendingGuideOpen[data.token];
+                if (pendingUrl === undefined) return;
+                delete _pendingGuideOpen[data.token];
+                if (!data.ok) showGuideOpenFail(data.url || pendingUrl, data.error);
+            }
+        });
+    </script>
+</body>
+
+</html>

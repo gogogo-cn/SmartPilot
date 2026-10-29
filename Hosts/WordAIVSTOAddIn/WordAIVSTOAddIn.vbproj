@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1A7C4E52-9D33-4B6E-8F01-2C5A6B7D8E90}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>WordAIVSTOAddIn</RootNamespace>
+    <AssemblyName>WordAIVSTOAddIn</AssemblyName>
+    <LoadBehavior>3</LoadBehavior>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <DefineConstants>VSTO40</DefineConstants>
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
+    <FileUpgradeFlags />
+    <UpgradeBackupLocation />
+    <OldToolsVersion>16.0</OldToolsVersion>
+    <TargetFrameworkProfile />
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OfficeApplication>Word</OfficeApplication>
+  </PropertyGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.VSTORuntime.4.0">
+      <Visible>False</Visible>
+      <ProductName>Microsoft Visual Studio 2010 Tools for Office Runtime %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>41999,42016,42358,42017,42018,42019,42032,42036</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Office.Tools, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Office.Tools.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Office.Tools.Word, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Office.Tools.Common.v4.0.Utilities, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\libs\Microsoft.Office.Tools.Common.v4.0.Utilities.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="Microsoft.Office.Core">
+      <Guid>{2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>7</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Microsoft.Office.Interop.Word">
+      <Guid>{00020905-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>8</VersionMajor>
+      <VersionMinor>7</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Office, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+      <Private>False</Private>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2">
+      <Version>1.0.2210.55</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 公共核心库：OCR 识别引擎（与 Excel 同源，单一维护点） -->
+    <ProjectReference Include="..\..\Core\SmartPilot.Core.vbproj">
+      <Project>{7C4E1A92-5D3B-4F81-9A62-8E1D4C7B3F55}</Project>
+      <Name>SmartPilot.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\OcrHost\OcrHost.vbproj">
+      <Project>{B7E4C1A2-6F58-4D3E-9C21-4A8E0F6D2B17}</Project>
+      <Name>OcrHost</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Text" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="Microsoft.Office.Tools.Word" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppDesigner Include="My Project\" />
+    <Compile Include="ThisAddIn.vb" />
+    <Compile Include="ThisAddIn.Designer.vb">
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Ribbon.vb" />
+    <Compile Include="WordBridge.vb" />
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="..\Shared\OfficeHost.vb">
+      <Link>Shared\OfficeHost.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostWebView.vb">
+      <Link>Shared\HostWebView.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostConfig.vb">
+      <Link>Shared\HostConfig.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostLicense.vb">
+      <Link>Shared\HostLicense.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostBridgeBase.vb">
+      <Link>Shared\HostBridgeBase.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostRibbon.vb">
+      <Link>Shared\HostRibbon.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\CustomTaskPaneHost.vb">
+      <Link>Shared\CustomTaskPaneHost.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostMcpTools.vb">
+      <Link>Shared\HostMcpTools.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostPaneManager.vb">
+      <Link>Shared\HostPaneManager.vb</Link>
+    </Compile>
+    <Compile Include="..\Shared\HostPathHelper.vb">
+      <Link>Shared\HostPathHelper.vb</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 功能区布局：三宿主共用 Hosts\Shared\Ribbon.xml（Link 保证清单名仍为 WordAIVSTOAddIn.Ribbon.xml） -->
+    <EmbeddedResource Include="..\Shared\Ribbon.xml">
+      <Link>Ribbon.xml</Link>
+    </EmbeddedResource>
+    <!-- RapidOCR 引擎脚本：必须与主工程一致，落到输出目录的 Services\ 下
+         （RapidOcrService 按 AppDomain.BaseDirectory\Services\rapidocr_inference_engine.py 查找） -->
+    <None Include="..\..\Services\rapidocr_inference_engine.py">
+      <Link>Services\rapidocr_inference_engine.py</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Services\ocr_overlap_dedupe.py">
+      <Link>Services\ocr_overlap_dedupe.py</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Services\ocr_formula_router.py">
+      <Link>Services\ocr_formula_router.py</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ThisAddIn.Designer.xml">
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+    </None>
+    <None Include="WordAIVSTOAddIn_TemporaryKey.pfx" />
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">18.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">D:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionCompare>Binary</OptionCompare>
+    <OptionStrict>Off</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+    <ManifestKeyFile>WordAIVSTOAddIn_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestCertificateThumbprint>ED1AC12D8BB72993C13AFA541F279849D1A1DF27</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationVersion>1.0.0.0</ApplicationVersion>
+    <ApplicationRevision>0</ApplicationRevision>
+    <!-- 与 Excel 宿主一致：启用 ClickOnce 更新。InstallUrl 留空时正式发布门禁失败。 -->
+    <InstallUrl></InstallUrl>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+  <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" Condition="'$(VSToolsPath)' != ''" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
+        <ProjectProperties HostName="Word" HostPackage="{29A7B9D7-A7F1-4328-8EF0-6B2D1A56B2C1}" OfficeVersion="15.0" VstxVersion="4.0" ApplicationType="Word" Language="vb" TemplatesPath="" DebugInfoExeName="C:\Program Files\Microsoft Office\Root\Office16\WINWORD.EXE" DebugInfoCommandLine="/w" AddItemTemplatesGuid="{1DC4C0D4-1A54-4C86-9E1A-0D8B1F2C6E31}" />
+        <Host Name="Word" IconIndex="0">
+          <HostItem Name="ThisAddIn" Code="ThisAddIn.vb" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="ThisAddIn.Designer.xml" GeneratedCode="ThisAddIn.Designer.vb" />
+        </Host>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- 构建后同步（UI / Config）：与 PPT 共用 Hosts\Shared\SmartPilot.Build.targets -->
+  <Import Project="..\Shared\SmartPilot.Build.targets" />
+</Project>

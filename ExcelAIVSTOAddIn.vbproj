@@ -1,0 +1,1178 @@
+<Project ToolsVersion="18.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+
+  <PropertyGroup>
+
+    <AcceptNPOIOSMFLicense>true</AcceptNPOIOSMFLicense>
+
+    <ProjectTypeGuids>{BAA0C2D2-18E2-41B9-852F-F413020CAA33};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
+
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+
+    <ProjectGuid>{8AD721C6-CD63-46BB-844E-3FC209197751}</ProjectGuid>
+
+    <OutputType>Library</OutputType>
+
+    <RootNamespace>ExcelAIVSTOAddIn</RootNamespace>
+
+    <AssemblyName>ExcelAIVSTOAddIn</AssemblyName>
+
+    <LoadBehavior>3</LoadBehavior>
+
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+
+    <DefineConstants>VSTO40</DefineConstants>
+
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
+
+    <StartupObject>
+
+    </StartupObject>
+
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+
+    <BootstrapperComponentsLocation>HomeSite</BootstrapperComponentsLocation>
+
+    <ResolveComReferenceSilent>true</ResolveComReferenceSilent>
+
+    <NuGetPackageImportStamp>
+
+    </NuGetPackageImportStamp>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <BootstrapperPackage Include="Microsoft.VSTORuntime.4.0">
+
+      <Visible>False</Visible>
+
+      <ProductName>Microsoft Visual Studio 2010 Tools for Office Runtime %28x86 and x64%29</ProductName>
+
+      <Install>true</Install>
+
+    </BootstrapperPackage>
+  </ItemGroup>
+
+  <PropertyGroup>
+
+    <OfficeApplication>Excel</OfficeApplication>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <OptionInfer>On</OptionInfer>
+
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+
+    <DefineDebug>true</DefineDebug>
+
+    <DefineTrace>true</DefineTrace>
+
+    <DebugType>full</DebugType>
+
+    <DebugSymbols>true</DebugSymbols>
+
+    <Optimize>false</Optimize>
+
+    <OutputPath>bin\Debug\</OutputPath>
+
+    <DocumentationFile>ExcelAIVSTOAddIn.xml</DocumentationFile>
+
+    <RegisterForComInterop>false</RegisterForComInterop>
+
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+
+    <DefineDebug>false</DefineDebug>
+
+    <DefineTrace>true</DefineTrace>
+
+    <DebugType>pdbonly</DebugType>
+
+    <Optimize>true</Optimize>
+
+    <OutputPath>bin\Release\</OutputPath>
+
+    <DocumentationFile>ExcelAIVSTOAddIn.xml</DocumentationFile>
+
+    <RegisterForComInterop>false</RegisterForComInterop>
+
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|Win32' ">
+
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+
+    <DefineDebug>true</DefineDebug>
+
+    <DefineTrace>true</DefineTrace>
+
+    <DebugType>full</DebugType>
+
+    <DebugSymbols>true</DebugSymbols>
+
+    <Optimize>false</Optimize>
+
+    <OutputPath>bin\Debug\</OutputPath>
+
+    <DocumentationFile>ExcelAIVSTOAddIn.xml</DocumentationFile>
+
+    <RegisterForComInterop>false</RegisterForComInterop>
+
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|Win32' ">
+
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+
+    <DefineDebug>false</DefineDebug>
+
+    <DefineTrace>true</DefineTrace>
+
+    <DebugType>pdbonly</DebugType>
+
+    <Optimize>true</Optimize>
+
+    <OutputPath>bin\Release\</OutputPath>
+
+    <DocumentationFile>ExcelAIVSTOAddIn.xml</DocumentationFile>
+
+    <RegisterForComInterop>false</RegisterForComInterop>
+
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <Reference Include="Accessibility" />
+
+    <Reference Include="System" />
+
+    <Reference Include="System.Data" />
+
+    <Reference Include="System.Drawing" />
+
+    <Reference Include="System.IO.Compression" />
+
+    <Reference Include="System.IO.Compression.FileSystem" />
+
+    <Reference Include="System.Net.Http" />
+
+    <Reference Include="System.Security" />
+
+    <Reference Include="System.Windows.Forms" />
+
+    <Reference Include="WindowsFormsIntegration" />
+
+    <Reference Include="System.Xml" />
+
+    <Reference Include="System.Core" />
+
+    <Reference Include="System.Runtime.Caching" />
+
+    <Reference Include="System.Xml.Linq" />
+
+    <Reference Include="System.Data.DataSetExtensions" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+
+      <Private>False</Private>
+
+    </Reference>
+
+    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+
+      <Private>False</Private>
+
+    </Reference>
+
+    <Reference Include="Microsoft.Office.Tools, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+
+      <Private>False</Private>
+
+    </Reference>
+
+    <Reference Include="Microsoft.Office.Tools.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+
+      <Private>False</Private>
+
+    </Reference>
+
+    <Reference Include="Microsoft.Office.Tools.Excel, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+
+      <Private>False</Private>
+
+    </Reference>
+
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <Reference Include="Microsoft.Office.Tools.Common.v4.0.Utilities, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+
+      <HintPath>libs\Microsoft.Office.Tools.Common.v4.0.Utilities.dll</HintPath>
+
+      <Private>True</Private>
+
+    </Reference>
+
+  </ItemGroup>
+
+  <Choose>
+
+    <When Condition="$([System.String]::Copy(&quot;;$(DefineConstants);&quot;).ToLower().Contains(';useofficeinterop;')) or $([System.String]::Copy(&quot;,$(DefineConstants),&quot;).ToLower().Contains(',useofficeinterop,'))">
+
+      <ItemGroup>
+
+        <Reference Include="Office, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+
+          <Private>False</Private>
+
+          <EmbedInteropTypes>true</EmbedInteropTypes>
+
+        </Reference>
+
+        <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+
+          <Private>False</Private>
+
+          <EmbedInteropTypes>true</EmbedInteropTypes>
+
+        </Reference>
+
+        <Reference Include="Microsoft.Vbe.Interop, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+
+          <Private>False</Private>
+
+          <EmbedInteropTypes>true</EmbedInteropTypes>
+
+        </Reference>
+
+      </ItemGroup>
+
+    </When>
+
+    <Otherwise>
+
+      <ItemGroup>
+
+        <COMReference Include="Microsoft.Office.Core">
+
+          <Guid>{2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}</Guid>
+
+          <VersionMajor>2</VersionMajor>
+
+          <VersionMinor>7</VersionMinor>
+
+          <Lcid>0</Lcid>
+
+          <WrapperTool>tlbimp</WrapperTool>
+
+          <Isolated>False</Isolated>
+
+          <EmbedInteropTypes>true</EmbedInteropTypes>
+
+        </COMReference>
+
+        <COMReference Include="Microsoft.Office.Interop.Excel">
+
+          <Guid>{00020813-0000-0000-C000-000000000046}</Guid>
+
+          <VersionMajor>1</VersionMajor>
+
+          <VersionMinor>8</VersionMinor>
+
+          <Lcid>0</Lcid>
+
+          <WrapperTool>tlbimp</WrapperTool>
+
+          <Isolated>False</Isolated>
+
+          <EmbedInteropTypes>true</EmbedInteropTypes>
+
+        </COMReference>
+
+        <COMReference Include="Microsoft.Vbe.Interop">
+
+          <Guid>{0002E157-0000-0000-C000-000000000046}</Guid>
+
+          <VersionMajor>5</VersionMajor>
+
+          <VersionMinor>3</VersionMinor>
+
+          <Lcid>0</Lcid>
+
+          <WrapperTool>tlbimp</WrapperTool>
+
+          <Isolated>False</Isolated>
+
+          <EmbedInteropTypes>true</EmbedInteropTypes>
+
+        </COMReference>
+
+      </ItemGroup>
+
+    </Otherwise>
+
+  </Choose>
+
+  <ItemGroup>
+
+    <Reference Include="stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+
+      <Private>False</Private>
+
+    </Reference>
+
+    <Reference Include="Office, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+
+      <Private>False</Private>
+
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+
+    </Reference>
+
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <Import Include="Microsoft.VisualBasic" />
+
+    <Import Include="System" />
+
+    <Import Include="System.Collections.Generic" />
+
+    <Import Include="System.Linq" />
+
+    <Import Include="System.Text" />
+
+    <Import Include="System.Xml.Linq" />
+
+    <Import Include="Microsoft.Office.Tools.Excel" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <AppDesigner Include="My Project\" />
+
+    <Compile Include="ExcelBridge.vb" />
+
+    <Compile Include="Bridges\SkillBridge.vb" />
+
+    <Compile Include="Bridges\ExcelDataBridge.vb" />
+
+    <Compile Include="Bridges\ConfigBridge.vb" />
+
+    <Compile Include="Bridges\LicenseBridge.vb" />
+
+    <Compile Include="Bridges\LicenseKey.vb" />
+
+    <Compile Include="Bridges\UndoBridge.vb" />
+
+    <Compile Include="Bridges\FormatBridge.vb" />
+
+    <Compile Include="Bridges\McpBridge.vb" />
+
+    <Compile Include="Bridges\RagBridge.vb" />
+
+    <Compile Include="Bridges\DocumentBridge.vb" />
+
+    <Compile Include="Bridges\IntentBridge.vb" />
+
+    <Compile Include="Bridges\ThinkingBridge.vb" />
+
+    <Compile Include="Bridges\BrowserDisplayBridge.vb" />
+
+
+    <Compile Include="Bridges\MobileControlBridge.vb" />
+
+    <Compile Include="Bridges\VbaExecutionBridge.vb" />
+
+    <Compile Include="Bridges\TaskSchedulerBridge.vb" />
+
+    <Compile Include="Services\ApiResponse.vb" />
+
+    <Compile Include="Services\SseParser.vb" />
+
+    <Compile Include="Services\StreamPushService.vb" />
+
+    <Compile Include="ExcelBridge.OcrInstallApi.vb" />
+
+    <Compile Include="TaskPaneManager.vb" />
+
+    <Compile Include="ScreenshotService.vb" />
+
+    <Compile Include="WebView2Manager.vb" />
+
+    <Compile Include="Ribbon.vb" />
+
+    <!-- 功能区/任务窗格语言同步桥（SaveUiLocale / GetUiLocale），与 HostRibbon.vb 配套 -->
+    <Compile Include="ExcelBridge.LocaleApi.vb" />
+
+    <Compile Include="Hosts\Shared\HostRibbon.vb">
+      <Link>Shared\HostRibbon.vb</Link>
+    </Compile>
+    <Compile Include="Hosts\Shared\HostConfig.vb">
+      <Link>Shared\HostConfig.vb</Link>
+    </Compile>
+    <Compile Include="Hosts\Shared\HostLicense.vb">
+      <Link>Shared\HostLicense.vb</Link>
+    </Compile>
+
+    <Compile Include="Forms\ImageOcrDialog.vb">
+
+      <SubType>Form</SubType>
+
+    </Compile>
+
+    <Compile Include="Security\VBACodeSandbox.vb" />
+
+    <Compile Include="Security\VBACodeSandbox.Detection.vb" />
+
+    <Compile Include="Security\VBACodeSandbox.Reporting.vb" />
+
+    <Compile Include="Security\VBACodeSandbox.Execution.vb" />
+
+    <Compile Include="Security\VBACodeSandbox.Engine.vb" />
+
+    <Compile Include="Security\VBACodeSandbox.Workbook.vb" />
+
+    <Compile Include="Security\VBACodeSandbox.Debug.vb" />
+
+    <Compile Include="Security\AutoExecutionSettings.vb" />
+
+    <Compile Include="Composition\AppServiceProvider.vb" />
+
+    <Compile Include="Services\Mcp\StepRecorder.vb" />
+    <Compile Include="Services\Mcp\Models.vb" />
+
+    <Compile Include="Services\Mcp\McpTransport.vb" />
+
+    <Compile Include="Services\Mcp\McpProtocol.vb" />
+
+    <Compile Include="Services\Mcp\ExcelMcpTools.vb" />
+    <Compile Include="Services\Mcp\PptMcpTools.vb" />
+    <Compile Include="Services\Mcp\PptMcpTools.Project.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.JsonLoader.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.ToolDefinitions.Core.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.ToolDefinitions.Data.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.ToolDefinitions.System.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.ToolDefinitions.Metadata.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.SheetManage.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.Vba.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.Search.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.Chart.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.Layout.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Shapes.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Dashboard.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DashboardAudit.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Core.FormatRange.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.SheetOps.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.SheetOps.CellEdit.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.SheetOps.SheetManage.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.SheetOps.SplitMerge.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DataOps.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DataOps.TableJoin.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DataOps.RowOps.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DataOps.ImportExport.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DataOps.Workbook.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.DataOps.Visual.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Advanced.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Advanced.Execution.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Advanced.Aggregate.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Advanced.Dedupe.vb" />
+    <Compile Include="Services\Mcp\ExcelMcpTools.Charts.vb" />
+
+<Compile Include="Services\Mcp\ExcelMcpCoreUtils.vb" />
+
+    <Compile Include="Services\Mcp\McpServer.vb" />
+
+    <Compile Include="Services\Mcp\McpServerHost.vb" />
+
+    <Compile Include="Services\Mcp\McpClient.vb" />
+
+    <Compile Include="Services\Mcp\McpClientPool.vb" />
+
+    <Compile Include="Services\Mcp\McpConfigManager.vb" />
+
+    <Compile Include="Services\Mcp\McpManager.vb" />
+
+    <Compile Include="Services\Mcp\McpCapabilityRegistry.vb" />
+
+    <Compile Include="Services\ComputerAgentTools.vb" />
+
+    <Compile Include="Services\Mcp\WebSearchTools.vb" />
+
+    <Compile Include="Services\Mcp\TimeTools.vb" />
+
+    <Compile Include="Services\RAG\KnowledgeModels.vb" />
+
+    <Compile Include="Services\RAG\QdrantClient.vb" />
+
+    <Compile Include="Services\RAG\QdrantInstaller.vb" />
+
+    <Compile Include="Services\RAG\EmbeddingService.vb" />
+
+    <Compile Include="Services\RAG\DocumentProcessor.vb" />
+
+    <Compile Include="Services\RAG\KnowledgeBaseManager.vb" />
+
+    <Compile Include="Services\RAG\OllamaEnvironment.vb" />
+
+    <Compile Include="Services\RAG\RagOrchestrator.vb" />
+
+    <Compile Include="Services\ExcelService.vb" />
+
+
+
+
+
+
+
+
+
+
+
+
+    <Compile Include="Services\PythonExecutionService.vb" />
+    <Compile Include="Services\BridgeServerLauncher.vb" />
+
+
+        <Compile Include="Services\MinerUService.vb" />
+
+    <Compile Include="Services\MoonshotImageService.vb" />
+
+    <Compile Include="Services\ILlmProtocol.vb" />
+
+    <Compile Include="Services\OpenAIProtocol.vb" />
+
+    <Compile Include="Services\LlmProtocolFactory.vb" />
+
+    <Compile Include="Utils\RequestCache.vb" />
+
+
+
+    <Compile Include="Services\MultimodalLLMEngine.vb" />
+
+    <Compile Include="Services\ThinkingEngine.vb" />
+
+    <Compile Include="Services\ConversationMemoryService.vb" />
+
+    <Compile Include="Services\ErrorRecovery.vb" />
+
+    <Compile Include="Services\PptGenerationService.vb" />
+    <Compile Include="Services\PptGenerationService.Utils.vb" />
+    <Compile Include="Services\PptGenerationService.Theme.vb" />
+    <Compile Include="Services\PptGenerationService.Charts.vb" />
+    <Compile Include="Services\PptGenerationService.Kpi.vb" />
+    <Compile Include="Services\PptGenerationService.Shapes.vb" />
+    <Compile Include="Services\PptGenerationService.Media.vb" />
+    <Compile Include="Services\PptDesignEngine.vb" />
+    <Compile Include="Services\PptThemeDesignValidator.vb" />
+    <Compile Include="Services\PptStyleDirections.vb" />
+    <Compile Include="Services\PptImagePaletteExtractor.vb" />
+
+    <Compile Include="Services\PromptGenerator.vb" />
+
+    <Compile Include="Services\ActionEngine.vb" />
+
+    <Compile Include="Services\Parsers\IDocumentParser.vb" />
+
+    <Compile Include="Services\Parsers\PdfDocumentParser.vb" />
+
+    <Compile Include="Services\Parsers\PdfTextExtractor.vb" />
+
+    <Compile Include="Services\Parsers\DocxDocumentParser.vb" />
+
+    <Compile Include="Services\Parsers\ExcelFileParser.vb" />
+
+    <Compile Include="Services\DocumentRouter.vb" />
+
+    <Compile Include="Utils\SemanticChunker.vb" />
+
+    <Compile Include="Utils\ShutdownMonitor.vb" />
+
+    <Compile Include="Utils\ComReleaseHelper.vb" />
+
+
+
+    <Compile Include="Utils\ConfigFileWatcher.vb" />
+
+    <Compile Include="Utils\ConfigValidator.vb" />
+
+
+
+    <Compile Include="Utils\ExcelMarkdownRenderer.vb" />
+
+    <Compile Include="Utils\RulesManager.vb" />
+
+    <Compile Include="Utils\IntentRecognitionEngine.vb" />
+
+
+    <Compile Include="Utils\JsonHelper.vb" />
+
+
+
+
+    <Compile Include="Skills\Engine\SkillManager.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Config.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Loading.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.YamlHelpers.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Persistence.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Execution.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Parsing.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Multimodal.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Ocr.vb" />
+
+    <Compile Include="Skills\Engine\SkillManager.Defaults.vb" />
+
+    <Compile Include="Skills\Engine\SkillRecognizer.vb" />
+
+    <Compile Include="Skills\Engine\WorkflowEngine.vb" />
+
+    <Compile Include="Skills\Engine\CustomSkillManager.vb" />
+
+    <Compile Include="Skills\Engine\CustomSkillExecutor.vb" />
+
+    <Compile Include="Skills\Engine\SkillTriggerEngine.vb" />
+
+    <Compile Include="Skills\Engine\SkillApprovalGate.vb" />
+
+    <Compile Include="Skills\Engine\SkillExecutionRouter.vb" />
+    <Compile Include="Skills\Engine\SkillProcessingModeExtensions.vb" />
+
+    <Compile Include="Skills\Testing\SkillTestEngine.vb" />
+
+    <Compile Include="Skills\Testing\McpAndSkillTestRunner.vb" />
+
+    <Compile Include="Context\ContextStore.vb" />
+
+    <Compile Include="ThisAddIn.vb">
+
+      <SubType>Code</SubType>
+
+    </Compile>
+
+    <Compile Include="ThisAddIn.Panels.vb">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="ThisAddIn.Selection.vb">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="ThisAddIn.Config.vb">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="ThisAddIn.Events.vb">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="ThisAddIn.Startup.vb">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="ThisAddIn.Shutdown.vb">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="Utils\ErrorHandler.vb" />
+
+    <Compile Include="Utils\RetryPolicy.vb" />
+
+    <Compile Include="Utils\RateLimiter.vb" />
+
+    <Compile Include="Utils\WebView2Factory.vb" />
+
+
+
+    <Compile Include="Utils\LocalizationService.vb" />
+
+    <None Include="ThisAddIn.Designer.xml">
+
+      <DependentUpon>ThisAddIn.vb</DependentUpon>
+
+    </None>
+
+    <Compile Include="ThisAddIn.Designer.vb">
+
+      <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
+
+    </Compile>
+
+    <Compile Include="My Project\AssemblyInfo.vb" />
+
+    <EmbeddedResource Include="My Project\Resources.resx">
+
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+
+      <SubType>Designer</SubType>
+
+    </EmbeddedResource>
+
+    <Compile Include="My Project\Resources.Designer.vb">
+
+      <AutoGen>True</AutoGen>
+
+      <DesignTime>True</DesignTime>
+
+      <DependentUpon>Resources.resx</DependentUpon>
+
+    </Compile>
+
+    <None Include="My Project\Settings.settings">
+
+      <Generator>SettingsSingleFileGenerator</Generator>
+
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+
+    </None>
+
+    <Compile Include="My Project\Settings.Designer.vb">
+
+      <AutoGen>True</AutoGen>
+
+      <DependentUpon>Settings.settings</DependentUpon>
+
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+
+    </Compile>
+
+    <Content Include="UI\index.html">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </Content>
+
+    <!-- 功能区布局：三宿主共用 Hosts\Shared\Ribbon.xml（Link 保证清单名仍为 ExcelAIVSTOAddIn.Ribbon.xml） -->
+    <EmbeddedResource Include="Hosts\Shared\Ribbon.xml">
+      <Link>Ribbon.xml</Link>
+    </EmbeddedResource>
+
+    <EmbeddedResource Include="UI\images\chat.png" />
+
+    <EmbeddedResource Include="UI\images\OCR.png" />
+
+    <EmbeddedResource Include="UI\images\setting.png" />
+
+    <None Include="Config\DataTypeConfigs.json">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\ThinkingPrompts.md">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\mcp.json">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\rag_config.json">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\excel_tools.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Config\ppt_tools.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="Config\intent_config.json">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\ppt_templates.json">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\DefaultParseScripts\**\*.md">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <!-- 机械制图等领域修正配置 + 领域包：缺失会导致干净构建后 CorrectionProfile /
+         DomainPackLoader 加载为空，专项 OCR（如机械制图识别）被静默跳过 -->
+    <None Include="Config\Correction\**\*">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Config\DomainPacks\**\*">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Services\paddle_inference_engine.py">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Services\rapidocr_inference_engine.py">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Services\ocr_overlap_dedupe.py">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="Services\ocr_formula_router.py">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+    <None Include="StandaloneAgent\**\*">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </None>
+
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <PackageReference Include="Microsoft.Web.WebView2">
+
+      <Version>1.0.2210.55</Version>
+
+    </PackageReference>
+
+    <PackageReference Include="Newtonsoft.Json">
+
+      <Version>13.0.3</Version>
+
+    </PackageReference>
+
+    <PackageReference Include="PdfSharp">
+
+      <Version>1.50.5147</Version>
+
+    </PackageReference>
+
+    <PackageReference Include="NPOI">
+
+      <Version>2.8.0</Version>
+
+    </PackageReference>
+
+    <Reference Include="YamlDotNet, Version=16.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e">
+
+      <HintPath>$(NuGetPackageRoot)yamldotnet\16.3.0\lib\net47\YamlDotNet.dll</HintPath>
+
+    </Reference>
+
+    <PackageReference Include="YamlDotNet">
+
+      <Version>16.3.0</Version>
+
+    </PackageReference>
+
+
+
+    <!-- 依赖注入：使用 Composition\AppServiceProvider.vb 中自实现的轻量级容器，
+
+         以避免 Microsoft.Extensions.DependencyInjection 8.x 与 .NET Framework 4.7.2 的兼容性问题 -->
+
+
+
+    <Reference Include="PresentationCore" />
+
+    <Reference Include="PresentationFramework" />
+
+    <Reference Include="WindowsBase" />
+
+  </ItemGroup>
+
+  <PropertyGroup>
+
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">18.0</VisualStudioVersion>
+
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">D:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <OptionExplicit>On</OptionExplicit>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <OptionCompare>Binary</OptionCompare>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <OptionStrict>On</OptionStrict>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <!-- 不再强杀 excel.exe：避免销毁用户未保存的工作簿。若 Excel 已加载本加载项导致 bin\Debug\ExcelAIVSTOAddIn.dll 被锁，构建会在复制步骤明确报错"文件正在使用"，此时请完全退出 Excel 重开（或用 msbuild /p:PreBuildEvent="exit 0" 跳过本事件）。仅清理无害的后台 OCR 宿主进程。
+         一致性检查用 powershell 绝对路径：某些环境（精简 PATH 的 CI/构建机）里 PATH 上没有 powershell，
+         写 "powershell" 会静默失败（"不是内部或外部命令"），工具定义漂移就没人拦了。 -->
+    <PreBuildEvent>"%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\check-tools-consistency.ps1" &amp; taskkill /F /IM OcrHost.exe 2&gt;nul &amp; exit 0</PreBuildEvent>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <!-- ClickOnce 清单签名：VSTO 目标（Microsoft.VisualStudio.Tools.Office.targets 的
+         VisualStudioForApplicationsBuild → VerifyClickOnceSigningSettings）强制要求
+         SignManifests=true，设成 false 会直接报
+         "Cannot build because the ClickOnce manifest signing option is not selected"
+         （2026-10-26 实测：曾经按「方案 B」关掉，结果每次构建必失败）。
+         密钥用仓库里已存在的 ExcelAIVSTOAddIn_TemporaryKey.pfx（与 Word 宿主同款做法），
+         缺失时 VS 会自动重新生成一个临时密钥。
+         ManifestCertificateThumbprint 也必须留着：Office 目标第 68 行把它映射成
+         CertificateThumbprint 传给 ManageCertificateStore，删掉会报
+         "未给任务 ManageCertificateStore 的必需参数 CertificateThumbprint 赋值"。 -->
+    <SignManifests>true</SignManifests>
+    <ManifestKeyFile>ExcelAIVSTOAddIn_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestCertificateThumbprint>ED1AC12D8BB72993C13AFA541F279849D1A1DF27</ManifestCertificateThumbprint>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <PublishUrl>bin\Release\</PublishUrl>
+
+    <!-- 对外 ClickOnce 更新地址。留空时正式发布门禁失败。填公网 HTTPS 目录。 -->
+    <InstallUrl></InstallUrl>
+
+    <UpdateEnabled>true</UpdateEnabled>
+
+    <UpdateMode>Foreground</UpdateMode>
+
+    <UpdateInterval>7</UpdateInterval>
+
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+
+    <UpdatePeriodically>false</UpdatePeriodically>
+
+    <UpdateRequired>false</UpdateRequired>
+
+    <MapFileExtensions>true</MapFileExtensions>
+
+    <ApplicationRevision>0</ApplicationRevision>
+
+    <ApplicationVersion>1.0.0.0</ApplicationVersion>
+
+    <UseApplicationTrust>false</UseApplicationTrust>
+
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+
+  <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" Condition="'$(VSToolsPath)' != ''" />
+
+  <ProjectExtensions>
+
+    <VisualStudio>
+
+      <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
+
+        <ProjectProperties HostName="Excel" HostPackage="{29A7B9D7-A7F1-4328-8EF0-6B2D1A56B2C1}" OfficeVersion="15.0" VstxVersion="4.0" ApplicationType="Excel" Language="vb" TemplatesPath="" DebugInfoExeName="C:\Program Files\Microsoft Office\Root\Office16\EXCEL.EXE" DebugInfoCommandLine="/x" AddItemTemplatesGuid="{DCFE8D25-4715-4C33-9EAB-A34A9EBC9544}" />
+
+        <Host Name="Excel" IconIndex="0">
+
+          <HostItem Name="ThisAddIn" Code="ThisAddIn.vb" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="ThisAddIn.Designer.xml" GeneratedCode="ThisAddIn.Designer.vb" />
+
+        </Host>
+
+      </FlavorProperties>
+
+    </VisualStudio>
+
+  </ProjectExtensions>
+
+  <ItemGroup>
+
+    <Content Include="UI\**\*">
+
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+
+    </Content>
+
+    <Content Update="UI\**\*.md" ExcludeFromBuild="true">
+
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+
+    </Content>
+
+    <Content Update="UI\**\*.ps1" ExcludeFromBuild="true">
+
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+
+    </Content>
+
+    <Content Update="UI\**\*.bak*" ExcludeFromBuild="true">
+
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+
+    </Content>
+
+    <Content Update="UI\**\*.backup*" ExcludeFromBuild="true">
+
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+
+    </Content>
+
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <Content Include="Skills\*.md">
+
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+    </Content>
+
+  </ItemGroup>
+
+  <Target Name="SyncUIFiles" AfterTargets="Build">
+
+    <Message Text="正在同步 UI 文件到输出目录..." Importance="high" />
+
+    <Exec Command="robocopy &quot;$(ProjectDir)UI&quot; &quot;$(OutputPath)UI&quot; /E /NFL /NDL /NJH /NJS /XF *.ps1 *.bak* *.backup* .gitignore deploy-exclude.txt" IgnoreExitCode="true" />
+
+    <Exec Command="robocopy &quot;$(ProjectDir)UI&quot; &quot;$(OutputPath)UI&quot; index.html /NFL /NDL /NJH /NJS" IgnoreExitCode="true" />
+
+  </Target>
+
+  <Target Name="SyncSkillsFiles" AfterTargets="Build">
+
+    <Message Text=" 正在同步 Skills 文件到输出目录..." Importance="high" />
+
+    <Exec Command="robocopy &quot;$(ProjectDir)Skills&quot; &quot;$(OutputPath)Skills&quot; *.md /NFL /NDL /NJH /NJS" IgnoreExitCode="true" />
+
+  </Target>
+
+  <Target Name="SyncUIDebugStamp" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
+
+    <!-- 调用 Tools/sync-ui-to-debug.js：全量同步 UI 到 $(OutputPath)UI 并刷新版本戳。
+         Debug/Release 都触发（原来仅 Debug，导致 Release 发布后 WebView2 仍缓存旧 JS）。
+         必须显式传 dest 目标目录参数（脚本的 dest 选项）$(OutputPath)UI：脚本默认目标是 bin\Debug\UI，Release 下会刷错目录。
+
+         脚本只写目标副本，不污染源文件；需要 node 在 PATH 上（项目 Tests/Tools 均依赖 node）。 -->
+
+    <Message Text="运行 Tools/sync-ui-to-debug.js 同步 UI 并刷新版本戳 -> $(OutputPath)UI ..." Importance="high" />
+
+    <Exec Command="node &quot;Tools\sync-ui-to-debug.js&quot; --dest &quot;$(OutputPath)UI&quot;" WorkingDirectory="$(ProjectDir)" />
+
+  </Target>
+
+  <Target Name="SyncBridgeFiles" AfterTargets="Build">
+
+    <!-- 将本地桥(py-excel-bridge.py)与 UI 部署到 LocalAppData\ExcelAIVSTOAddIn\。
+         目的：插件 DLL 在运行时可能从 ClickOnce/VS 影子缓存(assembly\dl3)加载，
+         Assembly.Location 无法回溯到仓库 Tools/；而 LocalAppData 与加载位置无关、
+         始终可达，且桥脚本的 UI_DIR(=Tools/../UI) 正好解析到部署后的真实 UI。 -->
+
+    <Message Text="部署本地桥(py-excel-bridge)与 UI 到 LocalAppData..." Importance="high" />
+
+    <Exec Command="robocopy &quot;$(ProjectDir)Tools&quot; &quot;$(LocalAppData)\ExcelAIVSTOAddIn\Tools&quot; py-excel-bridge.py /NFL /NDL /NJH /NJS" IgnoreExitCode="true" />
+
+    <Exec Command="robocopy &quot;$(ProjectDir)UI&quot; &quot;$(LocalAppData)\ExcelAIVSTOAddIn\UI&quot; /E /NFL /NDL /NJH /NJS /XF *.ps1 *.bak* *.backup* .gitignore deploy-exclude.txt" IgnoreExitCode="true" />
+
+  </Target>
+
+<ItemGroup>
+    <ProjectReference Include="Core\SmartPilot.Core.vbproj">
+      <Project>{7C4E1A92-5D3B-4F81-9A62-8E1D4C7B3F55}</Project>
+      <Name>SmartPilot.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="OcrHost\OcrHost.vbproj">
+      <Project>{B7E4C1A2-6F58-4D3E-9C21-4A8E0F6D2B17}</Project>
+      <Name>OcrHost</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

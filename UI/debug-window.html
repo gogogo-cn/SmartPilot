@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VBA 调试器</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* ==================== 现代化 VBA 调试器样式 ==================== */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                         "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+            background: #f6f8fa;
+            color: #24292f;
+            font-size: 13px;
+        }
+
+        /* 滚动条美化 - WebKit */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: #d0d7de;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: #afb8c1; }
+        #debug-log::-webkit-scrollbar-thumb { background: #3e4451; }
+        #debug-log::-webkit-scrollbar-thumb:hover { background: #565c66; }
+
+        #debug-window-root {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            background: #f6f8fa;
+        }
+
+        /* ==================== 顶部标题栏（现代 App 风格） ==================== */
+        #debug-window-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px;
+            background: linear-gradient(120deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.2);
+            position: relative;
+            z-index: 5;
+        }
+
+        #debug-window-header h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #debug-window-header h2::before {
+            content: "";
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(4px);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 18l6-6-6-6'/%3E%3Cpath d='M8 6l-6 6 6 6'/%3E%3C/svg%3E");
+            background-size: 16px 16px;
+            background-repeat: no-repeat;
+            background-position: center;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
+        }
+
+        .window-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .connection-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #fff;
+            transition: all .2s;
+        }
+        .connection-pill .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #86efac;
+            box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.25);
+        }
+        .connection-pill.disconnected .dot {
+            background: #fca5a5;
+            box-shadow: 0 0 0 3px rgba(252, 165, 165, 0.25);
+            animation: blinkDisconnect 1.2s infinite;
+        }
+        @keyframes blinkDisconnect {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.35; }
+        }
+
+        .window-action-btn {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.18s ease;
+            backdrop-filter: blur(4px);
+        }
+        .window-action-btn:hover {
+            background: rgba(255,255,255,0.24);
+            transform: translateY(-1px);
+        }
+        .window-action-btn:active { transform: translateY(0); }
+        .window-action-btn.close-btn:hover {
+            background: rgba(239, 68, 68, 0.85);
+            border-color: rgba(239, 68, 68, 0.9);
+        }
+
+        /* ==================== 调试面板整体 ==================== */
+        #step-debug-panel {
+            margin: 0;
+            border: none;
+            border-radius: 0;
+            max-height: none;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            background: #f6f8fa;
+        }
+
+        /* ==================== 工具栏（IDE 质感） ==================== */
+        #debug-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            gap: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            flex-shrink: 0;
+        }
+
+        #debug-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        }
+        .status-indicator.running {
+            background: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+            animation: statusPulseAmber 1.6s infinite;
+        }
+        .status-indicator.error {
+            background: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+        }
+        @keyframes statusPulseAmber {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+            50%      { box-shadow: 0 0 0 6px rgba(245,158,11,0.05); }
+        }
+
+        #debug-status-text { min-width: 40px; }
+
+        .separator {
+            color: #cbd5e1;
+            margin: 0 2px;
+            font-weight: 400;
+        }
+
+        #debug-line-info {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 9px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            color: #334155;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 11px;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            padding: 3px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+        }
+
+        .toolbar-btn {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            min-width: 62px;
+            border: 1px solid transparent;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.16s cubic-bezier(.4,0,.2,1);
+            border-radius: 7px;
+            font-family: inherit;
+            color: #334155;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .toolbar-btn:hover:not(:disabled) {
+            background: #eff6ff;
+            border-color: #c7d2fe;
+            color: #4338ca;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
+            transform: translateY(-1px);
+        }
+        .toolbar-btn:active:not(:disabled) {
+            transform: translateY(0);
+            background: #e0e7ff;
+        }
+        .toolbar-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+            background: #f8fafc;
+        }
+
+        .toolbar-icon {
+            font-size: 17px;
+            line-height: 1;
+            margin-bottom: 3px;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.06));
+        }
+        .toolbar-text {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        .toolbar-btn:hover:not(:disabled) .toolbar-text { color: #4f46e5; }
+
+        .toolbar-btn.stop:hover:not(:disabled) {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #dc2626;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.15);
+        }
+        .toolbar-btn.stop:hover:not(:disabled) .toolbar-text { color: #b91c1c; }
+
+        /* ==================== 主内容区（卡片式三栏） ==================== */
+        #debug-content {
+            display: flex;
+            flex: 1;
+            height: auto;
+            overflow: hidden;
+            padding: 12px;
+            gap: 12px;
+            background: #f6f8fa;
+        }
+
+        #watch-window, #debug-output, #call-stack-window {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+            transition: box-shadow .2s;
+        }
+        #watch-window:hover, #debug-output:hover, #call-stack-window:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        #watch-window {
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        #debug-output {
+            flex: 1;
+            min-width: 0;
+            background: #1e1e1e; /* 保持终端黑 */
+            border-color: #2d2d30;
+        }
+
+        #call-stack-window {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        /* 可拖拽分隔条 */
+        .resizer {
+            width: 4px;
+            background: transparent;
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background 0.2s;
+            z-index: 20;
+            border-radius: 3px;
+            margin: 0 -4px;
+            position: relative;
+        }
+        .resizer::after {
+            content: "";
+            position: absolute;
+            left: 50%; top: 0;
+            transform: translateX(-50%);
+            width: 2px; height: 100%;
+            background: #d1d5db;
+            border-radius: 2px;
+            transition: all .2s;
+        }
+        .resizer:hover::after,
+        .resizer.dragging::after {
+            width: 4px;
+            background: linear-gradient(180deg, #6366f1, #8b5cf6);
+            box-shadow: 0 0 8px rgba(99,102,241,0.4);
+        }
+
+        /* ==================== 子窗口 Header ==================== */
+        .window-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 13px;
+            background: #fafbfc;
+            border-bottom: 1px solid #eceff1;
+            font-weight: 600;
+            font-size: 12px;
+            color: #374151;
+            border-radius: 10px 10px 0 0;
+            flex-shrink: 0;
+        }
+        #debug-output .window-header {
+            background: #252526;
+            border-bottom: 1px solid #333;
+            color: #cccccc;
+        }
+
+        .window-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .window-title::before {
+            content: "";
+            display: inline-block;
+            width: 3px; height: 14px;
+            background: linear-gradient(180deg, #6366f1, #8b5cf6);
+            border-radius: 2px;
+        }
+        #debug-output .window-title::before {
+            background: linear-gradient(180deg, #569cd6, #4ec9b0);
+        }
+        .window-title.active { font-weight: 700; color: #4f46e5; }
+
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 3px 6px;
+            border-radius: 5px;
+            color: #6b7280;
+            transition: all .16s;
+        }
+        .refresh-btn:hover {
+            background: #eef2ff;
+            color: #4f46e5;
+            border-color: #c7d2fe;
+            transform: rotate(180deg);
+        }
+
+        /* ==================== 空状态样式 ==================== */
+        .watch-empty {
+            color: #94a3b8;
+            text-align: center;
+            padding: 30px 15px;
+            font-style: normal;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .watch-empty::before {
+            content: "";
+            display: block;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 3'/%3E%3C/svg%3E");
+            background-size: 20px 20px;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        #call-stack-list .watch-empty::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h16M4 12h10M4 18h16'/%3E%3C/svg%3E");
+        }
+
+        /* ==================== 变量监视 - 类 VS 风格 ==================== */
+        #watch-list {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 12px;
+            background: #fff;
+        }
+
+        .watch-table-header {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            color: #475569;
+            padding: 6px 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .watch-header-cell {
+            padding: 2px 10px;
+            border-right: 1px solid #e5e7eb;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .watch-header-cell:last-child { border-right: none; }
+
+        .watch-row {
+            display: flex;
+            border-bottom: 1px solid #f1f5f9;
+            min-height: 26px;
+            align-items: center;
+            cursor: default;
+            transition: background .1s;
+        }
+        .watch-row:hover { background: #f1f5f9; }
+
+        .watch-row.active {
+            background: linear-gradient(90deg, #eef2ff, #faf5ff);
+            color: #312e81;
+            position: relative;
+        }
+        .watch-row.active::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #6366f1, #8b5cf6);
+            border-radius: 0 2px 2px 0;
+        }
+        .watch-row.active .watch-type { color: #6d28d9; }
+
+        .watch-cell {
+            padding: 3px 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .watch-expand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 10px;
+            color: #6b7280;
+            user-select: none;
+            border-radius: 3px;
+            transition: all .15s;
+            background: transparent;
+            font-family: ui-monospace, monospace;
+            font-weight: 700;
+        }
+        .watch-expand:hover {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+        /* 对象属性占位：不可展开的弱化图标 */
+        .watch-expand-placeholder {
+            color: #c0c7d1;
+            font-weight: 400;
+            font-size: 11px;
+            cursor: default;
+            pointer-events: none;
+        }
+        .watch-expand-placeholder:hover {
+            background: transparent;
+            color: #c0c7d1;
+        }
+
+        .watch-name {
+            font-family: 'JetBrains Mono', ui-monospace, Consolas, 'Courier New', monospace;
+            font-weight: 600;
+            color: #4338ca;
+        }
+        .watch-row.active .watch-name { color: #3730a3; }
+
+        .watch-value {
+            color: #0f172a;
+            font-family: ui-monospace, Consolas, monospace;
+        }
+
+        .watch-type {
+            color: #6b7280;
+            font-style: italic;
+            font-size: 11px;
+            font-family: ui-monospace, Consolas, monospace;
+        }
+
+        .watch-child-row {
+            display: flex;
+            border-bottom: 1px solid #f1f5f9;
+            min-height: 24px;
+            align-items: center;
+            background: #fcfcfd;
+        }
+        .watch-child-row:hover { background: #f1f5f9; }
+
+        .watch-indent {
+            display: inline-block;
+            width: 18px;
+        }
+
+        /* ==================== 执行日志（终端暗色调） ==================== */
+        #debug-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+            font-family: 'JetBrains Mono', ui-monospace, Consolas, 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            background: #1e1e1e;
+            max-height: none;
+        }
+
+        .log-entry {
+            margin-bottom: 2px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background .1s;
+            border-bottom: none;
+        }
+        .log-entry:hover { background: rgba(255,255,255,0.04); }
+
+        .log-entry.success   { color: #4ec9b0; }
+        .log-entry.error     { color: #f48771; }
+        .log-entry.info      { color: #9cdcfe; }
+        .log-entry.warning   { color: #dcdcaa; }
+        .log-entry.skipped   { color: #858585; font-style: italic; }
+
+        .log-time {
+            color: #6a9955;
+            margin-right: 10px;
+            font-size: 11px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        /* ==================== 调用堆栈 ==================== */
+        #call-stack-list {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 12px;
+            padding: 4px 0;
+        }
+
+        .stack-frame {
+            padding: 7px 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all .12s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .stack-frame:hover { background: #f1f5f9; }
+        .stack-frame.stack-frame-active {
+            background: linear-gradient(90deg, #eff6ff, #ffffff);
+            border-left-color: #3b82f6;
+        }
+        .stack-frame.stack-frame-active .stack-name { color: #1d4ed8; }
+
+        .stack-name {
+            font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+            font-weight: 600;
+            color: #334155;
+            font-size: 12px;
+        }
+        .stack-line {
+            color: #94a3b8;
+            font-size: 10.5px;
+            font-family: ui-monospace, Consolas, monospace;
+            padding-left: 2px;
+        }
+
+        /* ==================== 旧连接浮层（隐藏，改用标题胶囊） ==================== */
+        #connection-status { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="debug-window-root">
+        <!-- 窗口标题栏 -->
+        <div id="debug-window-header">
+            <h2>VBA 代码调试器</h2>
+            <div class="window-actions">
+                <span class="connection-pill" id="header-conn-pill"><span class="dot"></span><span id="header-conn-text">未连接</span></span>
+                <button class="window-action-btn" onclick="clearDebugLog()" title="清空执行日志">🧹 清空日志</button>
+                <button class="window-action-btn close-btn" onclick="window.close()" title="关闭调试窗口">✕ 关闭</button>
+            </div>
+        </div>
+
+        <!-- 调试面板 -->
+        <div id="step-debug-panel">
+            <div id="debug-toolbar">
+                <div id="debug-status-bar">
+                    <span class="status-indicator" id="debug-status-indicator"></span>
+                    <span id="debug-status-text">就绪</span>
+                    <span class="separator">|</span>
+                    <span id="debug-line-info">行 0/0</span>
+                </div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" id="step-into-btn" title="单步执行 (F11)">
+                        <span class="toolbar-icon">▶️</span>
+                        <span class="toolbar-text">单步 (F11)</span>
+                    </button>
+                    <button class="toolbar-btn" id="step-over-toolbar-btn" title="单步跳过 (F10)">
+                        <span class="toolbar-icon">⏭️</span>
+                        <span class="toolbar-text">跳过 (F10)</span>
+                    </button>
+                    <button class="toolbar-btn" id="continue-btn" title="继续执行 (F5)">
+                        <span class="toolbar-icon">▶️</span>
+                        <span class="toolbar-text">继续 (F5)</span>
+                    </button>
+                    <button class="toolbar-btn stop" id="stop-toolbar-btn" title="停止调试 (Shift+F5)">
+                        <span class="toolbar-icon">⏹️</span>
+                        <span class="toolbar-text">停止</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="debug-content">
+                <div id="watch-window">
+                    <div class="window-header">
+                        <span class="window-title">局部变量</span>
+                        <button class="refresh-btn" id="refresh-watch-btn" title="刷新">🔄</button>
+                    </div>
+                    <div id="watch-list">
+                        <div class="watch-empty">等待执行...</div>
+                    </div>
+                </div>
+
+                <div class="resizer" data-resizer="left"></div>
+
+                <div id="debug-output">
+                    <div class="window-header">
+                        <span class="window-title active">执行日志</span>
+                    </div>
+                    <div id="debug-log"></div>
+                </div>
+
+                <div class="resizer" data-resizer="right"></div>
+
+                <div id="call-stack-window">
+                    <div class="window-header">
+                        <span class="window-title">📚 调用堆栈</span>
+                    </div>
+                    <div id="call-stack-list">
+                        <div class="watch-empty">无调用信息</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="connection-status">连接中</div>
+
+    <script>
+        // BroadcastChannel 用于主窗口和调试窗口通信
+        const bc = new BroadcastChannel('vba-debugger');
+
+        // 连接状态
+        let isConnected = false;
+        let heartbeatInterval = null;
+
+        // DOM 元素引用
+        const els = {
+            statusText: document.getElementById('debug-status-text'),
+            statusIndicator: document.getElementById('debug-status-indicator'),
+            lineInfo: document.getElementById('debug-line-info'),
+            watchList: document.getElementById('watch-list'),
+            debugLog: document.getElementById('debug-log'),
+            callStackList: document.getElementById('call-stack-list'),
+            connectionStatus: document.getElementById('connection-status'),
+            stepIntoBtn: document.getElementById('step-into-btn'),
+            stepOverBtn: document.getElementById('step-over-toolbar-btn'),
+            continueBtn: document.getElementById('continue-btn'),
+            stopBtn: document.getElementById('stop-toolbar-btn'),
+            refreshWatchBtn: document.getElementById('refresh-watch-btn'),
+            headerConnPill: document.getElementById('header-conn-pill'),
+            headerConnText: document.getElementById('header-conn-text')
+        };
+
+        // 按钮事件 - 发送命令到主窗口
+        // 单步按钮：若未开始调试则先启动
+        els.stepIntoBtn.addEventListener('click', () => sendCommand('startOrStepInto'));
+        els.stepOverBtn.addEventListener('click', () => sendCommand('stepOver'));
+        els.continueBtn.addEventListener('click', () => sendCommand('continue'));
+        els.stopBtn.addEventListener('click', () => sendCommand('stop'));
+        els.refreshWatchBtn.addEventListener('click', () => sendCommand('refreshWatch'));
+
+        function sendCommand(command) {
+            bc.postMessage({ type: 'command', command });
+        }
+
+        // 接收主窗口消息
+        bc.onmessage = function(event) {
+            const msg = event.data;
+            if (!msg || !msg.type) return;
+
+            switch (msg.type) {
+                case 'init':
+                    // 主窗口确认连接
+                    updateConnectionStatus(true);
+                    break;
+
+                case 'status':
+                    updateStatus(msg.status, msg.lineInfo);
+                    break;
+
+                case 'watch':
+                    updateWatchList(msg.variables);
+                    break;
+
+                case 'log':
+                    appendLog(msg.text, msg.level);
+                    break;
+
+                case 'callStack':
+                    updateCallStack(msg.stack);
+                    break;
+
+                case 'heartbeat':
+                    // 收到心跳，确认连接
+                    updateConnectionStatus(true);
+                    break;
+
+                case 'clear':
+                    clearAll();
+                    break;
+            }
+        };
+
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            if (els.headerConnPill && els.headerConnText) {
+                if (connected) {
+                    els.headerConnPill.classList.remove('disconnected');
+                    els.headerConnText.textContent = '已连接主窗口';
+                } else {
+                    els.headerConnPill.classList.add('disconnected');
+                    els.headerConnText.textContent = '未连接';
+                }
+            }
+        }
+
+        function updateStatus(status, lineInfo) {
+            els.statusText.textContent = status || '就绪';
+            if (lineInfo) els.lineInfo.textContent = lineInfo;
+
+            // 更新状态指示器：使用 CSS class（带动画与光晕）
+            const ind = els.statusIndicator;
+            ind.classList.remove('running', 'error');
+            // 去掉内联色，交给 CSS 控制
+            ind.style.backgroundColor = '';
+            ind.style.boxShadow = '';
+
+            if (status === '运行中' || status === '执行中') {
+                ind.classList.add('running');
+            } else if (status === '已停止' || status === '错误') {
+                ind.classList.add('error');
+            }
+            // 其余情况默认绿色就绪
+        }
+
+        // 展开状态
+        const expandedVars = new Set();
+        let lastWatchData = []; // 保存上一次变量数据，用于检测变化
+
+        const OBJECT_TYPES = ['range', 'worksheet', 'workbook', 'object', 'variant'];
+
+        function isObjectType(type, value) {
+            if (!type) return false;
+            const t = type.toLowerCase();
+            if (OBJECT_TYPES.includes(t)) return true;
+            if (typeof value === 'string' && /\//.test(value)) return true; // e.g. "Worksheet/Sheet3"
+            return false;
+        }
+
+        function enrichVariable(v) {
+            const enriched = { ...v };
+            if (isObjectType(v.type, v.value) && !enriched.children) {
+                // 后端暂未返回对象子属性：标记为占位，前端渲染为不可展开的弱化图标，避免误导
+                enriched.placeholder = true;
+            }
+            return enriched;
+        }
+
+        function updateWatchList(variables) {
+            if (!variables || variables.length === 0) {
+                els.watchList.innerHTML = '<div class="watch-empty">等待执行...</div>';
+                lastWatchData = [];
+                return;
+            }
+
+            const vars = variables.map(enrichVariable);
+
+            // 检测哪些变量值发生了变化（相比上一次）
+            const changedNames = new Set();
+            if (lastWatchData.length > 0) {
+                vars.forEach(v => {
+                    const prev = lastWatchData.find(p => p.name === v.name);
+                    if (!prev || String(prev.value) !== String(v.value)) {
+                        changedNames.add(v.name);
+                    }
+                });
+            }
+            lastWatchData = vars.map(v => ({ name: v.name, value: v.value, type: v.type }));
+
+            let html = `
+                <div class="watch-table-header">
+                    <div class="watch-header-cell" style="flex:2">表达式</div>
+                    <div class="watch-header-cell" style="flex:2">值</div>
+                    <div class="watch-header-cell" style="flex:1">类型</div>
+                </div>
+            `;
+
+            vars.forEach((v, idx) => {
+                const hasChildren = v.children && v.children.length > 0;
+                const isExpanded = expandedVars.has(v.name);
+                const isPlaceholder = v.placeholder === true && !hasChildren;
+                const expandIcon = hasChildren ? (isExpanded ? '−' : '+') : '';
+                // 优先高亮值发生变化的变量；首次渲染时高亮第一行
+                const rowActive = (changedNames.size > 0 && changedNames.has(v.name)) || (changedNames.size === 0 && idx === 0) ? 'active' : '';
+
+                html += `
+                    <div class="watch-row ${rowActive}" data-var="${escapeHtml(v.name)}">
+                        <div class="watch-cell" style="flex:2">
+                            ${hasChildren ? `<span class="watch-expand" onclick="toggleExpand('${escapeHtml(v.name)}', event)" title="展开对象属性">${expandIcon}</span>` : (isPlaceholder ? '<span class="watch-expand watch-expand-placeholder" title="对象属性暂不支持展开">…</span>' : '<span class="watch-expand"></span>')}
+                            <span class="watch-name">${escapeHtml(v.name)}</span>
+                        </div>
+                        <div class="watch-cell watch-value" style="flex:2">${escapeHtml(String(v.value))}</div>
+                        <div class="watch-cell watch-type" style="flex:1">${escapeHtml(v.type || 'Variant')}</div>
+                    </div>
+                `;
+
+                if (hasChildren && isExpanded) {
+                    v.children.forEach(child => {
+                        html += `
+                            <div class="watch-child-row">
+                                <div class="watch-cell" style="flex:2">
+                                    <span class="watch-indent"></span>
+                                    <span class="watch-name">${escapeHtml(child.name)}</span>
+                                </div>
+                                <div class="watch-cell watch-value" style="flex:2">${escapeHtml(String(child.value))}</div>
+                                <div class="watch-cell watch-type" style="flex:1">${escapeHtml(child.type || '')}</div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+
+            els.watchList.innerHTML = html;
+        }
+
+        function toggleExpand(varName, event) {
+            event.stopPropagation();
+            if (expandedVars.has(varName)) {
+                expandedVars.delete(varName);
+            } else {
+                expandedVars.add(varName);
+            }
+            // 重新触发一次 watch 渲染，保持当前数据
+            bc.postMessage({ type: 'command', command: 'refreshWatch' });
+        }
+
+        function appendLog(text, level) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level || 'info'}`;
+            entry.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString('zh-CN')}</span> ${escapeHtml(text)}`;
+            els.debugLog.appendChild(entry);
+            els.debugLog.scrollTop = els.debugLog.scrollHeight;
+        }
+
+        function updateCallStack(stack) {
+            if (!stack || stack.length === 0) {
+                els.callStackList.innerHTML = '<div class="watch-empty">无调用信息</div>';
+                return;
+            }
+
+            let html = '';
+            stack.forEach((frame, index) => {
+                const activeClass = index === 0 ? 'stack-frame-active' : '';
+                html += `
+                    <div class="stack-frame ${activeClass}">
+                        <span class="stack-name">${escapeHtml(frame.name || '未知')}</span>
+                        <span class="stack-line">行 ${frame.line || '?'}</span>
+                    </div>
+                `;
+            });
+            els.callStackList.innerHTML = html;
+        }
+
+        function clearAll() {
+            els.watchList.innerHTML = '<div class="watch-empty">等待执行...</div>';
+            els.debugLog.innerHTML = '';
+            els.callStackList.innerHTML = '<div class="watch-empty">无调用信息</div>';
+            updateStatus('就绪', '行 0/0');
+        }
+
+        function clearDebugLog() {
+            els.debugLog.innerHTML = '';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 启动时向主窗口发送就绪信号
+        bc.postMessage({ type: 'ready' });
+
+        // 定期发送心跳
+        heartbeatInterval = setInterval(() => {
+            bc.postMessage({ type: 'ping' });
+        }, 3000);
+
+        // 窗口关闭时清理
+        window.addEventListener('beforeunload', () => {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            bc.postMessage({ type: 'closed' });
+            bc.close();
+        });
+
+        // 窗格拖拽调整大小
+        (function initResizers() {
+            const leftPanel = document.getElementById('watch-window');
+            const centerPanel = document.getElementById('debug-output');
+            const rightPanel = document.getElementById('call-stack-window');
+            const resizers = document.querySelectorAll('.resizer');
+            let currentResizer = null;
+            let startX = 0;
+            let startLeftWidth = 0;
+            let startCenterWidth = 0;
+            let startRightWidth = 0;
+
+            resizers.forEach(resizer => {
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    currentResizer = resizer;
+                    startX = e.clientX;
+                    startLeftWidth = leftPanel.getBoundingClientRect().width;
+                    startCenterWidth = centerPanel.getBoundingClientRect().width;
+                    startRightWidth = rightPanel.getBoundingClientRect().width;
+                    resizer.classList.add('dragging');
+                    document.body.style.userSelect = 'none';
+                });
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!currentResizer) return;
+                const dx = e.clientX - startX;
+                const minWidth = 120;
+
+                if (currentResizer.dataset.resizer === 'left') {
+                    const newLeft = Math.max(minWidth, startLeftWidth + dx);
+                    const newCenter = Math.max(minWidth, startCenterWidth - dx);
+                    leftPanel.style.width = newLeft + 'px';
+                    centerPanel.style.width = newCenter + 'px';
+                    centerPanel.style.flex = 'none';
+                } else if (currentResizer.dataset.resizer === 'right') {
+                    const newCenter = Math.max(minWidth, startCenterWidth + dx);
+                    const newRight = Math.max(minWidth, startRightWidth - dx);
+                    centerPanel.style.width = newCenter + 'px';
+                    centerPanel.style.flex = 'none';
+                    rightPanel.style.width = newRight + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (currentResizer) {
+                    currentResizer.classList.remove('dragging');
+                    currentResizer = null;
+                    document.body.style.userSelect = '';
+                }
+            });
+        })();
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F5' && !e.shiftKey) {
+                e.preventDefault();
+                sendCommand('continue');
+            } else if (e.key === 'F10') {
+                e.preventDefault();
+                sendCommand('stepOver');
+            } else if (e.key === 'F11') {
+                e.preventDefault();
+                sendCommand('stepInto');
+            } else if (e.shiftKey && e.key === 'F5') {
+                e.preventDefault();
+                sendCommand('stop');
+            }
+        });
+    </script>
+</body>
+</html>

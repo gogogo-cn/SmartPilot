@@ -1,0 +1,455 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-10-04",
+  "source": "word-local",
+  "tools": [
+    {
+      "name": "word_get_document_info",
+      "layer": 1,
+      "description": "获取当前 Word 文档的基本信息：文件名、完整路径、页数、字数、段落数。\n\n适用于：需要了解用户正在编辑哪份文档、文档规模时，作为后续操作的前置信息。",
+      "parameters": [],
+      "displayName": "获取文档信息",
+      "intentKeywords": ["文档信息", "多少字", "多少页", "文档名", "当前文档", "段落数"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "word_get_selection_text",
+      "layer": 1,
+      "description": "获取当前选中的文本。未选中内容时返回光标处的空文本或所在段落文本。\n\n适用于：用户说'把这段…'、'改写选中内容'、'总结一下这段'时先读取选区。",
+      "parameters": [],
+      "displayName": "读取选中文本",
+      "intentKeywords": ["选中", "选区", "这段", "当前文本", "读取内容"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "word_get_document_text",
+      "layer": 1,
+      "description": "读取整篇文档的正文文本。maxChars 限制返回长度（默认 20000，防止超长）。\n\n适用于：需要通读整篇文档做总结、润色、校对、提取要点时。",
+      "parameters": [
+        {
+          "name": "maxChars",
+          "type": "integer",
+          "required": false,
+          "description": "最大返回字符数，默认 20000"
+        }
+      ],
+      "displayName": "读取文档全文",
+      "intentKeywords": ["全文", "整篇", "文档内容", "通读", "总结文档"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_text",
+      "layer": 1,
+      "description": "在光标/选区之后插入文本（不覆盖原有内容）。\n\n适用于：续写、补充段落、插入 AI 生成的正文。",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "要插入的文本"
+        }
+      ],
+      "displayName": "插入文本",
+      "intentKeywords": ["插入", "写入", "添加文字", "补充", "续写"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_replace_selection",
+      "layer": 1,
+      "description": "用给定文本替换当前选中的内容（未选中时在光标处插入）。\n\n适用于：改写、润色、翻译后回填选中段落。",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "替换后的文本"
+        }
+      ],
+      "displayName": "替换选中内容",
+      "intentKeywords": ["替换", "改写", "覆盖", "回填", "润色"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_append_text",
+      "layer": 1,
+      "description": "把文本追加到文档末尾。\n\n适用于：在文末补充结论、附录、生成内容追加。",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "要追加到文末的文本"
+        }
+      ],
+      "displayName": "追加到文末",
+      "intentKeywords": ["追加", "文末", "末尾", "结尾补充"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_table",
+      "layer": 1,
+      "description": "在光标处插入表格。rows 为二维数组 JSON 字符串，如 [[\"月份\",\"销售额\"],[\"1月\",100]]。\n\n适用于：把 AI 整理出的结构化数据落成 Word 表格。",
+      "parameters": [
+        {
+          "name": "rows",
+          "type": "string",
+          "required": true,
+          "description": "二维数组 JSON 字符串，第一行为表头"
+        }
+      ],
+      "displayName": "插入表格",
+      "intentKeywords": ["表格", "插入表", "做成表", "整理成表"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_save",
+      "layer": 1,
+      "description": "保存当前 Word 文档。filePath 省略时保存到原路径（尚未保存过则必须提供路径）。\n\n适用于：AI 完成正文/表格编辑后落盘，避免修改丢失。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "目标路径，省略则覆盖原文件"
+        }
+      ],
+      "displayName": "保存文档",
+      "intentKeywords": ["保存", "存盘", "save", "另存为"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_find_replace",
+      "layer": 1,
+      "description": "在全篇文档中查找并替换文本（区分大小写可选）。\n\n适用于：批量修改术语、错别字、品牌名等。",
+      "parameters": [
+        { "name": "findText", "type": "string", "required": true, "description": "要查找的文本" },
+        { "name": "replaceText", "type": "string", "required": true, "description": "替换为的文本" },
+        { "name": "matchCase", "type": "boolean", "required": false, "description": "是否区分大小写，默认 false" }
+      ],
+      "displayName": "查找替换文本",
+      "intentKeywords": ["查找", "替换", "批量改", "find", "replace"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_format_selection",
+      "layer": 1,
+      "description": "对当前选中的内容设置格式：粗体/斜体/字号/字体名/颜色/样式（如 标题 1）。\n\n适用于：加粗、应用标题样式、改字体颜色。",
+      "parameters": [
+        { "name": "bold", "type": "boolean", "required": false, "description": "是否加粗" },
+        { "name": "italic", "type": "boolean", "required": false, "description": "是否斜体" },
+        { "name": "fontSize", "type": "number", "required": false, "description": "字号" },
+        { "name": "fontName", "type": "string", "required": false, "description": "字体名" },
+        { "name": "fontColor", "type": "string", "required": false, "description": "字体颜色 #RRGGBB" },
+        { "name": "style", "type": "string", "required": false, "description": "段落样式名，如 标题 1" }
+      ],
+      "displayName": "设置选中格式",
+      "intentKeywords": ["加粗", "标题", "样式", "字号", "格式"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_picture",
+      "layer": 1,
+      "description": "在光标处插入图片（内联）。width/height 省略时按原图尺寸。\n\n适用于：插入截图、配图。",
+      "parameters": [
+        { "name": "filePath", "type": "string", "required": true, "description": "图片文件路径" },
+        { "name": "width", "type": "number", "required": false, "description": "宽度（磅）" },
+        { "name": "height", "type": "number", "required": false, "description": "高度（磅）" }
+      ],
+      "displayName": "插入图片",
+      "intentKeywords": ["图片", "配图", "截图", "picture"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_delete_selection",
+      "layer": 1,
+      "description": "删除当前选中的内容。\n\n适用于：删除选中的段落/文字/对象。",
+      "parameters": [],
+      "displayName": "删除选中内容",
+      "intentKeywords": ["删除", "删掉", "移除"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true
+    },
+    {
+      "name": "word_export_pdf",
+      "layer": 1,
+      "description": "将文档导出为 PDF 文件。\n\n适用于：生成可分发的最终稿。",
+      "parameters": [
+        { "name": "filePath", "type": "string", "required": true, "description": "导出 PDF 路径" }
+      ],
+      "displayName": "导出 PDF",
+      "intentKeywords": ["导出", "PDF", "存 PDF"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_format_table_cell",
+      "layer": 1,
+      "description": "设置文档表格中某个单元格的格式：字体/对齐/底色/边框色。tableIndex 缺省为第一个表格。\n\n适用于：高亮表头、居中数字、调整单元格样式。",
+      "parameters": [
+        { "name": "tableIndex", "type": "integer", "required": false, "description": "表格序号，缺省第一个" },
+        { "name": "row", "type": "integer", "required": true, "description": "行号，从 1 开始" },
+        { "name": "col", "type": "integer", "required": true, "description": "列号，从 1 开始" },
+        { "name": "bold", "type": "boolean", "required": false, "description": "是否加粗" },
+        { "name": "italic", "type": "boolean", "required": false, "description": "是否斜体" },
+        { "name": "fontSize", "type": "number", "required": false, "description": "字号" },
+        { "name": "fontName", "type": "string", "required": false, "description": "字体名" },
+        { "name": "fontColor", "type": "string", "required": false, "description": "字体颜色 #RRGGBB" },
+        { "name": "align", "type": "string", "required": false, "description": "水平对齐 left/center/right" },
+        { "name": "fillColor", "type": "string", "required": false, "description": "单元格底色 #RRGGBB" },
+        { "name": "borderColor", "type": "string", "required": false, "description": "边框颜色 #RRGGBB" },
+        { "name": "highlightColor", "type": "string", "required": false, "description": "文本突出颜色(高亮笔) #RRGGBB 或颜色名（黄/红/蓝/绿/青/粉/紫/黑/白）；与字体颜色 fontColor 不同，是文字背景荧光色。Word 取最近高亮调色板、PPT 取最接近 RGB" }
+      ],
+      "displayName": "设置表格单元格格式",
+      "intentKeywords": ["单元格", "表格格式", "底色", "表头", "cell"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_format_selected_table_cell",
+      "layer": 1,
+      "description": "设置【光标当前所在表格】的格式，整表或单个单元格皆可。\n\n⭐ 推荐：省略 row/col 即作用于整张表格。用户只说“设置表格对齐/颜色/字体/美化一下”，却没指明具体单元格时，直接调用本工具并省略 row/col，填入合理默认值（例如 align=center、headerBold=true、headerFillColor=#D9D9D9）即可，严禁反问用户行号/列号/颜色值。\n\n仅当用户明确只想改某一格（如“把第1行第2列居中”）时才传 row/col（从 1 开始）。\n\n整表模式语义：align/fontSize/fontName/fontColor/borderColor 作用于所有单元格；bold/fillColor（或 headerBold/headerFillColor）作用于表头行（第 1 行）。\n\n⚠️ 调用前需光标已在目标表格内。",
+      "parameters": [
+        { "name": "row", "type": "integer", "required": false, "description": "行号（从 1 开始）；省略则整表生效" },
+        { "name": "col", "type": "integer", "required": false, "description": "列号（从 1 开始）；省略则整表生效" },
+        { "name": "align", "type": "string", "required": false, "description": "水平对齐 left/center/right" },
+        { "name": "headerBold", "type": "boolean", "required": false, "description": "表头行(第1行)加粗" },
+        { "name": "headerFillColor", "type": "string", "required": false, "description": "表头行底色 #RRGGBB" },
+        { "name": "fontSize", "type": "number", "required": false, "description": "字号" },
+        { "name": "fontName", "type": "string", "required": false, "description": "字体名" },
+        { "name": "fontColor", "type": "string", "required": false, "description": "字体颜色 #RRGGBB" },
+        { "name": "bold", "type": "boolean", "required": false, "description": "整表模式下等同 headerBold；单元格模式下作用于该格" },
+        { "name": "italic", "type": "boolean", "required": false, "description": "是否斜体" },
+        { "name": "fillColor", "type": "string", "required": false, "description": "整表模式下等同 headerFillColor；单元格模式下作用于该格" },
+        { "name": "borderColor", "type": "string", "required": false, "description": "边框颜色 #RRGGBB" },
+        { "name": "borderStyle", "type": "string", "required": false, "description": "边框版式：all 全网格（默认）/ none 无边框 / horizontal 仅横线 / outer 仅外框 / threeLine 三线表（学术：顶线+表头下线+底线）。需与 borderColor 一起给" },
+        { "name": "headerFontColor", "type": "string", "required": false, "description": "表头字体色 #RRGGBB（深底表头配 #FFFFFF 白字）" },
+        { "name": "headerItalic", "type": "boolean", "required": false, "description": "表头斜体（斜体表头版式）" },
+        { "name": "zebraColor", "type": "string", "required": false, "description": "隔行底纹色 #RRGGBB；给了它即默认开启隔行底纹" },
+        { "name": "firstColBold", "type": "boolean", "required": false, "description": "首列加粗（左侧标题列）+ 极浅底" },
+        { "name": "lastRowBold", "type": "boolean", "required": false, "description": "末行（合计行）加粗 + 上边线" },
+        { "name": "bodyAlign", "type": "string", "required": false, "description": "正文对齐 left/center/right，覆盖整表 align（常用于“表头居中 + 正文左对齐/数字右对齐”）" },
+        { "name": "rowHeight", "type": "number", "required": false, "description": "行高磅值：紧凑 16 / 标准 22 / 宽松 30" },
+        { "name": "valign", "type": "string", "required": false, "description": "垂直对齐 middle 居中（默认）/ top 顶端" },
+        { "name": "highlightColor", "type": "string", "required": false, "description": "文本突出颜色(高亮笔) #RRGGBB 或颜色名（黄/红/蓝/绿/青/粉/紫/黑/白）；与字体颜色 fontColor 不同，是文字背景荧光色。Word 取最近高亮调色板、PPT 取最接近 RGB" },
+        { "name": "zebra", "type": "boolean", "required": false, "description": "是否启用隔行底纹：正文偶数行（第2、4、6…行）着浅色，让表格更精致；与 clearFill 互斥。浅色由表头底色派生（同色系更浅），未给表头底色时取浅灰。美化/主题指令默认开启。" }
+      ],
+      "displayName": "设置当前表格格式（可整表）",
+      "intentKeywords": ["当前表格", "光标表格", "单元格", "表格格式", "底色", "对齐", "居中", "cell"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_page_break",
+      "layer": 1,
+      "description": "在光标处插入分页符。\n\n适用于：另起一页、章节分隔。",
+      "parameters": [],
+      "displayName": "插入分页符",
+      "intentKeywords": ["分页", "新页", "page break"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_hyperlink",
+      "layer": 1,
+      "description": "在光标处插入超链接。text 为显示文字，address 为链接地址。\n\n适用于：跳转到网页或文档位置。",
+      "parameters": [
+        { "name": "address", "type": "string", "required": true, "description": "链接地址 URL" },
+        { "name": "text", "type": "string", "required": true, "description": "显示文字" },
+        { "name": "displayText", "type": "string", "required": false, "description": "屏幕提示（可选）" }
+      ],
+      "displayName": "插入超链接",
+      "intentKeywords": ["超链接", "链接", "hyperlink", "url"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_toc",
+      "layer": 1,
+      "description": "在光标处插入目录（基于标题 1-3 样式）。\n\n适用于：长文档自动生成目录。",
+      "parameters": [],
+      "displayName": "插入目录",
+      "intentKeywords": ["目录", "toc", "大纲"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_section_break",
+      "layer": 1,
+      "description": "在光标处插入分节符。breakType 为 next_page(默认) 或 continuous。\n\n适用于：改变页面方向/页眉页脚范围。",
+      "parameters": [
+        { "name": "breakType", "type": "string", "required": false, "description": "next_page/continuous，缺省 next_page" }
+      ],
+      "displayName": "插入分节符",
+      "intentKeywords": ["分节", "section", "分节符"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_comment",
+      "layer": 1,
+      "description": "在光标处插入批注。\n\n适用于：审阅、标注意见。",
+      "parameters": [
+        { "name": "text", "type": "string", "required": true, "description": "批注内容" }
+      ],
+      "displayName": "插入批注",
+      "intentKeywords": ["批注", "comment", "审阅"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_bookmark",
+      "layer": 1,
+      "description": "在光标处插入书签。\n\n适用于：定位、交叉引用、超链接目标。",
+      "parameters": [
+        { "name": "name", "type": "string", "required": true, "description": "书签名" }
+      ],
+      "displayName": "插入书签",
+      "intentKeywords": ["书签", "bookmark", "标记"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_footnote",
+      "layer": 1,
+      "description": "在光标处插入脚注。\n\n适用于：页面底部补充说明。",
+      "parameters": [
+        { "name": "text", "type": "string", "required": true, "description": "脚注内容" }
+      ],
+      "displayName": "插入脚注",
+      "intentKeywords": ["脚注", "footnote", "注脚"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_endnote",
+      "layer": 1,
+      "description": "在光标处插入尾注。\n\n适用于：文档末尾补充说明/参考文献。",
+      "parameters": [
+        { "name": "text", "type": "string", "required": true, "description": "尾注内容" }
+      ],
+      "displayName": "插入尾注",
+      "intentKeywords": ["尾注", "endnote"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_apply_numbering",
+      "layer": 1,
+      "description": "将光标所在段落应用自动编号列表。\n\n适用于：有序清单。",
+      "parameters": [],
+      "displayName": "应用编号列表",
+      "intentKeywords": ["编号", "有序列表", "numbering"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_apply_bullets",
+      "layer": 1,
+      "description": "将光标所在段落应用项目符号列表。\n\n适用于：无序清单。",
+      "parameters": [],
+      "displayName": "应用项目符号",
+      "intentKeywords": ["项目符号", "无序列表", "bullets"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_set_page_orientation",
+      "layer": 1,
+      "description": "设置当前文档页面方向。orientation 为 portrait（默认）或 landscape。\n\n适用于：宽表/图表页改成横向、正文恢复纵向。",
+      "parameters": [
+        { "name": "orientation", "type": "string", "required": false, "description": "portrait/landscape，缺省 portrait" }
+      ],
+      "displayName": "设置页面方向",
+      "intentKeywords": ["横向", "纵向", "页面方向", "orientation", "landscape"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_header_text",
+      "layer": 1,
+      "description": "为文档第一节的主页眉写入文本（替换原有页眉内容）。\n\n适用于：添加公司名、文档标题到页眉。",
+      "parameters": [
+        { "name": "text", "type": "string", "required": true, "description": "页眉文本" }
+      ],
+      "displayName": "插入页眉文本",
+      "intentKeywords": ["页眉", "header", "眉"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_insert_footer_text",
+      "layer": 1,
+      "description": "为文档第一节的主页脚写入文本（替换原有页脚内容）。\n\n适用于：添加页码说明、版权信息到页脚。",
+      "parameters": [
+        { "name": "text", "type": "string", "required": true, "description": "页脚文本" }
+      ],
+      "displayName": "插入页脚文本",
+      "intentKeywords": ["页脚", "footer"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_update_fields",
+      "layer": 1,
+      "description": "更新文档中全部域（含目录、页码、引用等）。\n\n适用于：插入/修改目录或域后刷新显示。",
+      "parameters": [],
+      "displayName": "更新域",
+      "intentKeywords": ["刷新", "更新域", "更新目录", "update fields"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "word_find_text",
+      "layer": 1,
+      "description": "在文档中查找指定文本并返回出现次数（不修改文档）。\n\n适用于：统计关键词出现频次、确认是否存在某表述。",
+      "parameters": [
+        { "name": "findText", "type": "string", "required": true, "description": "要查找的文本" }
+      ],
+      "displayName": "查找文本计数",
+      "intentKeywords": ["查找", "出现几次", "统计", "find"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    }
+  ]
+}

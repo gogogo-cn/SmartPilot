@@ -1,0 +1,515 @@
+/* 额外覆盖样式，保证 Skill 名称与操作按钮同一行显示 */
+.skill-list-container .skill-card,
+.snippet-item,
+.skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.skill-item .skill-meta {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.skill-actions,
+.snippet-item-actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.skill-action-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 6px;
+}
+
+/* 窄屏时微调：描述换行但按钮仍然在标题行 */
+@media (max-width: 520px) {
+    .skill-list-container .skill-card,
+    .snippet-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .skill-item-header,
+    .snippet-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+}
+
+/* 标题隐藏保护：当我们注入 header 时，如果原始列表顶部为同一文本，隐藏重复的原始标题 */
+.orig-title {
+    display: none !important;
+}
+
+/* 如果标题被移除或隐藏，nameWrap 内部的字体大小与样式微调 */
+ .skill-item-header .skill-item-name span,
+.skill-item-header .skill-item-name h3,
+.skill-item-header .skill-item-name h4 {
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* 让 badge / category 紧挨标题显示 */
+.skill-item-header .skill-item-name .badge,
+.skill-item-header .skill-item-name .skill-badge,
+.skill-item-header .skill-item-name .tag,
+.skill-item-header .skill-item-name .label {
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* skill body: 其余内容应显示在 header 下方 */
+.skill-item-body {
+    margin-top: 8px;
+}
+
+/* 更通用：如果原始条目里存在直接文本节点作为标题，折叠第一个直系文本块（保守处理，不强制隐藏） */
+#skill-list-container > div > .title,
+#skill-list-container > div > .card-title,
+#skill-list-container > div > h4,
+#skill-list-container > div > h3 {
+    display: block;
+}
+
+/* 当 card 被修复，强制列布局以便 header 在上，body 在下 */
+.skill-card-fixed {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+}
+
+.skill-card-fixed > .skill-item-header {
+    display: flex !important;
+}
+
+.skill-card-fixed > .skill-item-body {
+    display: block !important;
+}
+
+/* 我们将通过 JS 在插入 header 后，给原始标题添加 .orig-title 类以隐藏重复显示。 */
+
+/* 只针对 skill-item 设置布局 */
+#skill-list-container .snippet-item,
+#skill-list-container .skill-item,
+.skill-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+}
+
+/* 操作按钮：横向排列 */
+#skill-list-container .skill-actions,
+#skill-list-container .snippet-item-actions,
+.skill-list-container .skill-actions,
+.skill-actions,
+.snippet-item-actions,
+.skill-card .actions,
+.card-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+}
+
+/* 按钮样式微调，防止换行 */
+#skill-list-container button,
+#skill-list-container .skill-actions > *,
+.skill-actions button,
+.snippet-item-actions button {
+    white-space: nowrap !important;
+    margin: 0 !important;
+}
+
+/* 名称区域可伸缩 */
+.skill-item .skill-meta,
+.snippet-item .snippet-item-desc,
+.skill-item-name,
+.snippet-item-name {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+/* 如果某些按钮仍被渲染为块级元素，强制其行内显示 */
+#skill-list-container .skill-actions > *,
+.skill-actions > *,
+.snippet-item-actions > * {
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* 最终强制：被修复的 card 必须纵向排列，保证 header 在上方，body 在下方 */
+#skill-list-container .skill-card-fixed,
+.skill-card-fixed {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+}
+
+.skill-card-fixed > .skill-item-header,
+.skill-card-fixed > .skill-item-body {
+    width: 100% !important;
+}
+
+.skill-card {
+    display: block !important;
+    padding: 12px 14px;
+    background: #ffffff;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid #e8e8e8;
+    transition: all 0.25s ease;
+    cursor: default;
+}
+
+.skill-card:hover {
+    border-color: #1890ff;
+    box-shadow: 0 2px 12px rgba(24, 144, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.skill-card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.skill-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.skill-card-header .skill-card-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.skill-card-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+    order: 1;
+}
+
+.skill-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+    min-width: 0;
+}
+
+.skill-card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.skill-card-desc {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    order: 3;
+}
+
+.skill-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    order: 4;
+}
+
+.skill-meta-item {
+    font-size: 11px;
+    color: #999;
+    padding: 2px 6px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.skill-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.skill-tag-custom {
+    background: #e6f7ff;
+    color: #1890ff;
+}
+
+.skill-tag-system {
+    background: #f6ffed;
+    color: #52c41a;
+}
+
+.skill-tag-snippet {
+    background: #f9f0ff;
+    color: #722ed1;
+}
+
+.skill-tag-overridden {
+    background: #fff7e6;
+    color: #fa8c16;
+}
+
+.skill-card-footer {
+    display: none;
+}
+
+.skill-quick-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px dashed #fa8c16;
+    background: #fffbe6;
+    color: #fa8c16;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.skill-quick-btn:hover {
+    background: #fa8c16;
+    color: #fff;
+    border-style: solid;
+    transform: scale(1.1);
+}
+
+.skill-quick-btn.active {
+    background: linear-gradient(135deg, #fa8c16, #d46b08);
+    color: #fff;
+    border-style: solid;
+    border-color: #d46b08;
+    box-shadow: 0 2px 8px rgba(250, 140, 22, 0.3);
+}
+
+.skill-quick-btn.active:hover {
+    transform: scale(1.05);
+}
+
+.skill-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(10px);
+    transition: all 0.25s ease;
+}
+
+.skill-card:hover .skill-card-actions {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.skill-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: #f5f5f5;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.skill-action-btn:hover {
+    background: #1890ff;
+    color: #fff;
+}
+
+.skill-action-delete:hover {
+    background: #f5222d;
+}
+
+.skill-action-restore:hover {
+    background: #52c41a;
+}
+
+.skill-actions-browser {
+    font-size: 11px;
+    color: #999;
+    padding: 4px 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.skill-category-group {
+    display: block !important;
+    margin-bottom: 16px;
+}
+
+.skill-category-items {
+    display: block !important;
+}
+
+.skill-category-title {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px;
+    padding: 8px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.skill-category-icon {
+    font-size: 16px;
+}
+
+.skill-category-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.skill-category-count {
+    font-size: 12px;
+    color: #999;
+    background: #f5f5f5;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.skill-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin: 16px 0 10px;
+    padding-left: 8px;
+    border-left: 3px solid #1890ff;
+}
+
+.skill-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.skill-list-header span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.btn-add-skill {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1890ff;
+    background: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-skill:hover {
+    background: #f0f5ff;
+    transform: translateY(-1px);
+}
+
+/* ==================== Skill 开关 Toggle ==================== */
+
+.skill-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.skill-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.skill-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background-color: #d9d9d9;
+    border-radius: 18px;
+    transition: background-color 0.25s ease;
+}
+
+.skill-toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    top: 2px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    transition: transform 0.25s ease;
+}
+
+.skill-toggle-switch input:checked + .skill-toggle-slider {
+    background-color: #52c41a;
+}
+
+.skill-toggle-switch input:checked + .skill-toggle-slider::before {
+    transform: translateX(14px);
+}
+
+.skill-toggle-switch input:focus-visible + .skill-toggle-slider {
+    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.3);
+}
+
+/* 停用状态的卡片视觉 */
+.skill-card.skill-card-disabled {
+    opacity: 0.55;
+    background: #fafafa;
+    border-color: #e0e0e0;
+}
+
+.skill-card.skill-card-disabled:hover {
+    opacity: 0.75;
+    border-color: #d9d9d9;
+    box-shadow: none;
+    transform: none;
+}
+
+/* 停用标签 */
+.skill-tag-disabled {
+    background: #f5f5f5;
+    color: #999;
+    border: 1px solid #d9d9d9;
+}

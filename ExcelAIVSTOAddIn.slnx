@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ExcelAIVSTOAddIn.vbproj" Id="8ad721c6-cd63-46bb-844e-3fc209197751" />
+  <Project Path="Tests\VbTests\ExcelMcpCoreUtils.Tests.vbproj" Id="a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
+</Solution>

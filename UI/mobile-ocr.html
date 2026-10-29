@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>SmartPilot 手机遥控 OCR</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --success: #0f9d58;
+            --danger: #ea4335;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #202124;
+            --text2: #5f6368;
+            --border: #dadce0;
+            --radius: 12px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+        .status-dot.connected { background: #4caf50; }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* 连接提示 */
+        .connect-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+        .connect-banner.error {
+            background: #fde7e7;
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* 拍照区域 */
+        .capture-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .capture-section h2 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .preview-wrap {
+            position: relative;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f0f0f0;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .preview-wrap img {
+            width: 100%;
+            display: block;
+            max-height: 300px;
+            object-fit: contain;
+        }
+        .preview-wrap .remove-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px; height: 28px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 裁剪区域 */
+        .crop-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+        .crop-container.show { display: flex; }
+        .crop-header {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .crop-header button {
+            background: transparent;
+            color: white;
+            border: none;
+            font-size: 15px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .crop-header .confirm {
+            color: #4caf50;
+            font-weight: 600;
+        }
+        .crop-body {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .crop-body img {
+            max-width: 100%;
+            max-height: 100%;
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+        .crop-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .crop-overlay::before { /* top mask */
+            top: 0; left: 0; right: 0;
+            height: var(--crop-top);
+            content: '';
+            position: absolute;
+            background: rgba(0,0,0,0.55);
+        }
+        .crop-overlay::after { /* bottom mask */
+            bottom: 0; left: 0; right: 0;
+            height: var(--crop-bottom);
+            content: '';
+            position: absolute;
+            background: rgba(0,0,0,0.55);
+        }
+        .crop-overlay .crop-mask-l { /* left mask */
+            top: var(--crop-top); bottom: var(--crop-bottom);
+            left: 0; width: var(--crop-left);
+            position: absolute;
+            background: rgba(0,0,0,0.55);
+        }
+        .crop-overlay .crop-mask-r { /* right mask */
+            top: var(--crop-top); bottom: var(--crop-bottom);
+            right: 0; width: var(--crop-right);
+            position: absolute;
+            background: rgba(0,0,0,0.55);
+        }
+        .crop-overlay > .crop-mask-t,
+        .crop-overlay > .crop-mask-b {
+            display: none;
+        }
+        .crop-box {
+            position: absolute;
+            border: 2px solid #4caf50;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.3);
+            pointer-events: auto;
+            cursor: move;
+        }
+        .crop-handle {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #4caf50;
+            border: 2px solid white;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        .crop-handle.nw { top: -12px; left: -12px; cursor: nw-resize; }
+        .crop-handle.ne { top: -12px; right: -12px; cursor: ne-resize; }
+        .crop-handle.sw { bottom: -12px; left: -12px; cursor: sw-resize; }
+        .crop-handle.se { bottom: -12px; right: -12px; cursor: se-resize; }
+        .crop-handle.n  { top: -12px; left: 50%; margin-left: -12px; cursor: n-resize; }
+        .crop-handle.s  { bottom: -12px; left: 50%; margin-left: -12px; cursor: s-resize; }
+        .crop-handle.w  { top: 50%; left: -12px; margin-top: -12px; cursor: w-resize; }
+        .crop-handle.e  { top: 50%; right: -12px; margin-top: -12px; cursor: e-resize; }
+        .crop-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+        }
+        .crop-grid::before,
+        .crop-grid::after {
+            content: '';
+            position: absolute;
+            background: rgba(255,255,255,0.3);
+        }
+        .crop-grid::before {
+            left: 33.33%; right: 33.33%;
+            top: 0; bottom: 0;
+            border-left: 1px solid rgba(255,255,255,0.3);
+            border-right: 1px solid rgba(255,255,255,0.3);
+            background: transparent;
+        }
+        .crop-grid::after {
+            top: 33.33%; bottom: 33.33%;
+            left: 0; right: 0;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            background: transparent;
+        }
+        .crop-tip {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .btn:active { opacity: 0.8; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #e8eaed; color: var(--text); }
+        .btn-success { background: var(--success); color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 模式选择 */
+        .mode-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .mode-chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* 结果区域 */
+        .result-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .result-section h2 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .result-text {
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+            user-select: all;
+        }
+        .result-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .result-actions .btn { font-size: 13px; padding: 8px 14px; }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .loading.show { display: block; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #e0e0e0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading p { color: var(--text2); font-size: 14px; }
+
+        /* 历史记录 */
+        .history-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .history-section h2 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .history-list { list-style: none; }
+        .history-item {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 10px 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item .time { color: var(--text2); font-size: 12px; }
+        .history-item .preview {
+            color: var(--text);
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 999;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📷 SmartPilot OCR</h1>
+        <div class="status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">连接中</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="connect-banner" id="connectBanner"></div>
+
+        <!-- 拍照区域 -->
+        <div class="capture-section">
+            <h2>📸 拍照识别</h2>
+
+            <div class="mode-row">
+                <span class="mode-chip active" data-mode="auto">自动</span>
+                <span class="mode-chip" data-mode="text">纯文本</span>
+                <span class="mode-chip" data-mode="number">数字</span>
+                <span class="mode-chip" data-mode="formula">公式</span>
+            </div>
+
+            <div class="preview-wrap" id="previewWrap">
+                <img id="previewImg" alt="预览">
+                <button class="remove-btn" onclick="removePreview()">×</button>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" id="cameraBtn" onclick="openCamera()">
+                    📷 拍照
+                </button>
+                <button class="btn btn-secondary" id="albumBtn" onclick="openAlbum()">
+                    🖼️ 相册
+                </button>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <button class="btn btn-success" id="recognizeBtn" onclick="startRecognize()" disabled style="width:100%">
+                    🔍 开始识别
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在识别中，请稍候...</p>
+        </div>
+
+        <!-- 结果区域 -->
+        <div class="result-section" id="resultSection">
+            <h2>✅ 识别结果</h2>
+            <div class="result-text" id="resultText"></div>
+            <div class="result-actions">
+                <button class="btn btn-primary" onclick="copyResult()">📋 复制</button>
+                <button class="btn btn-secondary" onclick="clearResult()">🗑️ 清除</button>
+            </div>
+        </div>
+
+        <!-- 裁剪容器 -->
+        <div class="crop-container" id="cropContainer">
+            <div class="crop-header">
+                <button onclick="cancelCrop()">取消</button>
+                <span>裁剪图片</span>
+                <button class="confirm" onclick="confirmCrop()">确认</button>
+            </div>
+            <div class="crop-body" id="cropBody">
+                <img id="cropImg" alt="裁剪">
+                <div class="crop-overlay" id="cropOverlay">
+                    <div class="crop-mask-t"></div>
+                    <div class="crop-mask-b"></div>
+                    <div class="crop-mask-l"></div>
+                    <div class="crop-mask-r"></div>
+                </div>
+                <div class="crop-box" id="cropBox">
+                    <div class="crop-grid"></div>
+                    <div class="crop-handle nw" data-handle="nw"></div>
+                    <div class="crop-handle n" data-handle="n"></div>
+                    <div class="crop-handle ne" data-handle="ne"></div>
+                    <div class="crop-handle e" data-handle="e"></div>
+                    <div class="crop-handle se" data-handle="se"></div>
+                    <div class="crop-handle s" data-handle="s"></div>
+                    <div class="crop-handle sw" data-handle="sw"></div>
+                    <div class="crop-handle w" data-handle="w"></div>
+                </div>
+                <div class="crop-tip">拖动裁剪框调整区域 · <a href="javascript:void(0)" onclick="useOriginalImage()" style="color:#4caf50;text-decoration:underline;font-weight:600;">使用原图</a></div>
+            </div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="history-section" id="historySection">
+            <h2 onclick="toggleHistory()">
+                📜 历史记录
+                <span id="historyToggle">▼</span>
+                <span style="float:right;font-size:13px;color:#ea4335;cursor:pointer;" onclick="event.stopPropagation();clearHistory()">🗑️ 清除</span>
+            </h2>
+            <ul class="history-list" id="historyList"></ul>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="albumInput" accept="image/*" style="display:none">
+
+    <script>
+        // 配置
+        const SERVER_IP = '{{SERVER_IP}}';
+        const SERVER_PORT = '{{SERVER_PORT}}';
+        const BASE_URL = `http://${SERVER_IP}:${SERVER_PORT}`;
+
+        // 状态
+        let currentImageBase64 = null;
+        let currentMode = 'auto';
+        let history = [];
+        // 服务端下发的 session token，上传等需鉴权的 API 必须携带
+        let sessionToken = null;
+
+        // 裁剪状态
+        let cropImgNaturalW = 0;
+        let cropImgNaturalH = 0;
+        let cropDisplayW = 0;
+        let cropDisplayH = 0;
+        let cropDisplayOffsetX = 0;
+        let cropDisplayOffsetY = 0;
+        let cropBox = { x: 0, y: 0, w: 0, h: 0 };
+        let cropOriginalBase64 = null;
+        let isDragging = false;
+        let dragStart = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            checkConnection();
+            initModeChips();
+            initFileInputs();
+            loadHistory();
+        });
+
+        function checkConnection() {
+            fetch(`${BASE_URL}/api/status`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionToken = data.sessionToken || null;
+                        document.getElementById('statusDot').classList.add('connected');
+                        document.getElementById('statusText').textContent = `已连接 (${SERVER_IP})`;
+                        document.getElementById('connectBanner').style.display = 'none';
+                    } else {
+                        showConnectError('服务状态异常');
+                    }
+                })
+                .catch(err => {
+                    showConnectError(`无法连接到桌面端: ${err.message}`);
+                });
+        }
+
+        function ensureSessionToken() {
+            if (sessionToken) return Promise.resolve(sessionToken);
+            return fetch(`${BASE_URL}/api/status`)
+                .then(r => r.json())
+                .then(data => {
+                    sessionToken = (data && data.sessionToken) || null;
+                    return sessionToken;
+                })
+                .catch(() => null);
+        }
+
+        function showConnectError(msg) {
+            const banner = document.getElementById('connectBanner');
+            banner.className = 'connect-banner error';
+            banner.textContent = msg;
+            banner.style.display = 'block';
+            document.getElementById('statusDot').classList.remove('connected');
+            document.getElementById('statusText').textContent = '未连接';
+        }
+
+        function initModeChips() {
+            document.querySelectorAll('.mode-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('.mode-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    currentMode = chip.dataset.mode;
+                });
+            });
+        }
+
+        function initFileInputs() {
+            const cameraInput = document.getElementById('cameraInput');
+            const albumInput = document.getElementById('albumInput');
+
+            cameraInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+            albumInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+        }
+
+        function openCamera() {
+            document.getElementById('cameraInput').click();
+        }
+
+        function openAlbum() {
+            document.getElementById('albumInput').click();
+        }
+
+        function handleFileSelect(file) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                cropOriginalBase64 = e.target.result;
+                openCrop(cropOriginalBase64);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openCrop(base64) {
+            const img = new Image();
+            img.onload = () => {
+                cropImgNaturalW = img.width;
+                cropImgNaturalH = img.height;
+
+                const cropContainer = document.getElementById('cropContainer');
+                const cropImgEl = document.getElementById('cropImg');
+                const cropBody = document.getElementById('cropBody');
+
+                cropImgEl.src = base64;
+                cropContainer.classList.add('show');
+
+                requestAnimationFrame(() => {
+                    const bodyRect = cropBody.getBoundingClientRect();
+                    const maxW = bodyRect.width - 20;
+                    const maxH = bodyRect.height - 20;
+                    const ratio = Math.min(maxW / cropImgNaturalW, maxH / cropImgNaturalH, 1);
+
+                    cropDisplayW = cropImgNaturalW * ratio;
+                    cropDisplayH = cropImgNaturalH * ratio;
+                    cropDisplayOffsetX = (bodyRect.width - cropDisplayW) / 2;
+                    cropDisplayOffsetY = (bodyRect.height - cropDisplayH) / 2;
+
+                    cropImgEl.style.width = cropDisplayW + 'px';
+                    cropImgEl.style.height = cropDisplayH + 'px';
+                    cropImgEl.style.position = 'absolute';
+                    cropImgEl.style.left = cropDisplayOffsetX + 'px';
+                    cropImgEl.style.top = cropDisplayOffsetY + 'px';
+
+                    // 初始裁剪框：居中 80% 区域
+                    const initW = cropDisplayW * 0.8;
+                    const initH = cropDisplayH * 0.8;
+                    cropBox = {
+                        x: cropDisplayOffsetX + (cropDisplayW - initW) / 2,
+                        y: cropDisplayOffsetY + (cropDisplayH - initH) / 2,
+                        w: initW,
+                        h: initH
+                    };
+                    updateCropBox();
+                    initCropInteractions();
+                });
+            };
+            img.src = base64;
+        }
+
+        function updateCropBox() {
+            const cropBoxEl = document.getElementById('cropBox');
+            const cropOverlay = document.getElementById('cropOverlay');
+
+            cropBoxEl.style.left = cropBox.x + 'px';
+            cropBoxEl.style.top = cropBox.y + 'px';
+            cropBoxEl.style.width = cropBox.w + 'px';
+            cropBoxEl.style.height = cropBox.h + 'px';
+
+            const cropBody = document.getElementById('cropBody');
+            const rect = cropBody.getBoundingClientRect();
+            cropOverlay.style.setProperty('--crop-top', cropBox.y + 'px');
+            cropOverlay.style.setProperty('--crop-bottom', (rect.height - cropBox.y - cropBox.h) + 'px');
+            cropOverlay.style.setProperty('--crop-left', cropBox.x + 'px');
+            cropOverlay.style.setProperty('--crop-right', (rect.width - cropBox.x - cropBox.w) + 'px');
+        }
+
+        function initCropInteractions() {
+            const cropBoxEl = document.getElementById('cropBox');
+            const cropBody = document.getElementById('cropBody');
+
+            cropBoxEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+            cropBoxEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+            cropBoxEl.addEventListener('touchend', handleTouchEnd);
+
+            cropBoxEl.addEventListener('mousedown', handleMouseDown);
+        }
+
+        function getPointerPos(e) {
+            const cropBody = document.getElementById('cropBody');
+            const rect = cropBody.getBoundingClientRect();
+            const point = e.touches ? e.touches[0] : e;
+            return {
+                x: point.clientX - rect.left,
+                y: point.clientY - rect.top
+            };
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const handle = e.target.dataset.handle;
+            const pos = getPointerPos(e);
+            dragStart = {
+                mode: handle ? 'resize' : 'move',
+                handle: handle,
+                startX: pos.x,
+                startY: pos.y,
+                startBox: { ...cropBox }
+            };
+            isDragging = true;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!isDragging || !dragStart) return;
+            const pos = getPointerPos(e);
+            const dx = pos.x - dragStart.startX;
+            const dy = pos.y - dragStart.startY;
+            const minSize = 60;
+
+            if (dragStart.mode === 'move') {
+                cropBox.x = Math.max(cropDisplayOffsetX, Math.min(cropDisplayOffsetX + cropDisplayW - cropBox.w, dragStart.startBox.x + dx));
+                cropBox.y = Math.max(cropDisplayOffsetY, Math.min(cropDisplayOffsetY + cropDisplayH - cropBox.h, dragStart.startBox.y + dy));
+            } else if (dragStart.mode === 'resize') {
+                const s = dragStart.startBox;
+                switch (dragStart.handle) {
+                    case 'nw':
+                        cropBox.x = Math.max(cropDisplayOffsetX, Math.min(s.x + s.w - minSize, s.x + dx));
+                        cropBox.y = Math.max(cropDisplayOffsetY, Math.min(s.y + s.h - minSize, s.y + dy));
+                        cropBox.w = s.w + (s.x - cropBox.x);
+                        cropBox.h = s.h + (s.y - cropBox.y);
+                        break;
+                    case 'ne':
+                        cropBox.y = Math.max(cropDisplayOffsetY, Math.min(s.y + s.h - minSize, s.y + dy));
+                        cropBox.w = Math.max(minSize, s.w + dx);
+                        cropBox.h = s.h + (s.y - cropBox.y);
+                        break;
+                    case 'sw':
+                        cropBox.x = Math.max(cropDisplayOffsetX, Math.min(s.x + s.w - minSize, s.x + dx));
+                        cropBox.w = s.w + (s.x - cropBox.x);
+                        cropBox.h = Math.max(minSize, s.h + dy);
+                        break;
+                    case 'se':
+                        cropBox.w = Math.max(minSize, s.w + dx);
+                        cropBox.h = Math.max(minSize, s.h + dy);
+                        break;
+                    case 'n':
+                        cropBox.y = Math.max(cropDisplayOffsetY, Math.min(s.y + s.h - minSize, s.y + dy));
+                        cropBox.h = s.h + (s.y - cropBox.y);
+                        break;
+                    case 's':
+                        cropBox.h = Math.max(minSize, s.h + dy);
+                        break;
+                    case 'w':
+                        cropBox.x = Math.max(cropDisplayOffsetX, Math.min(s.x + s.w - minSize, s.x + dx));
+                        cropBox.w = s.w + (s.x - cropBox.x);
+                        break;
+                    case 'e':
+                        cropBox.w = Math.max(minSize, s.w + dx);
+                        break;
+                }
+            }
+            updateCropBox();
+        }
+
+        function handleTouchEnd() {
+            isDragging = false;
+            dragStart = null;
+        }
+
+        function handleMouseDown(e) {
+            const handle = e.target.dataset.handle;
+            const pos = getPointerPos(e);
+            dragStart = {
+                mode: handle ? 'resize' : 'move',
+                handle: handle,
+                startX: pos.x,
+                startY: pos.y,
+                startBox: { ...cropBox }
+            };
+            isDragging = true;
+
+            const onMove = (ev) => {
+                const pos2 = getPointerPos(ev);
+                const dx = pos2.x - dragStart.startX;
+                const dy = pos2.y - dragStart.startY;
+                const minSize = 60;
+
+                if (dragStart.mode === 'move') {
+                    cropBox.x = Math.max(cropDisplayOffsetX, Math.min(cropDisplayOffsetX + cropDisplayW - cropBox.w, dragStart.startBox.x + dx));
+                    cropBox.y = Math.max(cropDisplayOffsetY, Math.min(cropDisplayOffsetY + cropDisplayH - cropBox.h, dragStart.startBox.y + dy));
+                } else if (dragStart.mode === 'resize') {
+                    const s = dragStart.startBox;
+                    switch (dragStart.handle) {
+                        case 'nw':
+                            cropBox.x = Math.max(cropDisplayOffsetX, Math.min(s.x + s.w - minSize, s.x + dx));
+                            cropBox.y = Math.max(cropDisplayOffsetY, Math.min(s.y + s.h - minSize, s.y + dy));
+                            cropBox.w = s.w + (s.x - cropBox.x);
+                            cropBox.h = s.h + (s.y - cropBox.y);
+                            break;
+                        case 'ne':
+                            cropBox.y = Math.max(cropDisplayOffsetY, Math.min(s.y + s.h - minSize, s.y + dy));
+                            cropBox.w = Math.max(minSize, s.w + dx);
+                            cropBox.h = s.h + (s.y - cropBox.y);
+                            break;
+                        case 'sw':
+                            cropBox.x = Math.max(cropDisplayOffsetX, Math.min(s.x + s.w - minSize, s.x + dx));
+                            cropBox.w = s.w + (s.x - cropBox.x);
+                            cropBox.h = Math.max(minSize, s.h + dy);
+                            break;
+                        case 'se':
+                            cropBox.w = Math.max(minSize, s.w + dx);
+                            cropBox.h = Math.max(minSize, s.h + dy);
+                            break;
+                        case 'n':
+                            cropBox.y = Math.max(cropDisplayOffsetY, Math.min(s.y + s.h - minSize, s.y + dy));
+                            cropBox.h = s.h + (s.y - cropBox.y);
+                            break;
+                        case 's':
+                            cropBox.h = Math.max(minSize, s.h + dy);
+                            break;
+                        case 'w':
+                            cropBox.x = Math.max(cropDisplayOffsetX, Math.min(s.x + s.w - minSize, s.x + dx));
+                            cropBox.w = s.w + (s.x - cropBox.x);
+                            break;
+                        case 'e':
+                            cropBox.w = Math.max(minSize, s.w + dx);
+                            break;
+                    }
+                }
+                updateCropBox();
+            };
+
+            const onUp = () => {
+                isDragging = false;
+                dragStart = null;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+
+        function cancelCrop() {
+            document.getElementById('cropContainer').classList.remove('show');
+            cropOriginalBase64 = null;
+        }
+
+        function useOriginalImage() {
+            document.getElementById('cropContainer').classList.remove('show');
+            if (cropOriginalBase64) {
+                compressImage(cropOriginalBase64, 1600, 0.8, (compressed) => {
+                    currentImageBase64 = compressed;
+                    document.getElementById('previewImg').src = compressed;
+                    document.getElementById('previewWrap').style.display = 'block';
+                    document.getElementById('recognizeBtn').disabled = false;
+                });
+            }
+            cropOriginalBase64 = null;
+        }
+
+        function confirmCrop() {
+            const scaleX = cropImgNaturalW / cropDisplayW;
+            const scaleY = cropImgNaturalH / cropDisplayH;
+
+            const srcX = Math.max(0, (cropBox.x - cropDisplayOffsetX) * scaleX);
+            const srcY = Math.max(0, (cropBox.y - cropDisplayOffsetY) * scaleY);
+            const srcW = Math.max(1, cropBox.w * scaleX);
+            const srcH = Math.max(1, cropBox.h * scaleY);
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(srcW);
+                canvas.height = Math.round(srcH);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height);
+
+                document.getElementById('cropContainer').classList.remove('show');
+                cropOriginalBase64 = null;
+
+                const resultBase64 = canvas.toDataURL('image/jpeg', 0.9);
+                compressImage(resultBase64, 1600, 0.8, (compressed) => {
+                    currentImageBase64 = compressed;
+                    document.getElementById('previewImg').src = compressed;
+                    document.getElementById('previewWrap').style.display = 'block';
+                    document.getElementById('recognizeBtn').disabled = false;
+                });
+            };
+            img.src = cropOriginalBase64 || document.getElementById('cropImg').src;
+        }
+
+        function compressImage(base64, maxWidth, quality, callback) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width;
+                let h = img.height;
+                if (w > maxWidth) {
+                    h = h * maxWidth / w;
+                    w = maxWidth;
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                callback(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = base64;
+        }
+
+        function removePreview() {
+            currentImageBase64 = null;
+            document.getElementById('previewWrap').style.display = 'none';
+            document.getElementById('recognizeBtn').disabled = true;
+            document.getElementById('cameraInput').value = '';
+            document.getElementById('albumInput').value = '';
+        }
+
+        function startRecognize() {
+            if (!currentImageBase64) {
+                showToast('请先拍照或选择图片');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const resultSection = document.getElementById('resultSection');
+            const recognizeBtn = document.getElementById('recognizeBtn');
+
+            loading.classList.add('show');
+            resultSection.style.display = 'none';
+            recognizeBtn.disabled = true;
+            recognizeBtn.textContent = '⏳ 识别中';
+
+            const payload = JSON.stringify({
+                image: currentImageBase64,
+                mode: currentMode
+            });
+
+            ensureSessionToken().then(token => {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['X-Session-Token'] = token;
+
+                fetch(`${BASE_URL}/api/upload`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: payload
+                })
+                .then(r => r.json())
+                .then(data => {
+                    loading.classList.remove('show');
+                    recognizeBtn.disabled = false;
+                    recognizeBtn.textContent = '🔍 开始识别';
+
+                    if (data.success) {
+                        // 显示识别结果预览
+                        showResult(data.text, data.fileName);
+                        showToast('✅ 识别完成，已同步到桌面');
+                        // 保留图片缩略图供用户查看，不自动清空
+                    } else {
+                        showToast('识别失败: ' + (data.error || '未知错误'));
+                    }
+                })
+                .catch(err => {
+                    loading.classList.remove('show');
+                    recognizeBtn.disabled = false;
+                    recognizeBtn.textContent = ' 开始识别';
+                    showToast('请求失败: ' + err.message);
+                });
+            });
+        }
+
+        function showResult(text, fileName) {
+            const resultSection = document.getElementById('resultSection');
+            const resultText = document.getElementById('resultText');
+            resultText.textContent = text || '（无识别结果）';
+            resultSection.style.display = 'block';
+
+            // 添加到历史
+            addToHistory(text, fileName);
+        }
+
+        function copyResult() {
+            const text = document.getElementById('resultText').textContent;
+            if (!text || text === '（无识别结果）') {
+                showToast('没有可复制的内容');
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板'));
+            } else {
+                // 降级方案
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('已复制到剪贴板');
+            }
+        }
+
+        function clearResult() {
+            document.getElementById('resultSection').style.display = 'none';
+            removePreview();
+        }
+
+        // 历史记录
+        function addToHistory(text, fileName) {
+            const item = {
+                time: new Date().toLocaleTimeString(),
+                text: text,
+                fileName: fileName
+            };
+            history.unshift(item);
+            if (history.length > 20) history.pop();
+            renderHistory();
+            saveHistory();
+        }
+
+        function renderHistory() {
+            const section = document.getElementById('historySection');
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+            list.innerHTML = history.map((item, i) => `
+                <li class="history-item" onclick="showHistoryItem(${i})">
+                    <div class="time">${item.time}</div>
+                    <div class="preview">${escapeHtml(item.text || '').substring(0, 80)}...</div>
+                </li>
+            `).join('');
+        }
+
+        function showHistoryItem(index) {
+            const item = history[index];
+            if (item) {
+                document.getElementById('resultText').textContent = item.text;
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        let historyExpanded = true;
+        function toggleHistory() {
+            historyExpanded = !historyExpanded;
+            document.getElementById('historyList').style.display = historyExpanded ? 'block' : 'none';
+            document.getElementById('historyToggle').textContent = historyExpanded ? '▼' : '▶';
+        }
+
+        function saveHistory() {
+            try {
+                localStorage.setItem('mobileOcrHistory', JSON.stringify(history.slice(0, 10)));
+            } catch(e) {}
+        }
+
+        function loadHistory() {
+            try {
+                const saved = localStorage.getItem('mobileOcrHistory');
+                if (saved) {
+                    history = JSON.parse(saved);
+                    renderHistory();
+                }
+            } catch(e) {}
+        }
+
+        function clearHistory() {
+            if (history.length === 0) {
+                showToast('暂无历史记录');
+                return;
+            }
+            if (!confirm('确定要清除所有历史记录吗？')) return;
+            history = [];
+            try {
+                localStorage.removeItem('mobileOcrHistory');
+            } catch(e) {}
+            renderHistory();
+            showToast('历史记录已清除');
+        }
+
+        // 工具
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

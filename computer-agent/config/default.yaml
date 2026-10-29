@@ -1,0 +1,16 @@
+# Computer Agent - 配置文件
+ocr:
+  engine: "paddleocr"
+  lang: "ch"
+  use_angle_cls: true
+
+security:
+  safe_mode: false
+  confirm_required: false
+  fail_safe: true
+
+vision:
+  enabled: false
+  provider: "glm-4v"
+  api_key: ""
+  api_base: ""

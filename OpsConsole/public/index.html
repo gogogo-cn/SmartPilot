@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartPilot 运营台</title>
+<style>
+  :root{
+    --teal:#0f766e; --teal-dark:#115e59; --teal-bg:#f0fdf4; --teal-line:#bbf7d0;
+    --ink:#0f172a; --sub:#475569; --faint:#94a3b8; --line:#e2e8f0; --card:#fff;
+    --warn:#b45309; --warn-bg:#fffbeb; --danger:#b91c1c; --danger-bg:#fef2f2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,"Microsoft YaHei",sans-serif;background:#f1f5f9;color:var(--ink);font-size:14px}
+  header{background:var(--teal);color:#fff;padding:12px 20px;display:flex;align-items:baseline;gap:14px}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header span{font-size:12px;opacity:.85}
+  nav{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--line);padding:0 16px}
+  nav button{border:none;background:none;padding:11px 16px;font-size:13px;cursor:pointer;color:var(--sub);border-bottom:2px solid transparent}
+  nav button.on{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+  main{padding:18px 20px;max-width:1180px;margin:0 auto}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .card .k{font-size:12px;color:var(--sub);margin-bottom:5px}
+  .card .v{font-size:22px;font-weight:700}
+  .card .v.money{color:var(--teal)}
+  .card .v.warn{color:var(--warn)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 17px;margin-bottom:16px}
+  .panel h2{font-size:14px;margin:0 0 12px;color:var(--sub);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--sub);font-weight:600;font-size:12px;padding:7px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:8px 9px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:hover td{background:#f8fafc}
+  .mono{font-family:Consolas,monospace;font-size:12px}
+  .key-cell{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+  .b-pending{background:var(--warn-bg);color:var(--warn)}
+  .b-sent{background:var(--teal-bg);color:var(--teal)}
+  .b-refunded{background:var(--danger-bg);color:var(--danger)}
+  .b-exp{background:#f1f5f9;color:var(--faint)}
+  .days{font-weight:600}
+  .days.soon{color:var(--warn)}
+  .days.over{color:var(--danger)}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:6px;padding:5px 11px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--teal);color:var(--teal)}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.primary:hover{background:var(--teal-dark)}
+  .btn.sm{padding:3px 8px;font-size:11px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+  .toolbar input[type=search],.toolbar select{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff}
+  .toolbar input[type=search]{min-width:230px}
+  form .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  form label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+  form input,form select{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;width:100%;background:#fff}
+  form .f{min-width:150px;flex:1}
+  .hint{font-size:12px;color:var(--faint);margin:8px 0 0;line-height:1.6}
+  .result{margin-top:14px;border:1px dashed var(--teal-line);background:var(--teal-bg);border-radius:8px;padding:12px 14px;display:none}
+  .result.show{display:block}
+  .result .line{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px}
+  .result .line .mono{flex:1;overflow:hidden;text-overflow:ellipsis}
+  #toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .18s;pointer-events:none;z-index:99;max-width:70%}
+  #toast.show{opacity:.95}
+  .empty{color:var(--faint);text-align:center;padding:26px 0;font-size:13px}
+  .bar{height:8px;border-radius:4px;background:#e2e8f0;overflow:hidden;min-width:90px}
+  .bar i{display:block;height:100%;background:var(--teal)}
+</style>
+</head>
+<body>
+<header>
+  <h1>SmartPilot 运营台</h1>
+  <span>本地运营 · 仅监听 127.0.0.1 · 台账与 gen-key 命令行共用</span>
+</header>
+<nav>
+  <button data-tab="dash" class="on">仪表盘</button>
+  <button data-tab="keys">激活码台账</button>
+  <button data-tab="gen">生成激活码</button>
+  <button data-tab="cust">客户档案</button>
+  <button data-tab="pay">支付配置</button>
+  <button data-tab="refund">消key退款</button>
+</nav>
+<main>
+  <!-- ============ 仪表盘 ============ -->
+  <section id="tab-dash">
+    <div class="cards" id="stat-cards"></div>
+    <div class="panel">
+      <h2>30 天内到期（续费提醒）</h2>
+      <div id="expiring-box"></div>
+    </div>
+    <div class="panel">
+      <h2>最近订单</h2>
+      <div id="recent-box"></div>
+    </div>
+  </section>
+
+  <!-- ============ 台账 ============ -->
+  <section id="tab-keys" style="display:none">
+    <div class="panel">
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="搜索激活码 / 客户 / 备注…">
+        <select id="f-plan"><option value="">全部方案</option></select>
+        <select id="f-status">
+          <option value="">全部状态</option>
+          <option value="pending">待发货</option>
+          <option value="sent">已发货</option>
+          <option value="refunded">已退款</option>
+        </select>
+        <select id="f-sort">
+          <option value="issuedAt">按生成时间（新→旧）</option>
+          <option value="expiresAt">按到期时间（近→远）</option>
+        </select>
+        <button class="btn" id="btn-export">导出 CSV</button>
+      </div>
+      <div style="overflow-x:auto"><table id="keys-table">
+        <thead><tr>
+          <th>激活码</th><th>客户</th><th>方案</th><th>席位</th><th>到期</th><th>状态</th><th>备注</th><th>操作</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ============ 生成 ============ -->
+  <section id="tab-gen" style="display:none">
+    <div class="panel">
+      <h2>生成激活码（等价于 npm run gen-key，但不用记命令行）</h2>
+      <form id="gen-form">
+        <div class="row">
+          <div class="f"><label>客户 login（邮箱/标识）*</label><input id="g-login" required placeholder="customer@example.com"></div>
+          <div class="f"><label>方案</label><select id="g-plan"></select></div>
+          <div class="f"><label>席位 / 人数</label><input id="g-seats" type="number" value="1" min="1" max="99" title="团队版 5 人起订；选团队版时会自动抬高下限"></div>
+          <div class="f"><label>有效天数</label><input id="g-days" type="number" value="365" min="1" max="3650"></div>
+        </div>
+        <p class="hint" id="g-plan-hint"></p>
+        <div class="row">
+          <div class="f" style="flex:2"><label>备注（建议写客户名/订单号，进台账）</label><input id="g-note" placeholder="微信订单20261021-张三"></div>
+          <div class="f" style="max-width:130px"><label>生成数量</label><input id="g-count" type="number" value="1" min="1" max="100"></div>
+        </div>
+        <button class="btn primary" type="submit">生成并登记台账</button>
+        <p class="hint">批量生成时客户 login 会自动加 +1、+2… 后缀（一客一码，与 gen-key --batch 规则一致）。团队版按「席位/人数」自动拆成同样数量的独立激活码；若要每人各自邮箱，请逐人分别生成。生成的 key 立即写入发货台账 CSV。</p>
+      </form>
+      <div class="result" id="gen-result"></div>
+    </div>
+  </section>
+
+  <!-- ============ 客户档案 ============ -->
+  <section id="tab-cust" style="display:none">
+    <div class="panel">
+      <h2>客户档案（按 login 聚合，退款单不计金额）</h2>
+      <div style="overflow-x:auto"><table id="cust-table">
+        <thead><tr><th>客户</th><th>订单数</th><th>累计金额</th><th>有效 key</th><th>方案分布</th><th>最晚到期</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ============ 支付配置 ============ -->
+  <section id="tab-pay" style="display:none">
+    <div class="panel">
+      <h2>支付配置（填好即上线，无需手改 .env）</h2>
+      <p class="hint">配置写入 LicenseServer/config.json。Stripe 填好 Secret Key / Webhook Secret / 两个 Price ID → 插件购买按钮亮起（/health 返回 stripeReady=true）；国内通道（微信 Native / 支付宝当面付）填好对应商户凭证 + 通知地址 + 备案号后同样自动启用（cnReady=true）。全部无需手改 .env、无需重启（运行中则热重载）。</p>
+      <form id="pay-form">
+        <h3 style="font-size:13px;color:var(--sub);margin:14px 0 8px">Stripe（海外订阅）</h3>
+        <div class="row">
+          <div class="f"><label>STRIPE_SECRET_KEY</label><input id="p-secret" placeholder="sk_live_… / sk_test_…"></div>
+          <div class="f"><label>STRIPE_WEBHOOK_SECRET</label><input id="p-whsec" placeholder="whsec_…"></div>
+        </div>
+        <div class="row">
+          <div class="f"><label>月付 Price ID</label><input id="p-pm" placeholder="price_…"></div>
+          <div class="f"><label>年付 Price ID</label><input id="p-py" placeholder="price_…"></div>
+        </div>
+        <div class="row">
+          <div class="f" style="flex:2"><label>成功回跳 URL</label><input id="p-succ" placeholder="http://…/checkout/success"></div>
+          <div class="f" style="flex:2"><label>取消回跳 URL</label><input id="p-cancel" placeholder="http://…/checkout/cancel"></div>
+        </div>
+        <h3 style="font-size:13px;color:var(--sub);margin:14px 0 8px">国内支付（微信 Native / 支付宝当面付，配置即上线）</h3>
+        <div class="row">
+          <div class="f"><label>CN_PAY_PROVIDER</label><input id="p-cnprov" placeholder="simulate | wechat | alipay"></div>
+          <div class="f"><label>备案号 CN_ICP_BEIAN</label><input id="p-beian" placeholder="沪ICP备xxxx号"></div>
+          <div class="f"><label>商品名 CN_PAY_SUBJECT</label><input id="p-subject" placeholder="SmartPilot 智航 年付授权"></div>
+        </div>
+        <div class="row">
+          <div class="f" style="flex:2"><label>异步通知 URL CN_NOTIFY_URL</label><input id="p-notify" placeholder="https://你的域名/webhooks/cn"></div>
+          <div class="f" style="flex:2"><label>回跳 URL CN_RETURN_URL</label><input id="p-return" placeholder="https://你的域名/checkout/success"></div>
+          <div class="f"><label>年付金额(分)</label><input id="p-cnamt" placeholder="19900" title="专业版年付 ¥199，填分：19900"></div>
+        </div>
+        <h4 style="font-size:12px;color:var(--teal);margin:14px 0 6px">微信支付 v3</h4>
+        <div class="row">
+          <div class="f"><label>WECHAT_APP_ID</label><input id="p-wxaid" placeholder="wx…"></div>
+          <div class="f"><label>WECHAT_MCH_ID</label><input id="p-wxmch" placeholder="商户号"></div>
+          <div class="f"><label>WECHAT_SERIAL_NO</label><input id="p-wxserial" placeholder="证书序列号"></div>
+        </div>
+        <div class="row">
+          <div class="f" style="flex:2"><label>WECHAT_API_V3_KEY</label><input id="p-wxv3" placeholder="32字节 APIv3 密钥"></div>
+          <div class="f" style="flex:3"><label>WECHAT_PRIVATE_KEY（商户私钥 PEM）</label><input id="p-wxpriv" placeholder="-----BEGIN PRIVATE KEY----- …"></div>
+        </div>
+        <div class="row">
+          <div class="f" style="flex:3"><label>WECHAT_PLATFORM_PUBLIC_KEY（平台证书公钥 PEM）</label><input id="p-wxplat" placeholder="-----BEGIN PUBLIC KEY----- …"></div>
+        </div>
+        <h4 style="font-size:12px;color:var(--teal);margin:14px 0 6px">支付宝当面付</h4>
+        <div class="row">
+          <div class="f"><label>ALIPAY_APP_ID</label><input id="p-alid" placeholder="应用 AppID"></div>
+          <div class="f" style="flex:2"><label>ALIPAY_GATEWAY</label><input id="p-algw" placeholder="留空=生产网关 / 沙箱地址"></div>
+        </div>
+        <div class="row">
+          <div class="f" style="flex:3"><label>ALIPAY_PRIVATE_KEY（应用私钥 PEM）</label><input id="p-alpriv" placeholder="-----BEGIN PRIVATE KEY----- …"></div>
+          <div class="f" style="flex:3"><label>ALIPAY_PUBLIC_KEY（支付宝公钥 PEM）</label><input id="p-alpub" placeholder="-----BEGIN PUBLIC KEY----- …"></div>
+        </div>
+        <button class="btn primary" type="submit">保存配置</button>
+        <span id="pay-status" style="margin-left:12px;font-size:12px;color:var(--sub)"></span>
+      </form>
+      <div class="result" id="pay-result"></div>
+    </div>
+  </section>
+
+  <!-- ============ 消 key 退款 ============ -->
+  <section id="tab-refund" style="display:none">
+    <div class="panel">
+      <h2>消 key 退款（凭注销码放款）</h2>
+      <p class="hint">用户在本机点「注销并申请退款」后会拿到一个 <b>消 key 码</b>（SPD1-…）。粘进来先验证——验签通过才说明他确实销毁了激活码。<b>确认退款时该激活码会同时写进吊销名单</b>：即使他事先备份过，换机器联网激活也会被拦下。</p>
+      <form id="refund-form">
+        <div class="row">
+          <div class="f" style="flex:3"><label>消 key 码（用户发来的 SPD1-…）</label><input id="r-code" placeholder="SPD1-…"></div>
+        </div>
+        <button class="btn primary" type="submit">验证注销码</button>
+        <span id="refund-status" style="margin-left:12px;font-size:12px;color:var(--sub)"></span>
+      </form>
+      <div class="result" id="refund-result"></div>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var PRICING = {};
+
+  function toast(msg){
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._tm); t._tm = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+  // file:// 双击打开时，'/api/...' 会解析成 file:///api/... 必然失败，
+  // 此时自动指向本机运营台（端口可用 ?ops=9610 覆盖，对应 OPS_PORT）。
+  var OPS_PORT = (/[?&]ops=(\d{2,5})/.exec(location.search) || [])[1] || '9600';
+  var OPS_BASE = location.protocol === 'file:' ? ('http://127.0.0.1:' + OPS_PORT) : '';
+  function api(path, opts){
+    return fetch(OPS_BASE + path, opts).then(function(r){ return r.json(); });
+  }
+  function esc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function copyText(text, okMsg){
+    var done = function(){ toast(okMsg || '已复制'); };
+    var fail = function(){ toast('复制失败，请手动复制'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text, done, fail); });
+    } else legacyCopy(text, done, fail);
+  }
+  function legacyCopy(text, done, fail){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? done() : fail();
+    }catch(_){ fail(); }
+  }
+  function planLabel(p){ return (PRICING[p] && PRICING[p].label) || p; }
+  function money(n){ return '¥' + (Number(n)||0); }
+  function daysHtml(r){
+    if (r.daysLeft == null) return '<span class="b-exp">—</span>';
+    if (r.expired) return '<span class="days over">已过期 ' + Math.abs(r.daysLeft) + ' 天</span>';
+    if (r.expiringSoon) return '<span class="days soon">剩 ' + r.daysLeft + ' 天</span>';
+    return '<span class="days">剩 ' + r.daysLeft + ' 天</span>';
+  }
+  function statusBadge(s){
+    var m = { pending:['b-pending','待发货'], sent:['b-sent','已发货'], refunded:['b-refunded','已退款'] };
+    var x = m[s] || m.pending;
+    return '<span class="badge ' + x[0] + '">' + x[1] + '</span>';
+  }
+  function shortKey(k){ return k.length > 14 ? k.slice(0,8) + '…' + k.slice(-6) : k; }
+
+  // ---------- 仪表盘 ----------
+  function loadDash(){
+    api('/api/overview').then(function(j){
+      if (!j.success) return;
+      PRICING = j.pricing || {};
+      var s = j.stats;
+      var cards = [
+        ['本月销售额', money(s.monthSales), 'money'],
+        ['累计销售额', money(s.totalSales), 'money'],
+        ['有效激活码', s.activeCount, ''],
+        ['待发货', s.pendingCount, s.pendingCount ? 'warn' : ''],
+        ['已退款', s.refundedCount, ''],
+        ['30天内到期', j.expiringSoon.length, j.expiringSoon.length ? 'warn' : '']
+      ];
+      $('stat-cards').innerHTML = cards.map(function(c){
+        return '<div class="card"><div class="k">' + c[0] + '</div><div class="v ' + c[2] + '">' + c[1] + '</div></div>';
+      }).join('');
+
+      // plan 占比
+      var plans = Object.keys(s.byPlan).map(function(p){
+        return '<tr><td>' + esc(planLabel(p)) + '</td><td>' + s.byPlan[p].count + '</td><td>' + money(s.byPlan[p].sales) + '</td>' +
+               '<td><div class="bar"><i style="width:' + Math.round(100*s.byPlan[p].sales/(s.totalSales||1)) + '%"></i></div></td></tr>';
+      }).join('');
+      var byPlanHtml = plans ? '<div class="panel"><h2>方案占比</h2><table><thead><tr><th>方案</th><th>订单数</th><th>销售额</th><th></th></tr></thead><tbody>' + plans + '</tbody></table></div>' : '';
+      var dashPanels = document.querySelectorAll('#tab-dash .panel');
+      if (byPlanHtml) {
+        if (!dashPanels[dashPanels.length-1]._byPlan) {
+          var div = document.createElement('div');
+          div.innerHTML = byPlanHtml;
+          dashPanels[dashPanels.length-1]._byPlan = div.firstChild;
+          $('tab-dash').appendChild(dashPanels[dashPanels.length-1]._byPlan);
+        }
+      }
+
+      $('expiring-box').innerHTML = j.expiringSoon.length
+        ? '<table><thead><tr><th>激活码</th><th>客户</th><th>方案</th><th>到期</th><th>操作</th></tr></thead><tbody>' +
+          j.expiringSoon.map(function(r){
+            return '<tr><td class="mono key-cell" title="' + esc(r.key) + '">' + esc(shortKey(r.key)) + '</td>' +
+                   '<td>' + esc(r.login) + '</td><td>' + esc(planLabel(r.plan)) + '</td>' +
+                   '<td>' + esc(String(r.expiresAt).slice(0,10)) + '</td>' +
+                   '<td><button class="btn sm" data-copytext="' + esc(r.key) + '">复制key</button></td>';
+          }).join('') + '</tbody></table>'
+        : '<div class="empty">30 天内没有到期订单 🎉</div>';
+
+      $('recent-box').innerHTML = j.recent.length
+        ? '<table><thead><tr><th>时间</th><th>激活码</th><th>客户</th><th>方案</th><th>金额</th><th>状态</th></tr></thead><tbody>' +
+          j.recent.map(function(r){
+            return '<tr><td class="mono">' + esc(String(r.issuedAt).slice(5,16).replace('T',' ')) + '</td>' +
+                   '<td class="mono key-cell" title="' + esc(r.key) + '">' + esc(shortKey(r.key)) + '</td>' +
+                   '<td>' + esc(r.login) + '</td><td>' + esc(planLabel(r.plan)) + '</td>' +
+                   '<td>' + money(r.amount) + '</td><td>' + statusBadge(r.status) + '</td></tr>';
+          }).join('') + '</tbody></table>'
+        : '<div class="empty">还没有订单</div>';
+    });
+  }
+
+  // ---------- 台账 ----------
+  var keysTimer = null;
+  function loadKeys(){
+    var q = $('q').value.trim(), plan = $('f-plan').value, st = $('f-status').value, sort = $('f-sort').value;
+    api('/api/keys?q=' + encodeURIComponent(q) + '&plan=' + encodeURIComponent(plan) +
+        '&status=' + encodeURIComponent(st) + '&sort=' + encodeURIComponent(sort)).then(function(j){
+      if (!j.success) return;
+      var tb = document.querySelector('#keys-table tbody');
+      tb.innerHTML = j.rows.length ? j.rows.map(function(r){
+        return '<tr>' +
+          '<td><span class="mono key-cell" title="' + esc(r.key) + '">' + esc(shortKey(r.key)) + '</span> ' +
+              '<button class="btn sm" data-copytext="' + esc(r.key) + '">复制</button></td>' +
+          '<td>' + esc(r.login) + '</td>' +
+          '<td>' + esc(planLabel(r.plan)) + '</td>' +
+          '<td>' + r.seats + '</td>' +
+          '<td>' + daysHtml(r) + '</td>' +
+          '<td>' + statusBadge(r.status) + '</td>' +
+          '<td title="' + esc(r.note + (r.opsNote ? ' / ' + r.opsNote : '')) + '">' + esc(r.note || '') + (r.opsNote ? ' / ' + esc(r.opsNote) : '') + '</td>' +
+          '<td style="white-space:nowrap">' +
+            '<button class="btn sm" data-act="text" data-key="' + esc(r.key) + '">客户文案</button> ' +
+            (r.status !== 'sent' ? '<button class="btn sm" data-act="sent" data-key="' + esc(r.key) + '">已发货</button> ' : '') +
+            (r.status !== 'refunded' ? '<button class="btn sm" data-act="refunded" data-key="' + esc(r.key) + '">退款</button>' : '') +
+          '</td></tr>';
+      }).join('') : '<tr><td colspan="8" class="empty">没有匹配的记录</td></tr>';
+    });
+  }
+  function debounceKeys(){ clearTimeout(keysTimer); keysTimer = setTimeout(loadKeys, 250); }
+
+  // ---------- 生成 ----------
+  // 方案下拉的本地兜底（与 OpsConsole/lib/pricing.js 的 DEFAULTS 保持一致）。
+  // 作用：/api/pricing 请求失败（服务没起 / 用 file:// 直接打开页面）时，
+  // 下拉不再是空白的，用户至少能看到方案并知道哪里出了问题。
+  var PLAN_FALLBACK = {
+    pro_yearly:  { amount: 199, perSeat: false, period: '年', label: '专业版 · 年付', note: '一口价，含 1 个席位' },
+    pro_monthly: { amount: 19,  perSeat: false, period: '月', label: '专业版 · 月付', note: '一口价，含 1 个席位' },
+    team:        { amount: 129, perSeat: true,  period: '年', minSeats: 5, label: '团队版（5人以上）', note: '按席位计价：金额 = 129 × 席位数（5 人起订）' }
+  };
+  /** 单价文案：¥129/席位/年 —— 把金额、是否按席位、周期一次写全 */
+  function priceText(c){
+    return '¥' + c.amount + (c.perSeat ? '/席位' : '') + (c.period ? '/' + c.period : '');
+  }
+  function fillPlanSelect(pricing){
+    PRICING = pricing || PLAN_FALLBACK;
+    // 生成页：写全「套餐 · 单价 · 计费方式 · 周期」
+    $('g-plan').innerHTML = Object.keys(PRICING).map(function(p){
+      return '<option value="' + esc(p) + '">' + esc(PRICING[p].label || p) + '（' + priceText(PRICING[p]) + '）</option>';
+    }).join('');
+    // 台账筛选：只留套餐名，价格在这里是噪音
+    var fp = $('f-plan');
+    if (fp) fp.innerHTML = '<option value="">全部方案</option>' +
+      Object.keys(PRICING).map(function(p){
+        return '<option value="' + esc(p) + '">' + esc(PRICING[p].label || p) + '</option>';
+      }).join('');
+    updatePlanHint();
+  }
+  /** 下拉下方的一句人话：算给你看多少钱、有效期多久、套餐不决定周期 */
+  function updatePlanHint(){
+    var el = $('g-plan-hint');
+    if (!el) return;
+    var p = $('g-plan').value;
+    var c = PRICING[p];
+    if (!c || !c.amount) { el.innerHTML = ''; return; }
+    var seats = parseInt($('g-seats').value, 10) || 1;
+    var days = parseInt($('g-days').value, 10) || 365;
+    // 起订量联动：团队版把「席位/人数」输入框的 min 提到 5，用户用微调钮也降不下去
+    var seatsEl = $('g-seats');
+    if (seatsEl) {
+      var ms0 = parseInt(c.minSeats, 10) > 0 ? parseInt(c.minSeats, 10) : 1;
+      seatsEl.min = String(ms0);
+      if (seats < ms0) { seatsEl.value = String(ms0); seats = ms0; }
+    }
+    var tail = ' · 有效期 <b>' + days + ' 天</b>（由「有效天数」决定，套餐名不决定周期）';
+    // 按席位方案（团队版）：**每人一张独立激活码** —— 席位数即人数，生成 N 个 seats=1 的 key。
+    // 理由：共用一张码时，任一人退款会连坐全队（吊销唯一那张码）；一客一码则退款天然隔离，
+    // 且台账每人一条可追溯。总价相同（129 × 人数）。
+    if (c.perSeat) {
+      var cntEl = $('g-count');
+      if (cntEl) cntEl.value = seats;
+      var minSeats = parseInt(c.minSeats, 10) > 0 ? parseInt(c.minSeats, 10) : 1;
+      var tooFew = seats < minSeats;
+      el.innerHTML = '<b>' + esc(c.label || p) + '</b> · ¥' + c.amount + ' × ' + seats + ' 人 = <b>¥' + (c.amount * seats) + '</b>'
+        + ' · 将生成 <b>' + seats + ' 个独立激活码</b>（每人一码，单人退款不影响其他人）'
+        + (tooFew ? ' · <span style="color:#b91c1c">该方案 ' + minSeats + ' 人起订，当前 ' + seats + ' 人，提交会被拒绝</span>' : '')
+        + tail;
+      return;
+    }
+    var calc = '一口价 <b>¥' + c.amount + '</b>（不随席位变化）';
+    el.innerHTML = '<b>' + esc(c.label || p) + '</b> · ' + calc
+      + (c.note ? ' · ' + esc(c.note) : '')
+      + tail;
+  }
+  function loadGenForm(){
+    api('/api/pricing').then(function(j){
+      if (!j || !j.success || !j.pricing) {
+        fillPlanSelect(null);
+        toast('定价表加载失败，已显示默认方案');
+        return;
+      }
+      fillPlanSelect(j.pricing);
+    }).catch(function(){
+      fillPlanSelect(null);
+      toast('无法连接运营台服务：请用 node OpsConsole/server.js 启动后从 http://127.0.0.1:9600 打开');
+    });
+  }
+  function submitGen(e){
+    e.preventDefault();
+    var c = PRICING[$('g-plan').value] || {};
+    var seatsInput = parseInt($('g-seats').value, 10) || 1;
+    // 起订量前置拦截：团队版 5 人以上。服务端也会拒（store.addKeys），这里先给一句人话，
+    // 免得用户点了提交才看到红色 toast。
+    var minSeats = parseInt(c.minSeats, 10) > 0 ? parseInt(c.minSeats, 10) : 1;
+    if (c.perSeat && seatsInput < minSeats) {
+      toast((c.label || '该方案') + ' 需 ' + minSeats + ' 人起订，当前 ' + seatsInput + ' 人');
+      return;
+    }
+    // 按席位方案（团队版）：席位数 = 人数 → 生成 N 张 seats=1 的独立激活码（每人一码）
+    var count = c.perSeat ? seatsInput : (parseInt($('g-count').value, 10) || 1);
+    var body = {
+      login: $('g-login').value.trim(),
+      plan: $('g-plan').value,
+      seats: c.perSeat ? 1 : seatsInput,
+      days: parseInt($('g-days').value, 10) || 365,
+      note: $('g-note').value.trim(),
+      count: count
+    };
+    api('/api/keys', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+      .then(function(j){
+        if (!j.success) { toast(j.error || '生成失败'); return; }
+        var box = $('gen-result');
+        box.innerHTML = '<div style="font-weight:600;margin-bottom:6px">已生成 ' + j.rows.length + ' 个激活码并登记台账：</div>' +
+          j.rows.map(function(r){
+            return '<div class="line"><span class="mono">' + esc(r.key) + '</span>' +
+                   '<button class="btn sm" data-copytext="' + esc(r.key) + '">复制</button>' +
+                   '<button class="btn sm" data-act="text" data-key="' + esc(r.key) + '">客户文案</button></div>';
+          }).join('');
+        box.classList.add('show');
+        toast('已生成 ' + j.rows.length + ' 个 key');
+      })
+      .catch(function(){
+        toast('生成失败：连不上运营台服务（请确认已用 node OpsConsole/server.js 启动，并从 http://127.0.0.1:9600 打开本页）');
+      });
+  }
+
+  // ---------- 客户档案 ----------
+  function loadCustomers(){
+    api('/api/customers').then(function(j){
+      if (!j.success) return;
+      var tb = document.querySelector('#cust-table tbody');
+      tb.innerHTML = j.customers.length ? j.customers.map(function(c){
+        var plans = Object.keys(c.plans).map(function(p){ return esc(planLabel(p)) + '×' + c.plans[p]; }).join('，');
+        return '<tr><td>' + esc(c.login) + '</td><td>' + c.orders + '</td><td class="money" style="color:var(--teal);font-weight:700">' + money(c.amount) + '</td>' +
+               '<td>' + c.active + '</td><td>' + plans + '</td><td class="mono">' + esc(String(c.lastExpiry).slice(0,10)) + '</td></tr>';
+      }).join('') : '<tr><td colspan="6" class="empty">还没有客户</td></tr>';
+    });
+  }
+
+  // ---------- 支付配置 ----------
+  function loadPay(){
+    api('/api/payment-config').then(function(j){
+      if (!j.success) return;
+      var c = j.config || {};
+      $('p-secret').value = c.STRIPE_SECRET_KEY || '';
+      $('p-whsec').value = c.STRIPE_WEBHOOK_SECRET || '';
+      $('p-pm').value = c.STRIPE_PRICE_PRO_MONTHLY || '';
+      $('p-py').value = c.STRIPE_PRICE_PRO_YEARLY || '';
+      $('p-succ').value = c.STRIPE_SUCCESS_URL || '';
+      $('p-cancel').value = c.STRIPE_CANCEL_URL || '';
+      $('p-cnprov').value = c.CN_PAY_PROVIDER || '';
+      $('p-beian').value = c.CN_ICP_BEIAN || '';
+      $('p-subject').value = c.CN_PAY_SUBJECT || '';
+      $('p-notify').value = c.CN_NOTIFY_URL || '';
+      $('p-return').value = c.CN_RETURN_URL || '';
+      $('p-cnamt').value = c.CN_YEARLY_AMOUNT_FEN || '';
+      $('p-wxaid').value = c.WECHAT_APP_ID || '';
+      $('p-wxmch').value = c.WECHAT_MCH_ID || '';
+      $('p-wxserial').value = c.WECHAT_SERIAL_NO || '';
+      $('p-wxv3').value = c.WECHAT_API_V3_KEY || '';
+      $('p-wxpriv').value = c.WECHAT_PRIVATE_KEY || '';
+      $('p-wxplat').value = c.WECHAT_PLATFORM_PUBLIC_KEY || '';
+      $('p-alid').value = c.ALIPAY_APP_ID || '';
+      $('p-algw').value = c.ALIPAY_GATEWAY || '';
+      $('p-alpriv').value = c.ALIPAY_PRIVATE_KEY || '';
+      $('p-alpub').value = c.ALIPAY_PUBLIC_KEY || '';
+    });
+  }
+  function submitPay(e){
+    e.preventDefault();
+    var body = {
+      STRIPE_SECRET_KEY: $('p-secret').value.trim(),
+      STRIPE_WEBHOOK_SECRET: $('p-whsec').value.trim(),
+      STRIPE_PRICE_PRO_MONTHLY: $('p-pm').value.trim(),
+      STRIPE_PRICE_PRO_YEARLY: $('p-py').value.trim(),
+      STRIPE_SUCCESS_URL: $('p-succ').value.trim(),
+      STRIPE_CANCEL_URL: $('p-cancel').value.trim(),
+      CN_PAY_PROVIDER: $('p-cnprov').value.trim(),
+      CN_ICP_BEIAN: $('p-beian').value.trim(),
+      CN_PAY_SUBJECT: $('p-subject').value.trim(),
+      CN_NOTIFY_URL: $('p-notify').value.trim(),
+      CN_RETURN_URL: $('p-return').value.trim(),
+      CN_YEARLY_AMOUNT_FEN: $('p-cnamt').value.trim(),
+      WECHAT_APP_ID: $('p-wxaid').value.trim(),
+      WECHAT_MCH_ID: $('p-wxmch').value.trim(),
+      WECHAT_SERIAL_NO: $('p-wxserial').value.trim(),
+      WECHAT_API_V3_KEY: $('p-wxv3').value.trim(),
+      WECHAT_PRIVATE_KEY: $('p-wxpriv').value.trim(),
+      WECHAT_PLATFORM_PUBLIC_KEY: $('p-wxplat').value.trim(),
+      ALIPAY_APP_ID: $('p-alid').value.trim(),
+      ALIPAY_GATEWAY: $('p-algw').value.trim(),
+      ALIPAY_PRIVATE_KEY: $('p-alpriv').value.trim(),
+      ALIPAY_PUBLIC_KEY: $('p-alpub').value.trim()
+    };
+    api('/api/payment-config', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+      .then(function(j){
+        if (!j.success) { $('pay-status').textContent = (j.error || '保存失败'); return; }
+        var msg = j.reloaded === 'reloaded'
+          ? '已保存并热重载（LicenseServer 运行中）'
+          : '已保存（重启 LicenseServer 后生效）';
+        $('pay-status').textContent = msg;
+        var r = $('pay-result');
+        r.innerHTML = '<div style="font-weight:600">已写入：' + esc(j.file || '') + '</div>';
+        r.classList.add('show');
+        toast(msg);
+      });
+  }
+
+  // ---------- 消 key 退款 ----------
+  var proofCode = null;   // 已通过验签的注销码，确认退款时用
+
+  function resetRefund(){
+    proofCode = null;
+    $('r-code').value = '';
+    $('refund-status').textContent = '';
+    $('refund-result').classList.remove('show');
+    $('refund-result').innerHTML = '';
+  }
+
+  function submitRefund(e){
+    if (e) e.preventDefault();
+    var code = $('r-code').value.trim();
+    if (!code) { toast('请先粘贴用户发来的消 key 码'); return; }
+    $('refund-status').textContent = '验证中…';
+    api('/api/deactivation/verify', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code: code })
+    }).then(function(j){
+      $('refund-status').textContent = '';
+      var r = $('refund-result');
+      if (!j.success){
+        proofCode = null;
+        r.innerHTML = '<div style="color:#d33;font-weight:600">' + esc(j.error) + '</div>';
+        r.classList.add('show');
+        return;
+      }
+      proofCode = code;
+      var html = '<div style="margin:6px 0">'
+        + '<div>客户：<b>' + esc(j.login || '-') + '</b></div>'
+        + '<div>套餐：' + esc(j.plan) + '</div>'
+        + '<div>到期：' + esc(j.expiresAt) + '</div>'
+        + '<div>当前状态：' + esc(j.status) + '</div>'
+        + '<div>本机销毁时间：' + esc(j.destroyedAt) + '</div>'
+        + '<div style="margin-top:6px;font-size:12px;color:var(--sub)">激活码：' + esc(j.key) + '</div>'
+        + '</div>';
+      if (j.alreadyRefunded){
+        html += '<div style="color:#d33;font-weight:600;margin-top:8px">这张激活码已经退过款了，不能重复退款。</div>';
+      } else {
+        html += '<button class="btn primary" id="btn-do-refund" style="margin-top:10px">确认退款（同时吊销该激活码）</button>';
+      }
+      r.innerHTML = html;
+      r.classList.add('show');
+      var b = $('btn-do-refund');
+      if (b) b.addEventListener('click', doRefund);
+    });
+  }
+
+  function doRefund(){
+    if (!proofCode) return;
+    $('refund-status').textContent = '处理中…';
+    api('/api/deactivation/refund', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code: proofCode })
+    }).then(function(j){
+      $('refund-status').textContent = '';
+      var r = $('refund-result');
+      if (!j.success){
+        r.innerHTML = '<div style="color:#d33;font-weight:600">' + esc(j.error) + '</div>';
+        r.classList.add('show');
+        return;
+      }
+      var h = j.revoked && j.revoked.hash ? j.revoked.hash : '';
+      r.innerHTML = '<div style="color:var(--teal);font-weight:600">已标记退款，并写入吊销名单'
+        + (h ? '（标识 ' + esc(h) + '）' : '') + '。</div>'
+        + '<div style="font-size:12px;color:var(--sub);margin-top:4px">他本机已失效；若在别处备份过，联网后会因吊销名单被拦下。</div>';
+      r.classList.add('show');
+      toast('已退款并吊销');
+      proofCode = null;
+      $('r-code').value = '';
+    });
+  }
+
+  // ---------- 事件 ----------
+  document.querySelectorAll('nav button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('nav button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var tab = b.getAttribute('data-tab');
+      ['dash','keys','gen','cust','pay','refund'].forEach(function(t){ $( 'tab-' + t ).style.display = t === tab ? '' : 'none'; });
+      if (tab === 'dash') loadDash();
+      if (tab === 'keys') loadKeys();
+      if (tab === 'gen') loadGenForm();
+      if (tab === 'cust') loadCustomers();
+      if (tab === 'pay') loadPay();
+      if (tab === 'refund') resetRefund();
+    });
+  });
+  ['q','f-plan','f-status','f-sort'].forEach(function(id){
+    $(id).addEventListener('input', id === 'q' ? debounceKeys : loadKeys);
+  });
+  // 方案/席位/天数一变就实时算金额与有效期，不用靠猜
+  ['g-plan','g-seats','g-days'].forEach(function(id){
+    $(id).addEventListener('change', updatePlanHint);
+    $(id).addEventListener('input', updatePlanHint);
+  });
+  $('btn-export').addEventListener('click', function(){ window.location = '/api/export.csv'; });
+  $('gen-form').addEventListener('submit', submitGen);
+  $('pay-form').addEventListener('submit', submitPay);
+  $('refund-form').addEventListener('submit', submitRefund);
+
+  // 事件委托：复制 / 客户文案 / 状态标记
+  document.addEventListener('click', function(e){
+    var el = e.target;
+    if (el.hasAttribute && el.hasAttribute('data-copytext')) {
+      copyText(el.getAttribute('data-copytext'), '已复制激活码');
+      return;
+    }
+    var btn = el.closest ? el.closest('[data-act]') : null;
+    if (!btn) return;
+    var act = btn.getAttribute('data-act'), key = btn.getAttribute('data-key');
+    if (act === 'text') {
+      api('/api/customer-text?key=' + encodeURIComponent(key)).then(function(j){
+        if (j.success) copyText(j.text, '客户文案已复制，直接粘微信');
+        else toast(j.error || '获取文案失败');
+      });
+    } else if (act === 'sent' || act === 'refunded') {
+      var label = act === 'sent' ? '已发货' : '已退款';
+      if (act === 'refunded' && !confirm('确认标记为退款？该单将不计入销售额统计。')) return;
+      api('/api/keys/status', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ key: key, status: act }) }).then(function(j){
+        if (j.success) { toast('已标记为' + label); loadKeys(); }
+        else toast(j.error || '操作失败');
+      });
+    }
+  });
+
+  // 方案下拉：先用本地兜底立即填充（保证任何情况下都不空白），再拉真实定价覆盖
+  fillPlanSelect(PLAN_FALLBACK);
+  api('/api/pricing').then(function(j){
+    if (!j || !j.success || !j.pricing) return;
+    fillPlanSelect(j.pricing);
+  }).catch(function(){ /* 已有兜底，静默即可 */ });
+
+  // file:// 双击打开时：api() 已自动指向本机运营台（OPS_BASE），server.js 的 CORS
+  // 白名单也放行了 null 源——服务在跑时一切正常，不打扰。只有服务没起来时才给
+  // 帮助条，并且直接给"一键启动"入口，不让用户自己猜命令（2026-10-21 用户反馈）。
+  if (location.protocol === 'file:') {
+    api('/api/overview').then(function () {
+      // 服务在跑：file:// 与 http://127.0.0.1:9600 完全等价，安静
+    }).catch(function () {
+      var dir = decodeURIComponent(location.pathname || '')
+        .replace(/[\\/]public[\\/]index\.html$/, '').replace(/^\//, '');
+      var cmd = dir ? ('cd /d "' + dir.replace(/\//g, '\\') + '" && node server.js') : 'node OpsConsole/server.js';
+      var banner = document.createElement('div');
+      banner.id = 'file-banner';
+      banner.style.cssText = 'background:#b45309;color:#fff;padding:10px 16px;font-size:13px;line-height:1.8';
+      banner.innerHTML =
+        '<div style="font-weight:700">⚠️ 运营台服务没有启动，页面数据都加载不到。两种启动方式：</div>' +
+        '<div>① 一键（推荐）：双击文件 <b>OpsConsole\\start-ops-console.bat</b>，自动启动服务并打开浏览器。</div>' +
+        '<div>② 手动：运行 <b>' + esc(cmd) + '</b>，然后访问 <b>http://127.0.0.1:' + OPS_PORT + '</b>。</div>' +
+        '<div style="margin-top:6px">' +
+        '<button type="button" id="fb-copy" style="margin-right:8px;padding:4px 12px;cursor:pointer">复制启动命令</button>' +
+        '<button type="button" id="fb-open" style="padding:4px 12px;cursor:pointer">打开 http://127.0.0.1:' + OPS_PORT + '</button>' +
+        '</div>';
+      document.body.insertBefore(banner, document.body.firstChild);
+      $('fb-copy').addEventListener('click', function () { copyText(cmd, '启动命令已复制，粘贴到终端运行即可'); });
+      $('fb-open').addEventListener('click', function () { window.open('http://127.0.0.1:' + OPS_PORT, '_blank'); });
+    });
+  }
+
+  loadDash();
+})();
+</script>
+</body>
+</html>

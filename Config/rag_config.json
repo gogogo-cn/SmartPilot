@@ -1,0 +1,30 @@
+{
+    "defaultEmbeddingProvider": "local_bge",
+    "localBge": {
+        "endpoint": "http://localhost:11434",
+        "model": "bge-m3"
+    },
+    "cloudEmbedding": {
+        "provider": "qianwen",
+        "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+        "apiKey": "",
+        "model": "text-embedding-v3"
+    },
+    "qdrant": {
+        "endpoint": "http://localhost:6333",
+        "apiKey": ""
+    },
+    "mineru": {
+        "endpoint": "http://127.0.0.1:8036",
+        "enabled": true
+    },
+    "retrieval": {
+        "defaultTopK": 5,
+        "scoreThreshold": 0.35,
+        "maxContextChunks": 3
+    },
+    "chatEnhancement": {
+        "enabled": true,
+        "defaultKbId": ""
+    }
+}

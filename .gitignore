@@ -1,0 +1,153 @@
+# ============================================================
+# ExcelAI VSTO AddIn - Git Ignore
+# ============================================================
+
+# ----------------------------------------------------------
+# VSTO / VB.NET build outputs
+# ----------------------------------------------------------
+bin/
+obj/
+*.user
+*.suo
+*.vbproj.FileListAbsolute.txt
+*.pidb
+*.svclog
+*.vsp
+*.vspx
+*.psess
+TestResults/
+*.userosscache
+*.sln.docstates
+
+# ClickOnce / VSTO publish
+UpgradeLog*.htm
+publish/
+
+# ----------------------------------------------------------
+# Visual Studio
+# ----------------------------------------------------------
+.vs/
+*.ncrunchsolution
+*.ncrunchproject
+*.dotCover
+_ReSharper.*/
+*.DotSettings.user
+
+# ----------------------------------------------------------
+# .NET / NuGet
+# ----------------------------------------------------------
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nuget.props
+*.nuget.targets
+
+# ----------------------------------------------------------
+# Python
+# ----------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+env/
+PythonEmbed/
+
+# ----------------------------------------------------------
+# Node.js
+# ----------------------------------------------------------
+node_modules/
+.npm/
+*.log
+npm-debug.log*
+
+# TypeScript 编译输出（渐进式迁移阶段产物）
+UI/js/chat-v2/__tsc_output__/
+UI/js/chat-v2/**/*.js.map
+
+# ----------------------------------------------------------
+# IDE / Editor
+# ----------------------------------------------------------
+*.swp
+*.swo
+*~
+
+# ----------------------------------------------------------
+# OS generated files
+# ----------------------------------------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+
+# ----------------------------------------------------------
+# Local secrets (never ship API keys or code-signing keys)
+# ----------------------------------------------------------
+**/Config/llm_config.json
+**/Config/*secret*
+**/Config/*credentials*
+*.pfx
+deploy/*.pfx
+
+# License server local data / secrets
+LicenseServer/data/
+LicenseServer/.env
+LicenseServer/node_modules/
+LicenseServer/logs/
+
+# ----------------------------------------------------------
+# Temporary / Debug files
+# ----------------------------------------------------------
+fix-output.txt
+fix-context.txt
+fix_encoding*
+fixenc.ps1
+*.bak
+*.bak-*
+*.backup-*
+*.orig
+**/js.backup-*/
+
+# ----------------------------------------------------------
+# AI / debug transient artifacts (per 2026-08 repo cleanup)
+# ----------------------------------------------------------
+trae-debug-*.ndjson
+_uploaded_image.png
+_build_*.txt
+_build_check.ps1
+_test_output.txt
+debug-duplicate-final-result.md
+debug-server-*.log
+*-final-result.env
+UI/**/debug*.log
+
+# E2E test reports (runtime-generated)
+Tools/reports/
+
+# ----------------------------------------------------------
+# Runtime-generated config files (not source-controlled)
+# ----------------------------------------------------------
+Config/mcp.user.json
+bin/Debug/Config/ParseScripts/
+bin/Debug/Config/mcp.user.json
+bin/Release/Config/ParseScripts/
+bin/Release/Config/mcp.user.json
+
+# ----------------------------------------------------------
+# AI 助手 / 调试残留（2026-10-29 代码审核后补充）
+# ----------------------------------------------------------
+.playwright-cli/
+.codebuddy/
+.trae/
+.workbuddy/
+.trae-html-share-packages/
+/*.yml
+_tmp_*.png

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartPilot 年付</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 48px auto; padding: 0 16px; color: #0f172a; }
+    .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    .muted { color: #64748b; font-size: 13px; line-height: 1.5; }
+    .price { font-size: 28px; font-weight: 700; margin: 16px 0; }
+    button { width: 100%; padding: 12px; border: 0; border-radius: 8px; background: #0b5cab; color: #fff; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    #msg { margin-top: 12px; font-size: 13px; }
+    #qr { margin: 16px auto; text-align: center; }
+    #qr img, #qr canvas { max-width: 220px; }
+    .copy { font-size: 12px; color: #0b5cab; cursor: pointer; text-decoration: underline; }
+    code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:12px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="title">支付</h1>
+    <p class="muted" id="meta"></p>
+    <div class="price" id="price">—</div>
+    <div id="qr"></div>
+    <div id="sim" style="display:none">
+      <button id="payBtn" type="button">确认支付（模拟）</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+  <script src="/js/qrcode.min.js"></script>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const orderId = q.get('orderId') || '';
+    const amount = Number(q.get('amount') || '0');
+    const provider = q.get('provider') || 'simulate';
+    document.getElementById('price').textContent = '¥' + (amount / 100).toFixed(2);
+    document.getElementById('meta').textContent = '订单 ' + orderId + ' · 通道 ' + provider;
+
+    const btn = document.getElementById('payBtn');
+    const msg = document.getElementById('msg');
+    const qrBox = document.getElementById('qr');
+
+    // 真实通道：轮询拿到 codeUrl 后渲染二维码（若页面引入了 qrcode 库则出图，否则显示可复制的串）
+    async function tryRealQr() {
+      if (!orderId) return false;
+      try {
+        const r = await fetch('/checkout/cn/status?orderId=' + encodeURIComponent(orderId));
+        const j = await r.json();
+        if (!r.ok || !j.success) return false;
+        if (j.provider === 'simulate' || !j.codeUrl) return false;
+        document.getElementById('title').textContent = (j.provider === 'wechat' ? '微信' : '支付宝') + '扫码支付';
+        if (typeof window.QRCode !== 'undefined') {
+          qrBox.innerHTML = '';
+          new window.QRCode(qrBox, { text: j.codeUrl, width: 220, height: 220 });
+        } else {
+          qrBox.innerHTML = '<p class="muted">请使用' + (j.provider === 'wechat' ? '微信' : '支付宝') +
+            '扫一扫下方收款码：</p><p><code>' + j.codeUrl + '</code></p>' +
+            '<span class="copy" id="copyCode">复制收款串</span>';
+          const cp = document.getElementById('copyCode');
+          if (cp) cp.addEventListener('click', () => {
+            navigator.clipboard && navigator.clipboard.writeText(j.codeUrl);
+            msg.textContent = '已复制，可粘贴到任意二维码工具生成';
+          });
+        }
+        pollPaid(j.codeUrl);
+        return true;
+      } catch (_) { return false; }
+    }
+
+    // 轮询支付结果
+    function pollPaid() {
+      const t = setInterval(async () => {
+        try {
+          const r = await fetch('/checkout/cn/status?orderId=' + encodeURIComponent(orderId));
+          const j = await r.json();
+          if (j.success && j.paid) {
+            clearInterval(t);
+            msg.textContent = '支付成功。请回到 SmartPilot 设置 → 账户，点击刷新。';
+          }
+        } catch (_) {}
+      }, 2000);
+    }
+
+    (async () => {
+      const real = await tryRealQr();
+      if (real) return; // 真实通道已渲染二维码
+      // 否则按模拟页处理
+      document.getElementById('title').textContent = '开发模拟页，不是收款';
+      document.getElementById('meta').textContent += '（本页不会向微信/支付宝下单；需 CN_PAY_ALLOW_SIMULATE=1 才会记测试订单）';
+      document.getElementById('sim').style.display = 'block';
+    })();
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      msg.textContent = '处理中…';
+      try {
+        const r = await fetch('/checkout/cn/simulate-pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId })
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || ('HTTP ' + r.status));
+        msg.textContent = '支付成功。请回到 SmartPilot 设置 → 账户，点击刷新。';
+        btn.textContent = '已完成';
+      } catch (e) {
+        msg.textContent = '失败：' + e.message;
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

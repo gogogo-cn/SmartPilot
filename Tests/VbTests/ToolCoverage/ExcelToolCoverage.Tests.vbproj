@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExcelAIVSTOAddIn</RootNamespace>
+    <AssemblyName>ToolCoverage.Tests</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- 与主工程同版本 Newtonsoft.Json -->
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <!-- 复制工具定义与桥源码到输出目录，运行时做一致性解析（无需 Office 实例） -->
+  <ItemGroup>
+    <None Include="..\..\..\Hosts\Shared\Config\ppt_tools.json" Link="ppt_tools.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\Hosts\Shared\Config\word_tools.json" Link="word_tools.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\Hosts\Shared\HostMcpTools.vb" Link="src/HostMcpTools.vb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\Hosts\PptAIVSTOAddIn\PptBridge.vb" Link="src/PptBridge.vb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\Hosts\WordAIVSTOAddIn\WordBridge.vb" Link="src/WordBridge.vb" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

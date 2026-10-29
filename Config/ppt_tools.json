@@ -1,0 +1,1228 @@
+{
+  "version": "1.2.0",
+  "lastUpdated": "2026-10-28",
+  "tools": [
+    {
+      "name": "ppt_get_templates",
+      "layer": 1,
+      "description": "获取 PPT 可用主题（配色+字体）与版式类型白名单。\n\n在生成 PPT 前调用本工具了解可用主题 id（如 business_blue 商务蓝 / tech_green 科技绿 / vibrant_orange 活力橙 / elegant_purple 优雅紫），再将 theme 参数传给 ppt_generate；也可让用户从返回的主题列表中挑选。\n\n适用于：用户问'有哪些PPT主题/模板'、'用什么风格做PPT'、AI 需要为生成 PPT 选择合适的主题配色时。",
+      "parameters": [],
+      "displayName": "获取PPT主题模板",
+      "intentKeywords": [
+        "PPT主题",
+        "模板",
+        "版式",
+        "风格",
+        "配色",
+        "主题",
+        "幻灯片风格"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_analyze_data",
+      "layer": 1,
+      "description": "数据感知设计分析：根据传入的表头(headers)与数据行(rows)分析数据画像，返回推荐的 PPT 页面结构(slides 规格)、洞察要点(insights)、列画像(profile)与页面方向(orientation)。\n\n本工具只做分析与推荐，不生成文件。推荐结果可：\n1. 直接原样传给 ppt_generate 的 slides 参数自动生成；\n2. 由 AI 基于返回的洞察/结构自行编排更符合用户需求的 slides 规格。\n\n适用于：AI 拿到了 Excel 数据（表头+行）需要规划'这份数据适合做成什么样的PPT'时，作为生成前的设计参谋。\n\n⚠️ 必须先有数据（如先用 excel_read_range 读取选区得到 headers/rows），本工具不做数据读取。",
+      "parameters": [
+        {
+          "name": "headers",
+          "type": "string",
+          "required": true,
+          "description": "列名数组的 JSON 字符串，如 [\"月份\",\"销售额\",\"利润\"]。通常来自 excel_read_range 的读取结果。"
+        },
+        {
+          "name": "rows",
+          "type": "string",
+          "required": true,
+          "description": "数据行数组的 JSON 字符串，每行为 {列名: 值} 的对象，如 [{\"月份\":\"1月\",\"销售额\":100}]。通常来自 excel_read_range 的读取结果。"
+        },
+        {
+          "name": "reportTitle",
+          "type": "string",
+          "required": false,
+          "description": "报告标题（默认'数据分析报告'），将作为 PPT 封面标题与生成时的文件名"
+        },
+        {
+          "name": "requirement",
+          "type": "string",
+          "required": false,
+          "description": "用户需求原文，如'按地区对比利润，突出增长最快的区域'。后端据此做结构偏置（趋势/对比/构成/明细/图表类型）"
+        },
+        {
+          "name": "columnHints",
+          "type": "string",
+          "required": false,
+          "description": "列理解提示 JSON 对象（可选），如 {\"timeSeries\":\"月份\",\"category\":\"地区\",\"metric\":\"销售额\"}，用于覆盖自动列画像"
+        }
+      ],
+      "displayName": "分析数据设计PPT",
+      "intentKeywords": [
+        "分析数据",
+        "设计PPT",
+        "PPT结构",
+        "页面规划",
+        "洞察",
+        "图表建议",
+        "怎么排版",
+        "如何展示"
+      ],
+      "operationType": "Compute",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_generate",
+      "layer": 1,
+      "description": "生成 PPT 演示文稿（.pptx 文件）并自动打开预览。这是制作 PPT 的核心工具，AI 可自由编排：\n\n【纯结构 PPT（不需要数据）】只传 reportTitle + slides（页面规格数组），可生成纯文字/目录/章节/时间线/对比/致谢/形状/图片/SmartArt 等页面，适合方案汇报、培训材料、项目介绍等无数据场景。页面 type 支持：title/cover 标题页、text/bullets 文本要点页、agenda 目录页、section 章节页、timeline 时间线页、comparison 对比页、closing/end 结束页、shapes 自由形状页、picture 图片页（本地路径或 URL）、smartart SmartArt 替代页（流程/循环/层次/矩阵）。\n\n【数据 PPT】用 rangeAddress 指定 Excel 选区地址（后端自动读数据），或直接传 headers+rows（AI 先用 excel_read_range 读取后传入，推荐）；页面 type 额外支持：table 数据表格页、chart 图表页（柱/条/折线/饼/环/面积/雷达/散点/组合图/气泡图，组合图可用 lineSeries 指定折线系列、secondaryAxis 指定次轴）、kpi 指标页。\n\n【自动设计】只传 reportTitle + headers + rows（或 rangeAddress）+ requirement，autoDesign=true 时由后端数据感知设计引擎自动生成完整叙事结构。\n\n【主题】theme 参数传 ppt_get_templates 返回的主题 id（内置 10 个）；不传时用默认主题。\n\n【动画】所有页型默认挂载淡入切换 + 进入动画，可用页级 transition/animation 参数调整或 animate=false 关闭。\n\n适用于：任何'生成/制作/创建 PPT 演示文稿'、'做一份汇报材料'、'把这个数据做成PPT'、'写一份方案PPT'的最终生成步骤。",
+      "parameters": [
+        {
+          "name": "reportTitle",
+          "type": "string",
+          "required": false,
+          "description": "报告/演示文稿标题，将作为封面标题与文件名（默认'数据分析报告'；纯结构 PPT 建议必填）"
+        },
+        {
+          "name": "slides",
+          "type": "string",
+          "required": false,
+          "description": "页面规格数组的 JSON 字符串，AI 自由编排。每页含 type、title、variant（可选版式变体）及该类型特有字段；所有页型可加 transition(fade/push/wipe/dissolve/cut/random/none，默认fade)、animation(appear/fade/rise/float/grow/none，默认fade)、animate(false关闭动画)：\n- title/cover：subtitle（副标题）、variant(centered/modern/split)\n- text/bullets：bullets 数组或 content 文本、variant(bullets/cards/numbered)\n- agenda：items 数组、variant(numbered/cards/timeline)\n- section：subtitle、number（章节序号）、variant(number/bar/centered)\n- timeline：items 数组（每项 {time, text}）\n- comparison：leftTitle/rightTitle/leftItems/rightItems\n- closing/end：subtitle、variant(thanks/centered)\n- table：title（表格页标题，数据用 headers+rows 或 rangeAddress）\n- chart：title、chartType(column/bar/line/pie/doughnut/area/radar/scatter/combo组合图/bubble气泡图)、xField（X轴列名，默认第一列）、series（数值系列列名数组）、secondaryAxis（次坐标轴列名数组，量纲差异大时用）、lineSeries（组合图转为折线的系列，系列序号从1起或列名）、insight（数据洞察文字）、variant(standard/full/insight)\n- kpi：title、items 数组（每项 {label,value,highlight}）、variant(grid/hero/row)\n- shapes（自由形状页）：title、items 数组（每项 {type:rect/roundrect/oval/arrow/arrowLeft/arrowUp/arrowDown/flow/flowDecision/flowTerminator/flowDocument/callout/calloutOval/diamond/triangle/line, x,y,w,h, fill(主题令牌primary/secondary/accent/light 或 #RRGGBB), text, textColor, shadow, rotate, weight}；坐标缺失自动网格布局）\n- picture（图片页）：title、images 数组（每项 {src本地路径或http(s)URL, caption, x,y,w,h, rounded, border(bool或#RRGGBB), shadow, fit(fill拉伸/fit等比)}；坐标缺失自动网格布局；也可单图传 src+caption）\n- smartart（SmartArt 替代页）：title、layout(flow流程/cycle循环/hierarchy层次/matrix矩阵)、items 数组（字符串或 {title,desc}）\n示例：[{\"type\":\"title\",\"title\":\"Q3 销售汇报\",\"subtitle\":\"市场部\"},{\"type\":\"kpi\",\"title\":\"核心指标\",\"items\":[{\"label\":\"总销售额\",\"value\":\"1280万\",\"highlight\":true}]},{\"type\":\"chart\",\"title\":\"趋势\",\"chartType\":\"combo\",\"xField\":\"月份\",\"series\":[\"销售额\",\"增长率\"],\"lineSeries\":[\"增长率\"],\"secondaryAxis\":[\"增长率\"]},{\"type\":\"smartart\",\"title\":\"组织架构\",\"layout\":\"hierarchy\",\"items\":[\"总经理\",\"研发部\",\"市场部\",\"财务部\"]},{\"type\":\"closing\",\"title\":\"谢谢\"}]"
+        },
+        {
+          "name": "headers",
+          "type": "string",
+          "required": false,
+          "description": "列名数组的 JSON 字符串（用于数据表格/图表/KPI 页）。与 rows 成对传入；传了则优先用传入数据，不依赖 rangeAddress 读 Excel。"
+        },
+        {
+          "name": "rows",
+          "type": "string",
+          "required": false,
+          "description": "数据行数组的 JSON 字符串，每行为 {列名: 值} 的对象。与 headers 成对传入。"
+        },
+        {
+          "name": "rangeAddress",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel 选区地址（如 A1:H27，含表头）。不传 headers+rows 时后端自动从 Excel 读取该选区数据。纯结构 PPT 可省略。"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "required": false,
+          "description": "主题 id（如 business_blue/tech_green/vibrant_orange/elegant_purple），可用 ppt_get_templates 查询；不传用默认主题"
+        },
+        {
+          "name": "autoDesign",
+          "type": "boolean",
+          "required": false,
+          "description": "是否自动设计：true 且未传 slides 时，由后端数据感知设计引擎按数据画像+requirement 自动生成完整页面结构"
+        },
+        {
+          "name": "requirement",
+          "type": "string",
+          "required": false,
+          "description": "用户需求原文（配合 autoDesign 或 ppt_analyze_data 使用），如'重点展示各地区对比与增长趋势'"
+        },
+        {
+          "name": "orientation",
+          "type": "string",
+          "required": false,
+          "description": "页面方向：landscape 横版（默认）/ portrait 竖版；不传时后端按数据形状自动推断"
+        },
+        {
+          "name": "applyLayout",
+          "type": "boolean",
+          "required": false,
+          "description": "是否套用版式画像（默认 true；false 时仅用配色字体，不套用标题/表格位置与装饰形状）"
+        }
+      ],
+      "displayName": "生成PPT演示文稿",
+      "intentKeywords": [
+        "生成PPT",
+        "制作PPT",
+        "创建幻灯片",
+        "做一份PPT",
+        "演示文稿",
+        "汇报材料",
+        "方案PPT",
+        "做成PPT",
+        "幻灯片",
+        "ppt",
+        "演示"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_import_theme",
+      "layer": 1,
+      "description": "从已有 .pptx 模板文件提取配色与字体，注册为自定义主题。\n\n成功返回主题 id/名称/字体/配色，之后可传给 ppt_generate 的 theme 参数使用。\n\n适用于：用户提供公司模板 PPT（或指定某个 .pptx 文件），希望新生成的 PPT 沿用该模板的配色与字体风格。",
+      "parameters": [
+        {
+          "name": "pptxPath",
+          "type": "string",
+          "required": true,
+          "description": "模板 .pptx 文件的绝对路径，如 D:\\templates\\公司模板.pptx"
+        }
+      ],
+      "displayName": "导入PPT主题模板",
+      "intentKeywords": [
+        "导入主题",
+        "模板主题",
+        "提取配色",
+        "沿用模板",
+        "公司模板",
+        "注册主题"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_create_theme",
+      "layer": 1,
+      "description": "创建新的 PPT 主题（配色+字体+版式+风格方向）：AI 根据用户需求（风格/场景/品牌色/密度）输出主题 JSON，系统自动做 WCAG 对比度校验与可读性微调，并校验版式令牌与风格方向，通过后立即生效。\n\ntheme 参数格式：{\"id\":\"my_theme\",\"name\":\"我的主题\",\"font\":\"微软雅黑\",\"colors\":{\"primary\":[r,g,b],\"secondary\":[r,g,b],\"accent\":[r,g,b],\"bg\":[r,g,b],\"light\":[r,g,b],\"text\":[r,g,b],\"gray\":[r,g,b]},\"designTokens\":{...},\"styleDirection\":\"tech\"}。颜色支持 [r,g,b] 数组或 \"#RRGGBB\" 字符串；七组颜色均可省略，省略项自动回退商务蓝默认值。\n\nstyleDirection 为可选风格方向预设（五选一：tech 科技感/深色底电光蓝紧凑粗色条、academic 学术/米白底深蓝棕褐、business 商务/经典商务蓝、minimal 极简/纯白低饱和宽松无装饰、vivid 活力/暖白底橙红亮粉宽松）。声明方向后系统自动补齐整套合理默认（配色+版式），主题里显式给的字段会覆盖预设；不声明方向则完全手写。\n\ndesignTokens 为可选版式令牌（省略时用默认舒适版式）：density（compact/comfortable/spacious，紧凑/舒适/宽松三档，会自动展开字号与边距）、titleSize/headingSize/bodySize/smallSize/footerSize（字号 8-80）、margin（边距 8-120）、grid（网格 4-60）、titleTop/contentTop（标题与内容区起点 0-300）、ribbonStyle（标题装饰线：line 细线/bar 粗色条/none 无，配合 ribbonWidth 20-600）、pageVariants（页型变体默认，如 {\"title\":\"modern\",\"kpi\":\"hero\"}——title 支持 split/centered/modern，text 支持 bullets/cards/numbered，kpi 支持 grid/hero/row，chart 支持 standard/full/insight，section 支持 number/centered；spec 页级 variant 仍可覆盖）。用户说\"紧凑点/信息密集/宽松大气\"时优先用 density 档位。\n\n校验规则：正文色 text 与背景 bg 对比度需 ≥4.5，主色 primary 需 ≥3.0，强调色 accent 需 ≥1.5，辅助色 secondary 需 ≥1.3；不达标自动向增加对比度方向微调，仍不达标则报错拒绝创建；designTokens 枚举或范围非法、styleDirection 非五选一同样拒绝创建。\n\n成功返回主题 id/名称/配色与自动调整说明，之后把 theme id 传给 ppt_generate 或 ppt_project_start 即可使用。同 id 创建会覆盖旧主题。\n\n适用于：用户要求特定风格（科技感/学术/品牌色/深色/极简/紧凑/大气）而内置主题没有时；或用户给了主色要求生成配套完整色板。",
+      "parameters": [
+        {
+          "name": "theme",
+          "type": "string",
+          "required": true,
+          "description": "主题 JSON 字符串：{\"id\":\"my_theme\",\"name\":\"主题名\",\"font\":\"微软雅黑\",\"colors\":{...},\"designTokens\":{...},\"styleDirection\":\"tech\"}。colors 含 primary/secondary/accent/bg/light/text/gray 七组颜色，每组为 [r,g,b] 数组或 \"#RRGGBB\" 字符串；designTokens 可选：density(compact/comfortable/spacious)、titleSize/headingSize/bodySize/smallSize/footerSize、margin/grid/titleTop/contentTop、ribbonStyle(line/bar/none)/ribbonWidth、pageVariants({\"title\":\"modern\",\"kpi\":\"hero\"})；styleDirection 可选：tech/academic/business/minimal/vivid（自动补齐整套默认，显式字段覆盖）"
+        }
+      ],
+      "displayName": "创建PPT主题",
+      "intentKeywords": [
+        "创建主题",
+        "新建主题",
+        "自定义主题",
+        "定制配色",
+        "自定义风格",
+        "生成主题",
+        "AI配色",
+        "品牌色",
+        "主题风格"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_create_theme_from_image",
+      "layer": 1,
+      "description": "从参考图片提取品牌主色，自动生成 PPT 主题（配色+可选版式+可选风格方向）。\n\n用户给了品牌图/参考图/截图，希望 PPT 配色跟图走时调用。流程：图片提色（主色/辅助/强调/背景）→ WCAG 对比度校验与自动微调 → 落盘生效，之后把返回的 theme id 传给 ppt_generate 或 ppt_project_start 即可使用。\n\n参数：image（图片 URL 或本地路径，必填）；themeId/name（主题 id 与名称，可省略自动生成）；styleDirection（可选五选一：tech/academic/business/minimal/vivid——提取的品牌色作为主色覆盖预设配色，预设版式保留，适合\"按这张图的颜色，做成科技风\"）；designTokens（可选，版式令牌 JSON 字符串，如 {\"density\":\"compact\"}）；font（可选）。\n\n校验规则与 ppt_create_theme 相同：text/bg 对比度需 ≥4.5、primary/bg ≥3.0、accent/bg ≥1.5、secondary/bg ≥1.3；不达标自动微调，仍不达标报错拒绝创建。\n\n适用于：用户提供品牌 Logo 图/产品图/海报/参考配色图并要求'按这张图做 PPT'、'提取主色'、'跟图配色'时。",
+      "parameters": [
+        {
+          "name": "image",
+          "type": "string",
+          "required": true,
+          "description": "参考图片的 URL 或本地路径（jpg/png/bmp/gif 等常见格式）"
+        },
+        {
+          "name": "themeId",
+          "type": "string",
+          "required": false,
+          "description": "主题 id（可省略，自动生成 img_xxxx）"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "主题显示名（可省略，默认同 id）"
+        },
+        {
+          "name": "styleDirection",
+          "type": "string",
+          "required": false,
+          "description": "风格方向（可选）：tech/academic/business/minimal/vivid；提取色覆盖预设配色，保留预设版式"
+        },
+        {
+          "name": "designTokens",
+          "type": "string",
+          "required": false,
+          "description": "版式令牌 JSON 字符串（可选），如 {\"density\":\"compact\"}"
+        },
+        {
+          "name": "font",
+          "type": "string",
+          "required": false,
+          "description": "字体（可选，默认微软雅黑）"
+        }
+      ],
+      "displayName": "从图片创建主题",
+      "intentKeywords": [
+        "提取主色",
+        "按图配色",
+        "图片提色",
+        "品牌色提取",
+        "跟图做PPT",
+        "参考图主题",
+        "logo配色",
+        "取色"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_browse_template",
+      "layer": 1,
+      "description": "打开系统文件选择对话框，让用户手动选择一个 .pptx 模板文件。\n\n返回用户选择的文件路径；用户取消时返回明确提示。选择到的模板文件可继续传给 ppt_import_theme 导入主题，或作为 ppt_generate 的参考。\n\n适用于：AI 不知道模板文件在哪、需要用户亲自挑选模板文件的场景。",
+      "parameters": [],
+      "displayName": "选择PPT模板文件",
+      "intentKeywords": [
+        "选择模板",
+        "浏览模板",
+        "选文件",
+        "选择文件",
+        "挑模板"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_project_start",
+      "layer": 1,
+      "description": "创建 PPT 构建项目（分步构建模式的第一步），返回 projectId。之后用 ppt_add_cover_slide / ppt_add_text_slide / ppt_add_chart_slide 等工具逐页添加内容，最后用 ppt_project_build 渲染生成 .pptx 并自动打开。\n\n【项目级数据】若 PPT 需要数据表格/图表/KPI 页，在这里传 rangeAddress（Excel 选区地址）或 headers+rows（先用 excel_read_range 读取）；纯结构 PPT（封面/目录/文本/形状/图片/SmartArt 等）可不传数据。\n\n【主题】theme 传 ppt_get_templates 返回的主题 id（内置 10 个），不传用默认。\n\n适用于：AI 按用户需求分步构建 PPT 的起点；与 ppt_project_build 配套使用。",
+      "parameters": [
+        {
+          "name": "reportTitle",
+          "type": "string",
+          "required": false,
+          "description": "报告/演示文稿标题，作为封面标题与文件名（默认'数据分析报告'；纯结构 PPT 建议必填）"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "required": false,
+          "description": "主题 id（内置 10 个，用 ppt_get_templates 查询），不传用默认主题"
+        },
+        {
+          "name": "orientation",
+          "type": "string",
+          "required": false,
+          "description": "页面方向：landscape 横版（默认）/ portrait 竖版"
+        },
+        {
+          "name": "requirement",
+          "type": "string",
+          "required": false,
+          "description": "用户需求原文（供后续页面编排参考）"
+        },
+        {
+          "name": "rangeAddress",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel 选区地址（如 A1:H27，含表头）。数据表格/图表/KPI 页的数据来源"
+        },
+        {
+          "name": "headers",
+          "type": "string",
+          "required": false,
+          "description": "【可选】列名数组的 JSON 字符串。与 rows 成对传入则优先用传入数据"
+        },
+        {
+          "name": "rows",
+          "type": "string",
+          "required": false,
+          "description": "【可选】数据行数组的 JSON 字符串，每行为 {列名: 值} 的对象"
+        }
+      ],
+      "displayName": "创建PPT项目",
+      "intentKeywords": [
+        "创建PPT项目",
+        "新建PPT项目",
+        "开始做PPT",
+        "分步构建PPT"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_cover_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加封面/结尾类页面。type 支持：cover（封面，默认）、title（标题页）、end/closing（致谢/结束页）。\n\n参数：projectId（必填）+ title（页标题）+ subtitle（副标题）+ variant（centered 居中/modern 现代/split 分栏；closing 用 thanks/centered）。\n\n适用于：PPT 第一页封面、最后一页致谢。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "页型：cover/title/end/closing，默认 cover"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "标题文字"
+        },
+        {
+          "name": "subtitle",
+          "type": "string",
+          "required": false,
+          "description": "副标题/日期/部门等"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "版式变体：cover 用 centered/modern/split；closing 用 thanks/centered"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        }
+      ],
+      "displayName": "添加封面页",
+      "intentKeywords": [
+        "加封面",
+        "封面页",
+        "标题页",
+        "结束页",
+        "致谢页"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_text_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加文本/要点页。type 支持：text（段落文本，默认）、bullets（要点列表）。\n\n参数：projectId（必填）+ title + bullets（要点数组 JSON，如 [\"第一点\",\"第二点\"]）或 content（整段文本）+ variant（bullets 要点/cards 卡片/numbered 编号）。\n\n适用于：方案说明、观点陈述、要点罗列。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "页型：text/bullets，默认 text"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "页标题"
+        },
+        {
+          "name": "bullets",
+          "type": "string",
+          "required": false,
+          "description": "要点数组 JSON 字符串，如 [\"第一点\",\"第二点\"]"
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": false,
+          "description": "整段文本内容（text 页用）"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "版式变体：bullets/cards/numbered"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        }
+      ],
+      "displayName": "添加文本页",
+      "intentKeywords": [
+        "加文本页",
+        "文字页",
+        "要点页",
+        "内容页"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_table_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加数据表格页（type=table）。数据来源：项目创建时已传 rangeAddress/headers+rows，或本工具补充传数据。\n\n参数：projectId（必填）+ title + variant。\n\n适用于：展示明细数据、对比清单、数据总表。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "表格页标题"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "版式变体（standard 等）"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        },
+        {
+          "name": "rangeAddress",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel 选区地址；项目未带数据时在此补充"
+        },
+        {
+          "name": "headers",
+          "type": "string",
+          "required": false,
+          "description": "【可选】列名数组 JSON；项目未带数据时在此补充"
+        },
+        {
+          "name": "rows",
+          "type": "string",
+          "required": false,
+          "description": "【可选】数据行数组 JSON；与 headers 成对补充"
+        }
+      ],
+      "displayName": "添加表格页",
+      "intentKeywords": [
+        "加表格",
+        "数据表格页",
+        "表格页"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_chart_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加图表页（type=chart）。数据来源：项目创建时已传 rangeAddress/headers+rows，或本工具补充传数据。\n\n参数：projectId（必填）+ title + chartType（column柱/bar条/line折线/pie饼/doughnut环/area面积/radar雷达/scatter散点/combo组合图/bubble气泡图）+ xField（X 轴列名，默认第一列）+ series（数值系列列名数组 JSON）+ secondaryAxis（次坐标轴列名数组，量纲差异大时用）+ lineSeries（组合图中转为折线的系列，系列序号从 1 起或列名）+ insight（数据洞察文字）+ variant（standard/full/insight）。\n\n适用于：趋势、占比、对比、分布等数据可视化。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "图表页标题"
+        },
+        {
+          "name": "chartType",
+          "type": "string",
+          "required": false,
+          "description": "图表类型：column/bar/line/pie/doughnut/area/radar/scatter/combo/bubble，默认 column"
+        },
+        {
+          "name": "xField",
+          "type": "string",
+          "required": false,
+          "description": "X 轴列名（默认第一列）"
+        },
+        {
+          "name": "series",
+          "type": "string",
+          "required": false,
+          "description": "数值系列列名数组 JSON，如 [\"销售额\",\"增长率\"]"
+        },
+        {
+          "name": "secondaryAxis",
+          "type": "string",
+          "required": false,
+          "description": "次坐标轴列名数组 JSON（量纲差异大时用）"
+        },
+        {
+          "name": "lineSeries",
+          "type": "string",
+          "required": false,
+          "description": "组合图转为折线的系列（序号从 1 起或列名数组）"
+        },
+        {
+          "name": "insight",
+          "type": "string",
+          "required": false,
+          "description": "数据洞察文字（图表下方结论）"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "版式变体：standard/full/insight"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        },
+        {
+          "name": "rangeAddress",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel 选区地址；项目未带数据时在此补充"
+        },
+        {
+          "name": "headers",
+          "type": "string",
+          "required": false,
+          "description": "【可选】列名数组 JSON；项目未带数据时在此补充"
+        },
+        {
+          "name": "rows",
+          "type": "string",
+          "required": false,
+          "description": "【可选】数据行数组 JSON；与 headers 成对补充"
+        }
+      ],
+      "displayName": "添加图表页",
+      "intentKeywords": [
+        "加图表",
+        "图表页",
+        "趋势图",
+        "占比图",
+        "组合图",
+        "气泡图"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_kpi_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加核心指标页（type=kpi）。数据来源：项目创建时已传 rangeAddress/headers+rows，或本工具补充传数据。\n\n参数：projectId（必填）+ title + items（指标数组 JSON，每项 {label,value,highlight}）+ variant（grid 网格/hero 大数字/row 横向）。\n\n适用于：关键经营指标一览（总销售额、增长率、客户数等）。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "指标页标题"
+        },
+        {
+          "name": "items",
+          "type": "string",
+          "required": false,
+          "description": "指标数组 JSON，每项 {label,value,highlight}，如 [{\"label\":\"总销售额\",\"value\":\"1280万\",\"highlight\":true}]"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "版式变体：grid/hero/row"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        },
+        {
+          "name": "rangeAddress",
+          "type": "string",
+          "required": false,
+          "description": "【可选】Excel 选区地址；项目未带数据时在此补充"
+        },
+        {
+          "name": "headers",
+          "type": "string",
+          "required": false,
+          "description": "【可选】列名数组 JSON；项目未带数据时在此补充"
+        },
+        {
+          "name": "rows",
+          "type": "string",
+          "required": false,
+          "description": "【可选】数据行数组 JSON；与 headers 成对补充"
+        }
+      ],
+      "displayName": "添加指标页",
+      "intentKeywords": [
+        "加指标",
+        "KPI页",
+        "指标卡",
+        "核心指标"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_structure_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加结构页。type 支持：agenda（目录页，默认）、section（章节页）、timeline（时间线页）、comparison（左右对比页）。\n\n参数：projectId（必填）+ type + title + items（JSON 数组；agenda 用 [{label,desc}] 或字符串、timeline 用 [{time,text}]）+ subtitle/number（section 章节号）+ leftTitle/rightTitle/leftItems/rightItems（comparison 左右内容）+ variant（agenda 用 numbered/cards/timeline；section 用 number/bar/centered）。\n\n适用于：PPT 目录、章节过渡、项目里程碑时间线、方案对比。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "页型：agenda/section/timeline/comparison，默认 agenda"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "页标题"
+        },
+        {
+          "name": "subtitle",
+          "type": "string",
+          "required": false,
+          "description": "副标题（section/comparison 用）"
+        },
+        {
+          "name": "number",
+          "type": "string",
+          "required": false,
+          "description": "章节序号（section 用，如 '01'）"
+        },
+        {
+          "name": "items",
+          "type": "string",
+          "required": false,
+          "description": "条目数组 JSON：agenda [{label,desc}]，timeline [{time,text}]"
+        },
+        {
+          "name": "leftTitle",
+          "type": "string",
+          "required": false,
+          "description": "对比页左侧标题"
+        },
+        {
+          "name": "rightTitle",
+          "type": "string",
+          "required": false,
+          "description": "对比页右侧标题"
+        },
+        {
+          "name": "leftItems",
+          "type": "string",
+          "required": false,
+          "description": "对比页左侧条目数组 JSON"
+        },
+        {
+          "name": "rightItems",
+          "type": "string",
+          "required": false,
+          "description": "对比页右侧条目数组 JSON"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "版式变体：agenda 用 numbered/cards/timeline；section 用 number/bar/centered"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        }
+      ],
+      "displayName": "添加结构页",
+      "intentKeywords": [
+        "加目录",
+        "目录页",
+        "章节页",
+        "时间线",
+        "里程碑",
+        "对比页"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_shapes_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加自由形状页（type=shapes）。适合流程图、架构图、示意图等用形状拼装的页面。\n\n参数：projectId（必填）+ title + items（形状数组 JSON，每项 {type, x,y,w,h, fill, text, textColor, shadow, rotate, weight}）。形状 type：rect 矩形/roundrect 圆角矩形/oval 椭圆/arrow 右箭头/arrowLeft/arrowUp/arrowDown/flow 流程框/flowDecision 判定/flowTerminator 起止/flowDocument 文档/callout 标注/calloutOval/circle 圆/diamond 菱形/triangle 三角/line 线条。fill 用主题令牌 primary/secondary/accent/light 或 #RRGGBB。坐标缺失时自动网格布局。\n\n适用于：业务流程、架构图、步骤示意等。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "页标题"
+        },
+        {
+          "name": "items",
+          "type": "string",
+          "required": false,
+          "description": "形状数组 JSON，每项 {type,x,y,w,h,fill,text,textColor,shadow,rotate,weight}"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        }
+      ],
+      "displayName": "添加形状页",
+      "intentKeywords": [
+        "加形状",
+        "流程图页",
+        "架构图",
+        "示意图",
+        "形状页"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_picture_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加图片页（type=picture）。支持本地图片路径或 http(s) URL（自动下载）。\n\n参数：projectId（必填）+ title + images（图片数组 JSON，每项 {src, caption, x,y,w,h, rounded, border, shadow, fit}）或单图直接传 src+caption。fit：fill 拉伸 / fit 等比。\n\n适用于：产品图、现场照片、截图展示等。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "页标题"
+        },
+        {
+          "name": "images",
+          "type": "string",
+          "required": false,
+          "description": "图片数组 JSON，每项 {src,caption,x,y,w,h,rounded,border,shadow,fit}"
+        },
+        {
+          "name": "src",
+          "type": "string",
+          "required": false,
+          "description": "单图模式：本地路径或 http(s) URL"
+        },
+        {
+          "name": "caption",
+          "type": "string",
+          "required": false,
+          "description": "单图模式：图片说明文字"
+        },
+        {
+          "name": "x",
+          "type": "integer",
+          "required": false,
+          "description": "单图横坐标"
+        },
+        {
+          "name": "y",
+          "type": "integer",
+          "required": false,
+          "description": "单图纵坐标"
+        },
+        {
+          "name": "w",
+          "type": "integer",
+          "required": false,
+          "description": "单图宽度"
+        },
+        {
+          "name": "h",
+          "type": "integer",
+          "required": false,
+          "description": "单图高度"
+        },
+        {
+          "name": "rounded",
+          "type": "boolean",
+          "required": false,
+          "description": "是否圆角"
+        },
+        {
+          "name": "border",
+          "type": "string",
+          "required": false,
+          "description": "边框：true/false 或 #RRGGBB 颜色"
+        },
+        {
+          "name": "shadow",
+          "type": "boolean",
+          "required": false,
+          "description": "是否阴影"
+        },
+        {
+          "name": "fit",
+          "type": "string",
+          "required": false,
+          "description": "填充方式：fill 拉伸 / fit 等比"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        }
+      ],
+      "displayName": "添加图片页",
+      "intentKeywords": [
+        "加图片",
+        "图片页",
+        "照片页",
+        "截图"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_smartart_slide",
+      "layer": 1,
+      "description": "向 PPT 项目追加 SmartArt 替代页（type=smartart，用原生形状绘制，不依赖 SmartArt 组件）。\n\n参数：projectId（必填）+ title + layout（flow 流程 / cycle 循环 / hierarchy 层次组织架构 / matrix 矩阵）+ items（节点数组 JSON，字符串或 {title,desc}）。\n\n适用于：组织架构、流程步骤、循环关系、二维矩阵（如能力/优先级四象限）。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "页标题"
+        },
+        {
+          "name": "layout",
+          "type": "string",
+          "required": false,
+          "description": "布局：flow/cycle/hierarchy/matrix，默认 flow"
+        },
+        {
+          "name": "items",
+          "type": "string",
+          "required": false,
+          "description": "节点数组 JSON：字符串或 {title,desc}，如 [\"总经理\",\"研发部\",\"市场部\"]"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "页切换动画：fade/push/wipe/dissolve/cut/random/none，默认 fade"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "元素进入动画：appear/fade/rise/float/grow/none，默认 fade"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "是否启用动画（false 关闭本页所有动画），默认 true"
+        }
+      ],
+      "displayName": "添加SmartArt页",
+      "intentKeywords": [
+        "加SmartArt",
+        "组织架构",
+        "流程图",
+        "循环图",
+        "矩阵图"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_project_list",
+      "layer": 1,
+      "description": "查看 PPT 构建项目当前的页面结构：返回页序（index 从 1 起）、每页类型与标题。\n\n适用于：AI 构建过程中确认进度、或准备修改/删除某页前先定位目标页。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        }
+      ],
+      "displayName": "查看PPT项目",
+      "intentKeywords": [
+        "查看项目",
+        "页面列表",
+        "构建进度"
+      ],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_project_update",
+      "layer": 1,
+      "description": "修改 PPT 项目中指定页（index 从 1 起，可用 ppt_project_list 查询）。传入的字段覆盖该页对应字段，type 也可改；未传的字段保持不变。\n\n参数：projectId + index + 任意页字段（title/subtitle/chartType/items/variant/transition/animation/animate 等，与该页型规格一致）。\n\n适用于：构建中途调整某页标题、换图表类型、改配色变体等。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "index",
+          "type": "integer",
+          "required": true,
+          "description": "要修改的页序号（从 1 起）"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "【可选】改为其他页型"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "【可选】新标题"
+        },
+        {
+          "name": "subtitle",
+          "type": "string",
+          "required": false,
+          "description": "【可选】新副标题"
+        },
+        {
+          "name": "chartType",
+          "type": "string",
+          "required": false,
+          "description": "【可选】图表页：改图表类型"
+        },
+        {
+          "name": "items",
+          "type": "string",
+          "required": false,
+          "description": "【可选】改条目/指标/节点数组"
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "required": false,
+          "description": "【可选】改版式变体"
+        },
+        {
+          "name": "transition",
+          "type": "string",
+          "required": false,
+          "description": "【可选】改切换动画"
+        },
+        {
+          "name": "animation",
+          "type": "string",
+          "required": false,
+          "description": "【可选】改进入动画"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "required": false,
+          "description": "【可选】开/关动画"
+        }
+      ],
+      "displayName": "修改页面",
+      "intentKeywords": [
+        "改页面",
+        "修改页",
+        "调整页面",
+        "换图表类型",
+        "改标题"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_project_remove",
+      "layer": 1,
+      "description": "删除 PPT 项目中指定页（index 从 1 起，可用 ppt_project_list 查询当前页序）。\n\n参数：projectId + index。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        },
+        {
+          "name": "index",
+          "type": "integer",
+          "required": true,
+          "description": "要删除的页序号（从 1 起）"
+        }
+      ],
+      "displayName": "删除页面",
+      "intentKeywords": [
+        "删页面",
+        "删除页",
+        "移除页"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "将从 PPT 项目中删除指定页面，此操作不可自动撤销。"
+    },
+    {
+      "name": "ppt_project_build",
+      "layer": 1,
+      "description": "渲染生成 PPT 项目为 .pptx 文件并自动打开预览（分步构建模式的最后一步）。项目无页面时报错。\n\n参数：projectId（必填）。\n\n适用于：用 ppt_add_*_slide 逐页添加完成后，生成最终演示文稿。",
+      "parameters": [
+        {
+          "name": "projectId",
+          "type": "string",
+          "required": true,
+          "description": "ppt_project_start 返回的项目 id"
+        }
+      ],
+      "displayName": "生成PPT文件",
+      "intentKeywords": [
+        "生成PPT",
+        "渲染项目",
+        "生成演示文稿",
+        "完成PPT"
+      ],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true
+  },
+  "exclude": [
+    "UI/js/app-ai-stream-ui_clean.js",
+    "UI/js/app-ai-stream-ui_new.js",
+    "UI/js/app-ai-stream-ui_unix.js",
+    "node_modules",
+    "**/node_modules/**"
+  ]
+}

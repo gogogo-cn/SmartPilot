@@ -1,0 +1,24 @@
+{
+  "name": "excel-ai-addin-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ExcelAIVSTOAddIn 前端智能体层测试（node:test，零依赖）",
+  "scripts": {
+    "test": "node run-tests.js",
+    "test:agent": "node Tests/agent-loop.test.js && node Tests/skill-agent-e2e.test.js",
+    "test:tools": "node Tests/tool-registry.test.js",
+    "test:mcp-sync": "node Tests/tools-consistency.test.js",
+    "test:session": "node Tests/session-store.test.js",
+    "test:router": "node Tests/pipeline-router.test.js",
+    "test:skills": "node Tests/skill-route.test.js",
+    "test:replay": "node Tests/trajectory-replay.test.js",
+    "test:python": "node Tests/python-data-inject.test.js && node Tests/python-pipeline-e2e.test.js",
+    "test:spec": "node Tests/skill-spec-engine.test.js && node Tests/skill-spec-e2e.test.js && node Tests/skill-formatter.test.js && node Tests/skill-chart-clean.test.js",
+    "test:e2e-script": "node Tests/skill-chart-clean-e2e.test.js",
+    "test:crud": "node Tests/skill-crud-e2e.test.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "license": "MIT"
+}

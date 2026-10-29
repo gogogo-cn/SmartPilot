@@ -1,0 +1,345 @@
+/* ============================================================
+   TaskProgressPanel - 任务进度面板样式
+   参考 ChatGPT 的任务拆解展示风格
+   ============================================================ */
+
+/* 面板容器 */
+.task-progress-panel {
+    margin-top: 12px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    animation: tpFadeIn 0.3s ease-out;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    width: 100%;
+}
+
+/* 进度条 */
+.step-progress-bar {
+    height: 2px;
+    background: #e2e8f0;
+    border-radius: 1px;
+    margin: 8px 20px 0;
+    overflow: hidden;
+}
+
+.step-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    transition: width 0.3s ease;
+    border-radius: 1px;
+}
+
+@keyframes tpFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 完成状态 */
+.task-progress-panel.tp-completed {
+    opacity: 0;
+    transform: scale(0.97);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 头部 */
+.tp-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tp-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.tp-title::before {
+    content: '📋';
+    font-size: 14px;
+}
+
+.tp-counter {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-close-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.15s;
+}
+
+.tp-close-btn:hover {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* 步骤列表 */
+.tp-steps {
+    padding: 4px 0;
+}
+
+/* 单个步骤 */
+.tp-step {
+    transition: background 0.15s ease;
+    position: relative;
+}
+
+.tp-step:hover {
+    background: #f9fafb;
+}
+
+/* 步骤主行 */
+.tp-step-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: background 0.15s ease;
+    position: relative;
+}
+
+.tp-step-main:hover {
+    background: #f3f4f6;
+}
+
+/* 仅在任务进度面板内移除details的默认箭头 */
+.task-progress-panel details > summary {
+    list-style: none !important;
+}
+
+.task-progress-panel details > summary::-webkit-details-marker,
+.task-progress-panel details > summary::marker {
+    display: none !important;
+    content: '' !important;
+    list-style: none !important;
+}
+
+/* 步骤之间的分隔线 */
+.tp-step + .tp-step {
+    border-top: 1px solid #f3f4f6;
+}
+
+/* 步骤图标 */
+.tp-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.tp-icon-done {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: white;
+    font-weight: 600;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tp-icon-running {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #60a5fa;
+    border-top-color: #3b82f6;
+    animation: tpSpin 0.8s linear infinite;
+}
+
+@keyframes tpSpin {
+    to { transform: rotate(360deg); }
+}
+
+.tp-icon-pending {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 步骤名称 */
+.tp-step-name {
+    font-size: 13px;
+    font-weight: 400;
+    color: #374151;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.tp-step.running .tp-step-name {
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.tp-step.completed .tp-step-name {
+    color: #6b7280;
+}
+
+/* 类型图标 */
+.tp-type-icon {
+    display: none;
+}
+
+/* 预估时间 */
+.tp-step-est {
+    display: none;
+}
+
+/* 详情展开切换按钮 */
+.tp-step-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    transition: all 0.2s ease;
+    font-size: 10px;
+}
+
+.tp-step-main:hover .tp-step-toggle {
+    color: #666;
+}
+
+.tp-step-toggle::before {
+    content: '›';
+    font-size: 14px;
+    font-weight: bold;
+    color: inherit;
+    transition: transform 0.2s ease;
+    display: block;
+    line-height: 1;
+}
+
+.tp-step.expanded .tp-step-toggle::before {
+    transform: rotate(90deg);
+}
+
+.tp-step:not(.expanded) .tp-step-toggle::before {
+    transform: rotate(0deg);
+}
+
+/* 步骤详情区域 */
+.tp-step-detail {
+    padding: 0 14px 10px;
+    margin-top: 0;
+}
+
+.tp-step-detail-content {
+    background: #f9fafb;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 强制隐藏步骤详情内的所有details箭头 */
+.tp-step-detail-content details > summary,
+.tp-step-detail-content details summary {
+    list-style: none !important;
+}
+
+.tp-step-detail-content details > summary::-webkit-details-marker,
+.tp-step-detail-content details > summary::marker,
+.tp-step-detail-content details summary::-webkit-details-marker,
+.tp-step-detail-content details summary::marker {
+    display: none !important;
+    content: '' !important;
+    list-style: none !important;
+}
+
+.tp-step.running .tp-step-detail-content {
+    background: #eff6ff;
+    border-color: #dbeafe;
+}
+
+/* 失败状态图标 */
+.tp-icon-failed {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: white;
+    font-weight: 600;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 失败步骤样式 */
+.tp-step.failed .tp-step-name {
+    color: #dc2626;
+}
+
+.tp-step.failed .tp-step-main {
+    background: #fef2f2;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+    .task-progress-panel {
+        margin: 6px 8px 10px;
+        border-radius: 10px;
+    }
+
+    .tp-header {
+        padding: 8px 12px;
+    }
+
+    .tp-step-main {
+        padding: 7px 12px;
+    }
+}

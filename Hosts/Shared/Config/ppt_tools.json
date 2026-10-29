@@ -1,0 +1,496 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-10-04",
+  "source": "ppt-local",
+  "tools": [
+    {
+      "name": "ppt_get_presentation_info",
+      "layer": 1,
+      "description": "获取当前演示文稿信息：文件名、完整路径、幻灯片总数。\n\n适用于：了解用户正在编辑哪份 PPT、规模多大。",
+      "parameters": [],
+      "displayName": "获取演示文稿信息",
+      "intentKeywords": ["演示文稿", "PPT信息", "多少页", "文件名", "当前PPT"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_get_slide_count",
+      "layer": 1,
+      "description": "获取当前演示文稿的幻灯片数量。",
+      "parameters": [],
+      "displayName": "获取幻灯片数量",
+      "intentKeywords": ["几页", "幻灯片数量", "多少张"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_get_slide_text",
+      "layer": 1,
+      "description": "读取指定幻灯片的所有文本（按形状顺序拼接）。slideIndex 从 1 开始，缺省为当前幻灯片。\n\n适用于：改写某一页、检查某页内容。",
+      "parameters": [
+        {
+          "name": "slideIndex",
+          "type": "integer",
+          "required": false,
+          "description": "幻灯片序号（从 1 开始），缺省为当前页"
+        }
+      ],
+      "displayName": "读取指定页文本",
+      "intentKeywords": ["这一页", "第几页", "读取页面", "页面内容"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_get_all_slides_text",
+      "layer": 1,
+      "description": "按页读取整个演示文稿的文本，每页以 [幻灯片 N] 开头。maxChars 限制总长度（默认 20000）。\n\n适用于：通读全篇做总结、生成大纲、统一润色。",
+      "parameters": [
+        {
+          "name": "maxChars",
+          "type": "integer",
+          "required": false,
+          "description": "最大返回字符数，默认 20000"
+        }
+      ],
+      "displayName": "读取全文（按页）",
+      "intentKeywords": ["全文", "整篇", "所有页", "通读", "大纲"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_get_selected_text",
+      "layer": 1,
+      "description": "获取当前在 PowerPoint 中选中的文本。",
+      "parameters": [],
+      "displayName": "读取选中文本",
+      "intentKeywords": ["选中", "选区", "这段", "当前文本"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_slide",
+      "layer": 1,
+      "description": "在当前页之后新增一页幻灯片。layoutIndex：1=标题页，2=标题+内容，12=空白页（默认 12）。",
+      "parameters": [
+        {
+          "name": "layoutIndex",
+          "type": "integer",
+          "required": false,
+          "description": "版式索引：1=标题，2=标题+内容，12=空白（默认）"
+        }
+      ],
+      "displayName": "新增幻灯片",
+      "intentKeywords": ["新增页", "加一页", "添加幻灯片", "新页面"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_title_content_slide",
+      "layer": 1,
+      "description": "新增一页『标题 + 内容』版式的幻灯片，并写入标题与正文。",
+      "parameters": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "页面标题"
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": false,
+          "description": "页面正文"
+        }
+      ],
+      "displayName": "新增标题内容页",
+      "intentKeywords": ["新增页", "写标题", "生成页面", "添加内容页"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_textbox",
+      "layer": 1,
+      "description": "在当前幻灯片上插入一个文本框并写入文本（宽度自适应页面，位置在页面上部）。",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "文本框内容"
+        }
+      ],
+      "displayName": "插入文本框",
+      "intentKeywords": ["插入文字", "文本框", "写入页面", "添加文本"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_insert_table",
+      "layer": 1,
+      "description": "在当前幻灯片插入表格。rows 为二维数组 JSON 字符串，如 [[\"月份\",\"销售额\"],[\"1月\",100]]。",
+      "parameters": [
+        {
+          "name": "rows",
+          "type": "string",
+          "required": true,
+          "description": "二维数组 JSON 字符串，第一行为表头"
+        }
+      ],
+      "displayName": "插入表格",
+      "intentKeywords": ["表格", "插入表", "做成表", "数据页"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_save",
+      "layer": 1,
+      "description": "保存当前演示文稿。filePath 省略时保存到原路径（尚未保存过则必须提供路径，否则会报错）。\n\n适用于：AI 完成多页编辑后落盘，避免修改丢失。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": false,
+          "description": "目标路径，省略则覆盖原文件"
+        }
+      ],
+      "displayName": "保存演示文稿",
+      "intentKeywords": ["保存", "存盘", "save", "另存为"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_find_replace",
+      "layer": 1,
+      "description": "在全篇演示文稿中查找并替换文本（遍历所有幻灯片的形状文本）。\n\n适用于：批量修改标题、错别字、品牌名等。",
+      "parameters": [
+        { "name": "findText", "type": "string", "required": true, "description": "要查找的文本" },
+        { "name": "replaceText", "type": "string", "required": true, "description": "替换为的文本" },
+        { "name": "matchCase", "type": "boolean", "required": false, "description": "是否区分大小写，默认 false" }
+      ],
+      "displayName": "查找替换文本",
+      "intentKeywords": ["查找", "替换", "批量改", "find", "replace"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_format_text",
+      "layer": 1,
+      "description": "设置文本格式：粗体/斜体/字号/字体名/颜色。作用于当前选中的文本；未选中则作用于当前幻灯片全部文本。\n\n适用于：加粗标题、改字号、改字体颜色。",
+      "parameters": [
+        { "name": "bold", "type": "boolean", "required": false, "description": "是否加粗" },
+        { "name": "italic", "type": "boolean", "required": false, "description": "是否斜体" },
+        { "name": "fontSize", "type": "number", "required": false, "description": "字号，如 24" },
+        { "name": "fontName", "type": "string", "required": false, "description": "字体名，如 微软雅黑" },
+        { "name": "fontColor", "type": "string", "required": false, "description": "字体颜色，#RRGGBB 或 OLE_COLOR 整数" }
+      ],
+      "displayName": "设置文本格式",
+      "intentKeywords": ["加粗", "字号", "字体", "颜色", "格式"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_insert_picture",
+      "layer": 1,
+      "description": "在当前幻灯片插入图片。left/top/width/height 省略时使用默认值。\n\n适用于：插入截图、配图、Logo。",
+      "parameters": [
+        { "name": "filePath", "type": "string", "required": true, "description": "图片文件路径" },
+        { "name": "left", "type": "number", "required": false, "description": "左边距（磅），默认 60" },
+        { "name": "top", "type": "number", "required": false, "description": "上边距（磅），默认 120" },
+        { "name": "width", "type": "number", "required": false, "description": "宽度（磅），默认 300" },
+        { "name": "height", "type": "number", "required": false, "description": "高度（磅），默认 200" }
+      ],
+      "displayName": "插入图片",
+      "intentKeywords": ["图片", "配图", "截图", "logo", "picture"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_delete_slide",
+      "layer": 1,
+      "description": "删除指定幻灯片（slideIndex 从 1 开始，缺省为当前幻灯片）。\n\n适用于：删除多余页。",
+      "parameters": [
+        { "name": "slideIndex", "type": "integer", "required": false, "description": "幻灯片序号，缺省为当前页" }
+      ],
+      "displayName": "删除幻灯片",
+      "intentKeywords": ["删除页", "删幻灯片", "移除页"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "high",
+      "dangerMessage": "将删除演示文稿中的幻灯片，此操作通常不可自动撤销。"
+    },
+    {
+      "name": "ppt_delete_shape",
+      "layer": 1,
+      "description": "删除当前选中的形状。\n\n适用于：删除选中的文本框/图片/形状。",
+      "parameters": [],
+      "displayName": "删除选中形状",
+      "intentKeywords": ["删除形状", "删掉", "移除形状"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": true,
+      "dangerSeverity": "medium",
+      "dangerMessage": "将删除当前选中的形状，此操作通常不可自动撤销。"
+    },
+    {
+      "name": "ppt_export_pdf",
+      "layer": 1,
+      "description": "将演示文稿导出为 PDF 文件。\n\n适用于：生成可分发的最终稿。",
+      "parameters": [
+        { "name": "filePath", "type": "string", "required": true, "description": "导出 PDF 路径" }
+      ],
+      "displayName": "导出 PDF",
+      "intentKeywords": ["导出", "PDF", "存 PDF"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_format_table_cell",
+      "layer": 1,
+      "description": "设置表格中某个单元格的格式：字体/对齐/底色/边框色。shapeIndex 缺省为当前幻灯片第一个表格。\n\n适用于：高亮表头、居中数字、调整单元格样式。",
+      "parameters": [
+        { "name": "shapeIndex", "type": "integer", "required": false, "description": "表格所在形状序号，缺省第一个表格" },
+        { "name": "row", "type": "integer", "required": true, "description": "行号，从 1 开始" },
+        { "name": "col", "type": "integer", "required": true, "description": "列号，从 1 开始" },
+        { "name": "bold", "type": "boolean", "required": false, "description": "是否加粗" },
+        { "name": "italic", "type": "boolean", "required": false, "description": "是否斜体" },
+        { "name": "fontSize", "type": "number", "required": false, "description": "字号" },
+        { "name": "fontName", "type": "string", "required": false, "description": "字体名" },
+        { "name": "fontColor", "type": "string", "required": false, "description": "字体颜色 #RRGGBB" },
+        { "name": "align", "type": "string", "required": false, "description": "水平对齐 left/center/right" },
+        { "name": "fillColor", "type": "string", "required": false, "description": "单元格底色 #RRGGBB" },
+        { "name": "borderColor", "type": "string", "required": false, "description": "边框颜色 #RRGGBB" },
+        { "name": "highlightColor", "type": "string", "required": false, "description": "文本突出颜色(高亮笔) #RRGGBB 或颜色名（黄/红/蓝/绿/青/粉/紫/黑/白）；与字体颜色 fontColor 不同，是文字背景荧光色。Word 取最近高亮调色板、PPT 取最接近 RGB" }
+      ],
+      "displayName": "设置表格单元格格式",
+      "intentKeywords": ["单元格", "表格格式", "底色", "表头", "cell"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_format_selected_table_cell",
+      "layer": 1,
+      "description": "设置【当前选中的表格】的格式，整表或单个单元格皆可。\n\n⭐ 推荐：省略 row/col 即作用于整张表格。用户只说“设置表格对齐/颜色/字体/美化一下”，却没指明具体单元格时，直接调用本工具并省略 row/col，填入合理默认值（例如 align=center、headerBold=true、headerFillColor=#D9D9D9）即可，严禁反问用户行号/列号/颜色值。\n\n仅当用户明确只想改某一格（如“把第1行第2列居中”）时才传 row/col（从 1 开始）。\n\n整表模式语义：align/fontSize/fontName/fontColor/borderColor 作用于所有单元格；bold/fillColor（或 headerBold/headerFillColor）作用于表头行（第 1 行）。\n\n⚠️ 调用前需用户已点选目标表格。",
+      "parameters": [
+        { "name": "row", "type": "integer", "required": false, "description": "行号（从 1 开始）；省略则整表生效" },
+        { "name": "col", "type": "integer", "required": false, "description": "列号（从 1 开始）；省略则整表生效" },
+        { "name": "align", "type": "string", "required": false, "description": "水平对齐 left/center/right" },
+        { "name": "headerBold", "type": "boolean", "required": false, "description": "表头行(第1行)加粗" },
+        { "name": "headerFillColor", "type": "string", "required": false, "description": "表头行底色 #RRGGBB" },
+        { "name": "fontSize", "type": "number", "required": false, "description": "字号" },
+        { "name": "fontName", "type": "string", "required": false, "description": "字体名" },
+        { "name": "fontColor", "type": "string", "required": false, "description": "字体颜色 #RRGGBB" },
+        { "name": "bold", "type": "boolean", "required": false, "description": "整表模式下等同 headerBold；单元格模式下作用于该格" },
+        { "name": "italic", "type": "boolean", "required": false, "description": "是否斜体" },
+        { "name": "fillColor", "type": "string", "required": false, "description": "整表模式下等同 headerFillColor；单元格模式下作用于该格" },
+        { "name": "borderColor", "type": "string", "required": false, "description": "边框颜色 #RRGGBB" },
+        { "name": "borderStyle", "type": "string", "required": false, "description": "边框版式：all 全网格（默认）/ none 无边框 / horizontal 仅横线 / outer 仅外框 / threeLine 三线表（学术：顶线+表头下线+底线）。需与 borderColor 一起给" },
+        { "name": "headerFontColor", "type": "string", "required": false, "description": "表头字体色 #RRGGBB（深底表头配 #FFFFFF 白字）" },
+        { "name": "headerItalic", "type": "boolean", "required": false, "description": "表头斜体（斜体表头版式）" },
+        { "name": "zebraColor", "type": "string", "required": false, "description": "隔行底纹色 #RRGGBB；给了它即默认开启隔行底纹" },
+        { "name": "firstColBold", "type": "boolean", "required": false, "description": "首列加粗（左侧标题列）+ 极浅底" },
+        { "name": "lastRowBold", "type": "boolean", "required": false, "description": "末行（合计行）加粗 + 上边线" },
+        { "name": "bodyAlign", "type": "string", "required": false, "description": "正文对齐 left/center/right，覆盖整表 align（常用于“表头居中 + 正文左对齐/数字右对齐”）" },
+        { "name": "rowHeight", "type": "number", "required": false, "description": "行高磅值：紧凑 16 / 标准 22 / 宽松 30" },
+        { "name": "valign", "type": "string", "required": false, "description": "垂直对齐 middle 居中（默认）/ top 顶端" },
+        { "name": "highlightColor", "type": "string", "required": false, "description": "文本突出颜色(高亮笔) #RRGGBB 或颜色名（黄/红/蓝/绿/青/粉/紫/黑/白）；与字体颜色 fontColor 不同，是文字背景荧光色。Word 取最近高亮调色板、PPT 取最接近 RGB" },
+        { "name": "zebra", "type": "boolean", "required": false, "description": "是否启用隔行底纹：正文偶数行（第2、4、6…行）着浅色，让表格更精致；与 clearFill 互斥。浅色由表头底色派生（同色系更浅），未给表头底色时取浅灰。美化/主题指令默认开启。" }
+      ],
+      "displayName": "设置选中表格格式（可整表）",
+      "intentKeywords": ["选中表格", "当前表格", "单元格", "表格格式", "底色", "对齐", "居中", "cell"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_duplicate_slide",
+      "layer": 1,
+      "description": "复制一张幻灯片，默认复制当前幻灯片，可指定序号。返回新幻灯片序号。\n\n适用于：基于已有版式快速生成新页。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "源幻灯片序号，缺省当前幻灯片" }
+      ],
+      "displayName": "复制幻灯片",
+      "intentKeywords": ["复制", "副本", "duplicate", "新建页"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_set_slide_background",
+      "layer": 1,
+      "description": "设置幻灯片背景为纯色。index 缺省当前幻灯片。\n\n适用于：统一样式、突出某页。",
+      "parameters": [
+        { "name": "color", "type": "string", "required": true, "description": "背景色 #RRGGBB" },
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" }
+      ],
+      "displayName": "设置幻灯片背景",
+      "intentKeywords": ["背景", "底色", "background"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_add_chart",
+      "layer": 1,
+      "description": "在当前幻灯片插入图表。chartType 支持 column/pie/bar/line/area/scatter，title 可选。\n\n适用于：用数据图形化呈现。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" },
+        { "name": "chartType", "type": "string", "required": false, "description": "图表类型 column/pie/bar/line/area/scatter，缺省 column" },
+        { "name": "title", "type": "string", "required": false, "description": "图表标题" },
+        { "name": "left", "type": "number", "required": false, "description": "左边距，缺省 60" },
+        { "name": "top", "type": "number", "required": false, "description": "上边距，缺省 120" },
+        { "name": "width", "type": "number", "required": false, "description": "宽度，缺省 480" },
+        { "name": "height", "type": "number", "required": false, "description": "高度，缺省 300" }
+      ],
+      "displayName": "插入图表",
+      "intentKeywords": ["图表", "chart", "柱状图", "饼图"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_export_image",
+      "layer": 1,
+      "description": "将幻灯片导出为图片（PNG/JPG）。index 缺省当前幻灯片，filePath 必填。\n\n适用于：生成缩略图或嵌入到其他文档。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" },
+        { "name": "filePath", "type": "string", "required": true, "description": "导出图片路径" },
+        { "name": "format", "type": "string", "required": false, "description": "png/jpg，缺省 png" }
+      ],
+      "displayName": "导出幻灯片图片",
+      "intentKeywords": ["导出图片", "截图", "缩略图", "export image"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_set_slide_layout",
+      "layer": 1,
+      "description": "设置幻灯片版式。layout 支持 title/title_and_content/section_header/two_column_text/title_only/blank/two_objects/picture_caption，index 缺省当前幻灯片。\n\n适用于：调整页面结构。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" },
+        { "name": "layout", "type": "string", "required": false, "description": "版式名，缺省 title_and_content" }
+      ],
+      "displayName": "设置幻灯片版式",
+      "intentKeywords": ["版式", "layout", "结构"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_set_chart_data",
+      "layer": 1,
+      "description": "为幻灯片上的图表填充数据。rows 为二维数组（首行表头），shapeIndex 缺省第一个图表。\n\n适用于：让 ppt_add_chart 生成的图表呈现真实数据。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" },
+        { "name": "shapeIndex", "type": "integer", "required": false, "description": "图表形状序号，缺省第一个图表" },
+        { "name": "rows", "type": "string", "required": true, "description": "二维 JSON 数组，如 [[\"月份\",\"销量\"],[\"1月\",10],[\"2月\",20]]" }
+      ],
+      "displayName": "设置图表数据",
+      "intentKeywords": ["图表数据", "chart data", "填数据"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_insert_smartart",
+      "layer": 1,
+      "description": "在当前幻灯片插入 SmartArt 图形。layoutName 可为布局名关键词或数字索引，缺省第一个。\n\n适用于：流程图、层次结构、列表图等。",
+      "parameters": [
+        { "name": "layoutName", "type": "string", "required": false, "description": "布局名关键词或数字索引，缺省第一个" },
+        { "name": "left", "type": "number", "required": false, "description": "左边距，缺省 60" },
+        { "name": "top", "type": "number", "required": false, "description": "上边距，缺省 120" },
+        { "name": "width", "type": "number", "required": false, "description": "宽度，缺省 400" },
+        { "name": "height", "type": "number", "required": false, "description": "高度，缺省 300" }
+      ],
+      "displayName": "插入 SmartArt",
+      "intentKeywords": ["smartart", "图形", "流程图", "层次"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_goto_slide",
+      "layer": 1,
+      "description": "跳转到指定序号的幻灯片并使其成为当前页。\n\n适用于：定位到某页准备编辑或演示。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": true, "description": "目标幻灯片序号，从 1 开始" }
+      ],
+      "displayName": "跳转到幻灯片",
+      "intentKeywords": ["跳转", "定位", "切换到", "goto"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_set_slide_notes",
+      "layer": 1,
+      "description": "设置幻灯片的演讲者备注文本。index 缺省为当前幻灯片。\n\n适用于：补充口播词、备注要点。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" },
+        { "name": "text", "type": "string", "required": true, "description": "备注文本" }
+      ],
+      "displayName": "设置演讲者备注",
+      "intentKeywords": ["备注", "notes", "演讲者", "批注页"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_get_slide_notes",
+      "layer": 1,
+      "description": "读取幻灯片的演讲者备注文本。index 缺省为当前幻灯片。\n\n适用于：查看某页备注内容。",
+      "parameters": [
+        { "name": "index", "type": "integer", "required": false, "description": "幻灯片序号，缺省当前幻灯片" }
+      ],
+      "displayName": "读取演讲者备注",
+      "intentKeywords": ["读备注", "notes", "演讲者"],
+      "operationType": "Read",
+      "isWrite": false,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_move_slide",
+      "layer": 1,
+      "description": "调整幻灯片顺序：将 fromIndex 的幻灯片移动到 toIndex 位置。\n\n适用于：重新排序、把某页提前或置后。",
+      "parameters": [
+        { "name": "fromIndex", "type": "integer", "required": true, "description": "源幻灯片序号，从 1 开始" },
+        { "name": "toIndex", "type": "integer", "required": true, "description": "目标位置序号，从 1 开始" }
+      ],
+      "displayName": "移动幻灯片顺序",
+      "intentKeywords": ["移动", "排序", "调整顺序", "move"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    },
+    {
+      "name": "ppt_set_shape_text",
+      "layer": 1,
+      "description": "按序号设置当前幻灯片上某个形状的文本。shapeIndex 从 1 开始（按形状集合顺序）。\n\n适用于：精确改写某个文本框/占位符的内容。",
+      "parameters": [
+        { "name": "shapeIndex", "type": "integer", "required": true, "description": "形状序号，从 1 开始" },
+        { "name": "text", "type": "string", "required": true, "description": "要写入的文本" }
+      ],
+      "displayName": "设置形状文本",
+      "intentKeywords": ["改写形状", "形状文本", "占位符文本"],
+      "operationType": "Write",
+      "isWrite": true,
+      "isDangerous": false
+    }
+  ]
+}

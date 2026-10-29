@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR 模型设置</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .settings-header {
+            background: linear-gradient(135deg, #4a90d9, #357abd);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(74, 144, 217, 0.3);
+            flex-shrink: 0;
+        }
+
+        .settings-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .settings-header .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-header .header-lang-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: white;
+            height: 28px;
+            min-width: 36px;
+            padding: 0 10px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .settings-header .header-lang-btn:hover {
+            background: rgba(255, 255, 255, 0.32);
+        }
+
+        .settings-header .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .settings-header .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .settings-container {
+            flex: 1;
+            overflow-y: auto;
+            background: #f5f7fa;
+        }
+
+        #settings-panel {
+            display: block !important;
+            padding: 0;
+            height: auto;
+            min-height: 0;
+        }
+
+        .btn-save,
+        .btn-secondary {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-save:hover,
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            filter: brightness(1.05);
+        }
+
+        .btn-save:active,
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-loading {
+            opacity: 0.8;
+            cursor: wait;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-success-state {
+            background: #4caf50 !important;
+            animation: pulse-success 0.5s ease;
+        }
+
+        .btn-error-state {
+            background: #f44336 !important;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes pulse-success {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+    </style>
+</head>
+
+<body style="display: flex; flex-direction: column; height: 100vh;">
+    <div class="settings-header">
+        <h2 data-i18n="ocr.settingsTitle">🧾 OCR 识别设置</h2>
+        <div class="header-actions">
+            <button type="button" class="header-lang-btn" data-locale-indicator onclick="toggleUiLanguage()" title="切换界面语言">中</button>
+            <button class="close-btn" onclick="closePanel()">×</button>
+        </div>
+    </div>
+
+    <div class="settings-container">
+        <div id="settings-panel" class="panel" style="position: relative; padding: 0;">
+            <!-- OCR 引擎选择 -->
+            <div class="setting-group" style="margin-bottom: 20px;">
+                <label class="setting-label" style="font-size: 14px; font-weight: bold; color: #333;">
+                     <span data-i18n="ocr.settingsEngine">OCR 识别引擎</span>
+                </label>
+                <select class="setting-select" id="ocr-engine-select" onchange="App.onOcrEngineChange()"
+                    style="font-size: 14px; padding: 10px;">
+                    <option value="rapidocr" data-i18n="ocr.opt.rapid">RapidOCR - 嵌入式，轻量快速（约 30MB）</option>
+                    <option value="paddleocr" data-i18n="ocr.opt.paddle">PaddleOCR - 百度开源，中文识别效果最佳</option>
+                    <option value="cloud" data-i18n="ocr.opt.cloud">云端 OCR API - 识别准确率最高</option>
+                </select>
+                <div id="ocr-engine-description"
+                    style="margin-top: 8px; font-size: 12px; color: #666; padding: 8px; background: #f5f5f5; border-radius: 4px;"
+                    data-i18n="ocr.desc.default">
+                    可选 OCR 引擎，支持多种语言，本地运行无需联网
+                </div>
+            </div>
+
+            <!-- 引擎状态显示 -->
+            <div id="ocr-engine-status"
+                style="margin-bottom: 15px; padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3;">
+                <div style="font-size: 13px; color: #333; font-weight: 500;" data-i18n="ocr.engineStatus">引擎状态</div>
+                <div id="ocr-engine-status-content" style="font-size: 12px; color: #666; margin-top: 4px;" data-i18n="ocr.detecting">正在检测...</div>
+            </div>
+
+            <!-- RapidOCR 设置 -->
+            <div id="rapidocr-settings" class="ocr-engine-panel" style="display: none;">
+                <div
+                    style="font-size: 14px; color: #666; margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3;"
+                    data-i18n="ocr.rapid.intro">
+                    RapidOCR 是基于 ONNX 的轻量级 OCR 引擎，模型小（约 30MB），启动快，随插件预装
+                </div>
+
+                <div id="rapidocr-status"
+                    style="font-size: 13px; color: #666; margin-bottom: 15px; padding: 12px; background: #f5f5f5; border-radius: 6px;"
+                    data-i18n="ocr.rapid.checking">
+                    正在检测 RapidOCR...
+                </div>
+
+                <div id="rapidocr-features"
+                    style="margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
+                    <div style="font-size: 12px; color: #2e7d32; margin-bottom: 10px; font-weight: 600;" data-i18n="ocr.rapid.features">
+                        RapidOCR 特性
+                    </div>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #333;">
+                        <li data-i18n="ocr.rapid.f1">基于 ONNX Runtime，无需 Python 环境即可运行</li>
+                        <li data-i18n="ocr.rapid.f2">模型体积小（约 30MB），下载安装快速</li>
+                        <li data-i18n="ocr.rapid.f3">支持中文、英文等多种语言</li>
+                        <li data-i18n="ocr.rapid.f4">启动速度快，适合批量处理</li>
+                    </ul>
+                </div>
+
+                <button class="btn-save" id="btn-check-rapidocr" onclick="App.checkRapidOcrStatus()"
+                    style="width: 100%; margin-bottom: 10px; background: #2196f3;" data-i18n="ocr.rapid.check">
+                    检查 RapidOCR 状态
+                </button>
+            </div>
+
+            <!-- PaddleOCR 设置 -->
+            <div id="paddleocr-settings" class="ocr-engine-panel" style="display: none;">
+                <div
+                    style="font-size: 14px; color: #666; margin-bottom: 15px; padding: 10px; background: #e8f5e9; border-radius: 6px; border-left: 4px solid #4caf50;"
+                    data-i18n="ocr.paddle.intro">
+                    PaddleOCR 是百度开源的 OCR 引擎，对中文识别效果最佳
+                </div>
+
+                <div id="paddleocr-status"
+                    style="font-size: 13px; color: #666; margin-bottom: 15px; padding: 12px; background: #f5f5f5; border-radius: 6px;"
+                    data-i18n="ocr.paddle.checking">
+                    正在检测 PaddleOCR...
+                </div>
+
+                <!-- PaddleOCR 高级配置 -->
+                <div
+                    style="margin-bottom: 15px; padding: 12px; background: #f0faf0; border-radius: 8px; border: 1px solid #c8e6c9;">
+                    <div style="font-size: 12px; color: #2e7d32; margin-bottom: 10px; font-weight: 600;" data-i18n="ocr.paddle.advanced">
+                        PaddleOCR 高级功能（需 PP-OCRv6 + PP-StructureV3）
+                    </div>
+
+                    <!-- 语言选择 -->
+                    <div class="setting-group">
+                        <label class="setting-label" data-i18n="ocr.paddleLang">识别语言</label>
+                        <select class="setting-select" id="paddleocr-language"
+                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </select>
+                    </div>
+
+                    <!-- 功能开关 -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #333; cursor: pointer; padding: 6px 10px; background: white; border-radius: 4px; border: 1px solid #ddd;">
+                            <input type="checkbox" id="paddleocr-layout" checked>
+                            <span data-i18n="ocr.layout">版面分析</span>
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #333; cursor: pointer; padding: 6px 10px; background: white; border-radius: 4px; border: 1px solid #ddd;">
+                            <input type="checkbox" id="paddleocr-table" checked>
+                            <span data-i18n="ocr.table">表格识别</span>
+                        </label>
+                        <label
+                            style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #333; cursor: pointer; padding: 6px 10px; background: white; border-radius: 4px; border: 1px solid #ddd;">
+                            <input type="checkbox" id="paddleocr-formula" checked>
+                            <span data-i18n="ocr.formula">公式识别</span>
+                        </label>
+                    </div>
+
+                    <div style="font-size: 11px; color: #888; margin-top: 8px;" data-i18n="ocr.paddle.hint">
+                        新版 PP-OCRv6 支持多种语言统一识别。版面分析识别文档结构，表格识别还原行列，公式识别输出 LaTeX。
+                    </div>
+                </div>
+
+                <div id="paddleocr-python-missing"
+                    style="display: none; margin-bottom: 15px; padding: 12px; background: #fff3e0; border-radius: 6px; border-left: 4px solid #ff9800;">
+                    <div style="font-size: 13px; color: #333; margin-bottom: 8px;" data-i18n="ocr.paddle.noPython">
+                        未检测到 Python，PaddleOCR 需要 Python 3.9 或更高版本
+                    </div>
+                    <a href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer"
+                        style="display: inline-block; padding: 8px 16px; background: #ff9800; color: white; text-decoration: none; border-radius: 4px; font-size: 13px;"
+                        data-i18n="ocr.paddle.downloadPython">
+                        下载 Python
+                    </a>
+                </div>
+
+                <button class="btn-save" id="btn-install-paddleocr" onclick="App.installPaddleOcr()"
+                    style="width: 100%; margin-bottom: 10px; background: #4caf50; display: none;" data-i18n="ocr.paddle.install">
+                    自动安装 PaddleOCR
+                </button>
+
+                <button class="btn-save" id="btn-diagnose-paddleocr" onclick="App.diagnosePaddleOcr()"
+                    style="width: 100%; margin-bottom: 10px; background: #9c27b0; display: none;" data-i18n="ocr.verifyPaddle">
+                    🔍 验证 PaddleOCR 安装
+                </button>
+
+                <div id="paddleocr-diagnose-section" style="display: none; margin-top: 15px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;" data-i18n="ocr.paddle.diagnoseLabel">诊断结果：</div>
+                    <div id="paddleocr-diagnose-content"
+                        style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-size: 11px; color: #333; max-height: 300px; overflow-y: auto; font-family: monospace;">
+                    </div>
+                </div>
+
+                <div id="paddleocr-progress" style="display: none; margin-top: 15px;">
+                    <div style="background: #e0e0e0; height: 20px; border-radius: 10px; overflow: hidden;">
+                        <div id="paddleocr-progress-bar"
+                            style="background: #4caf50; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <div id="paddleocr-progress-text"
+                        style="font-size: 12px; color: #666; margin-top: 5px; text-align: center;"></div>
+                </div>
+
+                <div id="paddleocr-log-section" style="display: none; margin-top: 15px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;" data-i18n="ocr.paddle.log">安装日志：</div>
+                    <div id="paddleocr-log-content"
+                        style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-size: 11px; color: #333; max-height: 200px; overflow-y: auto; font-family: monospace;">
+                    </div>
+                </div>
+
+                <!-- 手动安装指南 -->
+                <div id="paddleocr-manual-install"
+                    style="margin-top: 15px; padding: 12px; background: #fff3e0; border-radius: 6px; border-left: 4px solid #ff9800;">
+                    <div style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: 500;" data-i18n="ocr.paddle.manualTitle">
+                        手动安装指南（高级用户）
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;" data-i18n="ocr.paddle.manualHint">
+                        如果一键安装也失败，可以手动执行以下命令：
+                    </div>
+                    <div
+                        style="background: #263238; color: #aed581; padding: 10px; border-radius: 4px; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; overflow-x: auto;">
+                        <div style="margin-bottom: 4px;" data-i18n="ocr.manual.step1"># 1. 打开命令提示符或 PowerShell</div>
+                        <div style="margin-bottom: 4px;" data-i18n="ocr.manual.step2"># 2. 执行以下命令（替换为实际 Python 版本号）：</div>
+                        <div style="margin-bottom: 4px;">py -3.9 -m pip install paddlepaddle -i
+                            https://pypi.tuna.tsinghua.edu.cn/simple</div>
+                        <div style="margin-bottom: 4px;">py -3.9 -m pip install paddleocr -i
+                            https://pypi.tuna.tsinghua.edu.cn/simple</div>
+                        <div style="margin-bottom: 4px;" data-i18n="ocr.manual.step3"># 3. 下载 OCR 识别模型（重要！）：</div>
+                        <div>py -3.9 -c "from paddleocr import PaddleOCR; PaddleOCR(use_textline_orientation=True,
+                            lang='ch'); print('ok')"</div>
+                    </div>
+                    <div style="font-size: 11px; color: #999; margin-top: 8px;" data-i18n="ocr.manual.tip">
+                        提示：如果清华镜像失败，可尝试其他镜像源<br>
+                        阿里云 https://mirrors.aliyun.com/pypi/simple/<br>
+                        中科大 https://pypi.mirrors.ustc.edu.cn/simple/
+                    </div>
+                </div>
+            </div>
+
+            <!-- Windows OCR 设置 -->
+            <div id="windows-settings" class="ocr-engine-panel" style="display: none;">
+                <div
+                    style="font-size: 14px; color: #666; margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3;"
+                    data-i18n="ocr.win.intro">
+                    使用 Windows 10/11 内置的 OCR 功能，无需安装任何额外软件
+                </div>
+
+                <div id="windows-ocr-status"
+                    style="font-size: 13px; color: #666; margin-bottom: 15px; padding: 12px; background: #f5f5f5; border-radius: 6px;"
+                    data-i18n="ocr.win.checking">
+                    正在检测 Windows OCR...
+                </div>
+
+                <div id="windows-ocr-languages" style="display: none; margin-top: 15px;">
+                    <div style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: 500;" data-i18n="ocr.win.langs">支持的语言</div>
+                    <div id="windows-ocr-languages-list"
+                        style="font-size: 12px; color: #666; padding: 10px; background: #f5f5f5; border-radius: 4px; max-height: 150px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 云端 OCR 设置 -->
+            <div id="cloud-settings" class="ocr-engine-panel" style="display: none;">
+                <div
+                    style="font-size: 14px; color: #666; margin-bottom: 15px; padding: 10px; background: #fce4ec; border-radius: 6px; border-left: 4px solid #e91e63;"
+                    data-i18n="ocr.cloud.intro">
+                    使用云端 OCR API，识别准确率最高，需要联网和配置 API Key
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label" data-i18n="ocr.cloud.provider">云服务提供商</label>
+                    <select class="setting-select" id="cloud-ocr-provider" onchange="onCloudProviderChange()">
+                        <option value="baidu" data-i18n="ocr.cloud.baidu">百度智能云 OCR</option>
+                        <option value="tencent" data-i18n="ocr.cloud.tencent">腾讯云 OCR</option>
+
+                    </select>
+                </div>
+
+                <!-- 百度配置 -->
+                <div id="baidu-config" class="cloud-provider-config">
+                    <div class="setting-group">
+                        <label class="setting-label">API Key</label>
+                        <input type="text" class="setting-input" id="baidu-api-key" data-i18n-placeholder="ocr.cloud.baiduKeyPh" placeholder="输入百度智能云 API Key">
+                    </div>
+                    <div class="setting-group">
+                        <label class="setting-label">Secret Key</label>
+                        <input type="password" class="setting-input" id="baidu-secret-key"
+                            data-i18n-placeholder="ocr.cloud.baiduSecretPh" placeholder="输入百度智能云 Secret Key">
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                        <a href="https://cloud.baidu.com/product/ocr" target="_blank" rel="noopener noreferrer"
+                            style="color: #2196f3;" data-i18n="ocr.cloud.baiduLink">前往百度智能云获取 API Key</a>
+                    </div>
+                </div>
+
+                <!-- 腾讯云配置 -->
+                <div id="tencent-config" class="cloud-provider-config" style="display: none;">
+                    <div class="setting-group">
+                        <label class="setting-label">SecretId</label>
+                        <input type="text" class="setting-input" id="tencent-secret-id"
+                            data-i18n-placeholder="ocr.cloud.tencentIdPh" placeholder="输入腾讯云 SecretId">
+                    </div>
+                    <div class="setting-group">
+                        <label class="setting-label">SecretKey</label>
+                        <input type="password" class="setting-input" id="tencent-secret-key"
+                            data-i18n-placeholder="ocr.cloud.tencentKeyPh" placeholder="输入腾讯云 SecretKey">
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                        <a href="https://cloud.tencent.com/product/ocr" target="_blank" rel="noopener noreferrer"
+                            style="color: #2196f3;" data-i18n="ocr.cloud.tencentLink">前往腾讯云获取 API Key</a>
+                    </div>
+                </div>
+
+
+
+                <div
+                    style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border: 1px solid #d0e3ff;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-weight: 500; color: #1976d2;" data-i18n="ocr.cloud.test">连接测试</span>
+                        <button class="btn-secondary" id="btn-test-cloud-ocr" onclick="App.testCloudOcrConfig()"
+                            style="padding: 6px 12px; font-size: 13px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                            data-i18n="ocr.cloud.testBtn">
+                            测试连接
+                        </button>
+                    </div>
+                    <div id="cloud-ocr-test-result"
+                        style="display: none; padding: 10px; border-radius: 4px; font-size: 13px;"></div>
+                </div>
+            </div>
+
+            <button class="btn-save" id="btn-save-ocr-settings" onclick="App.saveOcrSettings()"
+                style="width: 100%; margin-top: 20px; font-size: 15px; padding: 12px;" data-i18n="ocr.saveSettings">💾 保存 OCR 设置</button>
+        </div>
+    </div>
+
+    <script src="js/i18n.js?v=v202610191933"></script>
+<script src="js/ui-locale-switch.js?v=v202610191933"></script>
+    <script src="config/models-config.js?v=v202610191933"></script>
+    <script src="js/app-bootstrap.js"></script>
+    <script src="js/app-utils.js"></script>
+    <script src="js/bridge-config.js?v=v202610191933"></script>
+    <script src="js/app-config.js"></script>
+    <script src="js/app-ocr.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            try { if (window.App && App.i18n) { App.i18n.apply(document); document.title = App.i18n.t('ocr.settingsTitle'); } } catch (e) {}
+            var fns = [
+                'saveOcrSettings', 'onOcrEngineChange', 'loadOcrSettings',
+                'testCloudOcrConfig', 'onCloudProviderChange', 'installPaddleOcr', 'diagnosePaddleOcr',
+                'loadPaddleOcrAdvancedConfig', 'savePaddleOcrAdvancedConfig'
+            ];
+            fns.forEach(function (fn) {
+                if (typeof App[fn] === 'function' && typeof window[fn] !== 'function') {
+                    window[fn] = App[fn];
+                }
+            });
+
+            if (typeof App.showToast === 'function' && typeof window.showToast !== 'function') {
+                window.showToast = App.showToast;
+            }
+
+            setTimeout(function () {
+                try {
+                    if (typeof App.loadOcrSettings === 'function') App.loadOcrSettings();
+                } catch (e) { console.warn('加载OCR设置失败:', e); }
+            }, 500);
+
+            console.log('[OcrSettingsPanel] OCR 识别设置面板初始化完成');
+        });
+
+        function closePanel() {
+            if (window.chrome && window.chrome.webview && window.chrome.webview.hostObjects && window.chrome.webview.hostObjects.excelBridge) {
+                window.chrome.webview.hostObjects.excelBridge.CloseSettingsPanel();
+            }
+        }
+    </script>
+</body>
+
+</html>

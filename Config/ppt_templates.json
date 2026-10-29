@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-08-25",
+  "defaultTheme": "business_blue",
+  "themes": [
+    {
+      "id": "business_blue",
+      "name": "商务蓝",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [0, 90, 156],
+        "secondary": [0, 120, 200],
+        "accent": [255, 165, 0],
+        "bg": [245, 248, 252],
+        "light": [230, 240, 250],
+        "text": [51, 51, 51],
+        "gray": [150, 150, 150]
+      }
+    },
+    {
+      "id": "tech_green",
+      "name": "科技绿",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [0, 128, 128],
+        "secondary": [0, 160, 160],
+        "accent": [255, 105, 97],
+        "bg": [240, 248, 248],
+        "light": [220, 240, 240],
+        "text": [51, 51, 51],
+        "gray": [150, 150, 150]
+      }
+    },
+    {
+      "id": "vibrant_orange",
+      "name": "活力橙",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [230, 100, 50],
+        "secondary": [240, 140, 80],
+        "accent": [50, 100, 180],
+        "bg": [255, 248, 240],
+        "light": [255, 235, 220],
+        "text": [51, 51, 51],
+        "gray": [150, 150, 150]
+      }
+    },
+    {
+      "id": "elegant_purple",
+      "name": "优雅紫",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [100, 60, 150],
+        "secondary": [130, 90, 180],
+        "accent": [220, 180, 50],
+        "bg": [248, 245, 252],
+        "light": [235, 225, 245],
+        "text": [51, 51, 51],
+        "gray": [150, 150, 150]
+      }
+    },
+    {
+      "id": "academic_navy",
+      "name": "学术深蓝",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [15, 45, 90],
+        "secondary": [180, 150, 70],
+        "accent": [200, 80, 60],
+        "bg": [247, 248, 250],
+        "light": [225, 232, 242],
+        "text": [40, 50, 65],
+        "gray": [140, 145, 155]
+      }
+    },
+    {
+      "id": "academic_crimson",
+      "name": "学术红",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [128, 30, 45],
+        "secondary": [150, 110, 60],
+        "accent": [60, 90, 140],
+        "bg": [250, 247, 243],
+        "light": [240, 225, 222],
+        "text": [55, 45, 45],
+        "gray": [150, 140, 135]
+      }
+    },
+    {
+      "id": "light_fresh",
+      "name": "浅色清新",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [55, 160, 140],
+        "secondary": [90, 170, 220],
+        "accent": [240, 160, 90],
+        "bg": [255, 255, 255],
+        "light": [230, 244, 240],
+        "text": [60, 70, 70],
+        "gray": [150, 160, 160]
+      }
+    },
+    {
+      "id": "light_minimal",
+      "name": "浅色极简",
+      "font": "微软雅黑",
+      "colors": {
+        "primary": [60, 65, 80],
+        "secondary": [120, 128, 145],
+        "accent": [60, 120, 200],
+        "bg": [255, 255, 255],
+        "light": [240, 242, 246],
+        "text": [45, 50, 60],
+        "gray": [150, 155, 165]
+      }
+    }
+  ],
+  "slideLayouts": [
+    { "type": "title", "name": "标题页", "description": "封面：主标题 + 副标题 + 数据来源" },
+    { "type": "table", "name": "数据表格页", "description": "展示选区数据明细（带表头与斑马纹）" },
+    { "type": "text", "name": "文本要点页", "description": "要点列表 / 总结页" },
+    { "type": "chart", "name": "图表页", "description": "嵌入柱状/折线/饼图等数据图表" },
+    { "type": "kpi", "name": "KPI 指标页", "description": "关键指标数字卡片" },
+    { "type": "comparison", "name": "对比页", "description": "双栏对比 / 前后对比" },
+    { "type": "timeline", "name": "时间线页", "description": "按时间顺序展示里程碑" },
+    { "type": "agenda", "name": "目录页", "description": "汇报章节导航" },
+    { "type": "section", "name": "章节页", "description": "章节分隔页" },
+    { "type": "closing", "name": "结束页", "description": "总结致谢页" },
+    { "type": "shapes", "name": "自由形状页", "description": "任意形状组合（矩形/椭圆/箭头/流程图/标注/线条）" },
+    { "type": "picture", "name": "图片页", "description": "插入图片（位置/大小/圆角/边框/阴影）" },
+    { "type": "smartart", "name": "SmartArt 替代页", "description": "形状组合模拟流程/循环/层次/矩阵" }
+  ]
+}

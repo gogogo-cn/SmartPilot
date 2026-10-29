@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>任务规划 - SmartPilot</title>
+<link rel="icon" href="data:,">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0 14px; margin-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 16px; flex-wrap: wrap;
+}
+.header h1 {
+  font-size: 20px; font-weight: 700; color: #111827;
+  display: flex; align-items: center; gap: 8px; letter-spacing: 0.2px;
+}
+.header h1 .h-icon {
+  width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+  background: #fef2f2; color: #d32f2f; border-radius: 8px; font-size: 20px;
+  border: 1px solid #fecaca;
+}
+.header-actions {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;
+}
+/* 分组：左侧状态徽章区 + 中间操作按钮区 + 右侧主 CTA（主 CTA 在组外单独突出） */
+.status-group { display: flex; align-items: center; gap: 8px; padding-right: 12px; border-right: 1px solid #e5e7eb; }
+.action-group { display: flex; align-items: center; gap: 8px; }
+
+/* 状态徽章（同高 36px） */
+.server-status {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 14px;
+  background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;
+  font-size: 13px; color: #374151; font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+}
+.server-status:hover { border-color: #d1d5db; }
+.server-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e; display: inline-block; flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
+}
+.server-dot.offline {
+  background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+}
+.server-dot.syncing {
+  background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
+.ss-warn {
+  margin-left: 4px; font-size: 12px; color: #b45309;
+  padding: 1px 6px; border-radius: 4px; background: #fffbeb; border: 1px solid #fde68a;
+  font-weight: 500;
+}
+
+/* 按钮：统一高度 36px，统一视觉节奏 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 36px; padding: 0 14px;
+  border: 1px solid transparent; border-radius: 8px;
+  font-size: 13px; cursor: pointer; transition: all 0.15s ease;
+  font-weight: 500; line-height: 1; white-space: nowrap;
+  background: #ffffff; color: #111827;
+  box-sizing: border-box;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: #d32f2f; color: #fff; border-color: #d32f2f;
+  box-shadow: 0 1px 2px rgba(211,47,47,0.2);
+}
+.btn-primary:hover:not(:disabled) { background: #b71c1c; border-color: #b71c1c; transform: translateY(-1px); }
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+.btn-secondary {
+  background: #ffffff; color: #111827; border: 1px solid #d1d5db;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #f9fafb; border-color: #9ca3af; color: #111827;
+}
+.btn-secondary:active:not(:disabled) { background: #f3f4f6; }
+
+.btn-danger {
+  background: #fff; color: #dc2626; border: 1px solid #fecaca;
+}
+.btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #fca5a5; }
+
+.btn-success { background: #22c55e; color: #fff; border-color: #22c55e; }
+.btn-success:hover:not(:disabled) { background: #16a34a; border-color: #16a34a; }
+
+.btn-icon { width: 36px; height: 36px; padding: 0; justify-content: center; border-radius: 8px; font-size: 15px; }
+.btn .bi { font-size: 14px; }
+.btn-stop { color: #dc2626; }
+.btn-start { color: #16a34a; }
+.btn .b-icon {
+  width: 14px; height: 14px; display: inline-block; border-radius: 2px;
+  line-height: 1; text-align: center;
+}
+/* Task Form */
+.dialog-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.dialog-box { background: #fff; border-radius: 12px; padding: 24px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.dialog-box h2 { font-size: 20px; margin-bottom: 20px; color: #222; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #d32f2f; }
+.form-group textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.dialog-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; }
+/* Task List */
+.task-stats { display: flex; gap: 16px; margin-bottom: 20px; }
+.stat-card { flex: 1; background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+.stat-card .num { font-size: 28px; font-weight: 700; color: #333; }
+.stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.stat-card:nth-child(1) .num { color: #d32f2f; }
+.stat-card:nth-child(2) .num { color: #4caf50; }
+.stat-card:nth-child(3) .num { color: #ff9800; }
+.task-card { background: #fff; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
+.task-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.task-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.task-card-name { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.task-status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.task-status-dot.running { background: #4caf50; }
+.task-status-dot.paused { background: #ff9800; }
+.task-status-dot.executed { background: #2196f3; }
+.task-card-actions { display: flex; gap: 6px; }
+.task-card-body { font-size: 13px; color: #666; line-height: 1.8; }
+.task-card-body .label { color: #999; }
+.task-card-body .val { color: #333; font-weight: 500; }
+.task-card-body .row { display: flex; gap: 20px; flex-wrap: wrap; }
+.task-card-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+.task-command { font-size: 13px; color: #555; background: #f9f9f9; padding: 6px 10px; border-radius: 4px; font-family: 'Courier New', monospace; flex: 1; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 18px; color: #666; margin-bottom: 8px; }
+.empty-state p { font-size: 14px; }
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.toast.success { background: #4caf50; }
+.toast.error { background: #f44336; }
+/* Loading */
+.loading { text-align: center; padding: 40px; color: #999; }
+.loading .spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid #e0e0e0; border-top-color: #d32f2f; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* 离线提示 */
+.offline-banner { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: none; font-size: 13px; color: #e65100; }
+.offline-banner.show { display: flex; align-items: center; gap: 8px; }
+/* 数据说明 */
+.data-note { font-size: 12px; color: #999; text-align: center; margin-top: 24px; padding: 12px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1><span class="h-icon">📋</span> 任务规划</h1>
+    <div class="header-actions">
+      <!-- ① 状态徽章组：Excel + 独立服务（等高等圆角） -->
+      <div class="status-group">
+        <div class="server-status" id="serverStatus">
+          <span class="server-dot" id="serverDot"></span>
+          <span id="serverStatusText">检查中...</span>
+        </div>
+        <div class="server-status" id="sarStatus" title="独立服务：Excel 关闭后仍可执行任务">
+          <span class="server-dot" id="sarDot"></span>
+          <span id="sarStatusText">独立服务检测中...</span>
+        </div>
+      </div>
+      <!-- ② 操作按钮组：全 36px 统一 -->
+      <div class="action-group">
+        <button class="btn btn-secondary" id="sarToggleBtn" onclick="toggleStandaloneService()" title="一键启动/停止 9529 独立服务">
+          <span id="sarBtnIcon">▶</span>
+          <span id="sarBtnText">启动独立服务</span>
+        </button>
+        <button class="btn btn-secondary" id="fixConfigBtn" onclick="fixStandaloneConfig()" title="找不到 llm_config.json 时点这里：从 Excel 重新导出 AI 模型配置到独立服务">
+          🔧 修复配置
+        </button>
+        <button class="btn btn-secondary" onclick="refreshTasks(this)" title="刷新任务列表">🔄 刷新</button>
+        <button class="btn btn-secondary" id="homeBtn" onclick="goHome()" style="display:none;" title="返回 Excel 首页">🏠 首页</button>
+      </div>
+      <!-- ③ 主 CTA：新建任务（突出） -->
+      <button class="btn btn-primary" onclick="openCreateForm()" title="新建定时任务">＋ 新建任务</button>
+    </div>
+  </div>
+
+  <div class="offline-banner" id="offlineBanner">
+    <span>📌</span>
+    <span>Excel 未运行，任务数据仅保存在本地浏览器中。打开 Excel 后自动同步。</span>
+  </div>
+
+  <div class="task-stats" id="taskStats">
+    <div class="stat-card"><div class="num" id="statTotal">0</div><div class="label">总任务</div></div>
+    <div class="stat-card"><div class="num" id="statRunning">0</div><div class="label">已启用</div></div>
+    <div class="stat-card"><div class="num" id="statPaused">0</div><div class="label">已暂停</div></div>
+  </div>
+
+  
+
+  <div id="taskList" class="task-list"></div>
+
+  <div class="data-note" id="dataNote">数据存储在本地浏览器中，关闭 Excel 后仍可查看和编辑</div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- 任务表单弹窗 -->
+<div class="dialog-overlay" id="taskFormOverlay" style="display:none;">
+  <div class="dialog-box">
+    <h2 id="formTitle">新建定时任务</h2>
+    <div class="form-group">
+      <label>任务名称</label>
+      <input type="text" id="taskName" placeholder="如：每日数据清洗" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>执行频率</label>
+        <select id="taskFrequency" onchange="onFrequencyChange()">
+          <option value="daily">每天</option>
+          <option value="hourly">每小时</option>
+          <option value="weekdays">工作日每天</option>
+          <option value="weekly">每周一</option>
+          <option value="once">仅一次</option>
+        </select>
+      </div>
+      <div class="form-group" id="timeGroup">
+        <label>执行时间</label>
+        <input type="time" id="taskTime" value="09:00" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>目标 Excel 文件（独立执行时必填）</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="taskTargetFile" placeholder="直接粘贴完整路径，如：C:\数据\销售报表.xlsx" style="flex:1;" />
+        <button type="button" class="btn btn-secondary" onclick="pickTargetExcelFile('taskTargetFile')" style="white-space:nowrap;">📁 浏览</button>
+        <button type="button" class="btn btn-secondary" id="btnDetectSheets" onclick="detectWorkbookInfo()" style="white-space:nowrap;" title="读取该 xlsx 的工作表名、行列数、表头预览">🔍 探测</button>
+      </div>
+      <div style="margin-top:4px;font-size:12px;color:#888;">
+        点「浏览」用系统文件选择框选文件并填路径；也可直接粘贴完整路径（最稳）。点「探测」会读到当前文件里所有 sheet、行列、表头，方便写指令时引用。
+      </div>
+    </div>
+    <div class="form-group" id="refGroup" style="border:1px dashed #cbd5e1;border-radius:8px;padding:10px 14px;background:#f8fafc;">
+      <label style="margin-bottom:6px;display:flex;align-items:center;gap:6px;">📎 执行上下文引用（独立模式下代替 Excel 宿主感应，可直接拼进指令）</label>
+      <div class="form-row" style="margin-top:6px;">
+        <div class="form-group" style="margin:0;">
+          <label style="font-size:12px;color:#475569;font-weight:500;">工作表</label>
+          <select id="refSheet" onchange="onRefChange()">
+            <option value="">（探测后可选）</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label style="font-size:12px;color:#475569;font-weight:500;">单元格/范围（可留空）</label>
+          <input type="text" id="refRange" placeholder="如 A1:E10 或 A1" oninput="onRefChange()" />
+        </div>
+      </div>
+      <div id="refPreview" style="margin-top:8px;font-size:12px;color:#475569;white-space:pre-wrap;word-break:break-all;border-radius:6px;background:#fff;border:1px solid #e2e8f0;padding:6px 10px;min-height:28px;">—</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="appendRefToCommand()">🔗 把引用插入指令末尾</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="appendHeaderHintToCommand()">🧠 把表头字段加入指令</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="clearRefs()">🗑 清空引用</button>
+      </div>
+      <div style="margin-top:6px;font-size:12px;color:#64748b;">
+        已识别引用：<span id="refChips" style="color:#0f172a;font-weight:500;">—</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>执行指令</label>
+      <textarea id="taskCommand" placeholder="如：清洗当前工作表数据，按「销售额」降序；保留金额列两位小数&#10;可输入自然语言指令，结合下方引用的工作表/表头，AI 将自动执行" rows="4"></textarea>
+      <div style="margin-top:4px;font-size:12px;color:#888;">小贴士：如果指令里没写清楚哪个文件、哪个工作表、哪几列，用上面的「🔗 把引用插入指令末尾」能显著降低独立运行时出错率（AI 不需要再靠猜）。</div>
+    </div>
+    <div class="form-group">
+      <label>执行模型（选填；不选=跟随顶部「默认执行模型」）</label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select id="taskModel" style="flex:1;">
+          <option value="">🤖 AUTO（跟随默认执行模型）</option>
+        </select>
+        <button type="button" class="btn btn-secondary" onclick="refreshModelSelect('taskModel', this, currentEditingModel)" title="检测本地 Ollama / 刷新云端模型列表" style="white-space:nowrap;">🔄 刷新</button>
+      </div>
+      <div style="margin-top:4px;font-size:12px;color:#888;">给这个任务单独指定模型（qwen2.5 跑通用、deepseek-r1 跑推理、qwen3-vl 看表格图）；和顶部聊天栏选法完全一致</div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-secondary" onclick="closeForm()">取消</button>
+      <button class="btn btn-primary" id="formSubmitBtn" onclick="submitForm()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 配置模型弹窗（独立模式下无需 Excel，直接保存到权威位置） -->
+<div class="dialog-overlay" id="configFormOverlay" style="display:none;">
+  <div class="dialog-box" style="width:520px;">
+    <form id="cfgForm" onsubmit="event.preventDefault(); submitConfigForm(); return false;">
+    <h2>🤖 配置 AI 模型</h2>
+    <div style="background:#f0f7ff;border:1px solid #cfe2ff;color:#084298;border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:16px;line-height:1.6;">
+      💡 即使 <b>Excel 没运行</b>也可以在这里填，配置会保存到本地权威位置；下次启动 Excel 时会自动同步。
+    </div>
+    <div class="form-group">
+      <label>服务商（Provider）<span style="color:#d32f2f;">*</span></label>
+      <select id="cfgProvider" onchange="onCfgProviderChange()">
+        <option value="">-- 请选择 --</option>
+        <option value="ollama">🖥️ Ollama（本地，无需 API Key）</option>
+        <option value="openai">OpenAI</option>
+        <option value="qianwen">通义千问（阿里）</option>
+        <option value="zhipu">智谱 AI</option>
+        <option value="wenxin">文心一言（百度）</option>
+        <option value="xunfei">讯飞星火</option>
+        <option value="moonshot">Kimi / Moonshot</option>
+        <option value="azure">Azure OpenAI</option>
+        <option value="anthropic">Claude / Anthropic</option>
+        <option value="deepseek">DeepSeek</option>
+        <option value="volcengine">火山引擎</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>模型名称（Model）<span style="color:#d32f2f;">*</span></label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="text" id="cfgModel" list="cfgModelSuggest" placeholder="如 qwen2.5:7b、gpt-4o、ernie-5.1" />
+        <datalist id="cfgModelSuggest"></datalist>
+        <button type="button" class="btn btn-secondary" onclick="cfgRefreshOllama(this)" title="Ollama 在本地 11434 运行时自动拉取模型列表" style="white-space:nowrap;">🔄 扫本地 Ollama</button>
+      </div>
+      <div id="cfgModelHint" style="margin-top:4px;font-size:12px;color:#888;">选本地 Ollama 后可点「扫本地 Ollama」快速填入模型名</div>
+    </div>
+    <div class="form-group" id="cfgApiKeyGroup">
+      <label>API Key<span id="cfgApiKeyStar" style="color:#d32f2f;">*</span></label>
+      <input type="password" id="cfgApiKey" placeholder="sk-..." autocomplete="off" />
+      <div id="cfgApiKeyHint" style="margin-top:4px;font-size:12px;color:#888;">本地 Ollama 无需填写；云端服务商必填</div>
+    </div>
+    <div class="form-group">
+      <label>API URL / 接口地址（选填；绝大多数服务商留空即可，本地 Ollama 默认已填）</label>
+      <input type="text" id="cfgApiUrl" placeholder="如 http://localhost:11434/api/chat" />
+      <div style="margin-top:4px;font-size:12px;color:#888;">留空时走服务商官方默认地址；Ollama 本地建议填 <code>http://localhost:11434/api/chat</code></div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-secondary" onclick="closeConfigForm()">取消</button>
+      <button type="button" class="btn btn-primary" id="cfgSubmitBtn" onclick="submitConfigForm()">保存配置</button>
+    </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ===== 配置 =====
+const API_BASE = window.location.origin + '/api';
+const SAR_API = 'http://localhost:9529'; // 独立服务（Excel 关闭后仍可执行任务）
+const STORAGE_KEY = 'tp_tasks';
+const isStandalone = window.location.protocol === 'file:';
+
+// ===== Excel 9528 API session token（/api/* 鉴权；9529 独立服务无需 token）=====
+// 优先 COM 桥（内嵌 WebView2），其次公开端点 /api/status；缓存后复用
+let _excelToken = '';
+async function getExcelToken() {
+  if (_excelToken) return _excelToken;
+  try {
+    if (window.ExcelBridge && typeof window.ExcelBridge.GetMobileControlStatus === 'function') {
+      const r = window.ExcelBridge.GetMobileControlStatus();
+      if (r) { const j = JSON.parse(r); if (j && j.sessionToken) { _excelToken = j.sessionToken; return _excelToken; } }
+    }
+  } catch(e) {}
+  try {
+    const c = new AbortController(); const to = setTimeout(() => c.abort(), 1500);
+    const r = await fetch('http://localhost:9528/api/status', { cache: 'no-store', signal: c.signal });
+    clearTimeout(to);
+    if (r.ok) { const j = await r.json(); if (j && j.sessionToken) { _excelToken = j.sessionToken; return _excelToken; } }
+  } catch(e) {}
+  return '';
+}
+function excelApiUrl(url) {
+  if (!url.includes(':9528')) return url; // 9529 独立服务无需 token
+  return url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(_excelToken || '');
+}
+
+let tasks = [];
+let editingId = null;
+// 独立页打开编辑表单时临时记住当前 Model，给「🔄 刷新」按钮用：刷新后重新选回这个值
+let currentEditingModel = '';
+// ===== 轮询退避 & 页面可见性：避免 Excel 关闭时页面狂轰接口导致进程退出卡住 =====
+// - checkServerStatus / checkSarStatus 失败时连续累加 failCount，指数退避（最短 30s → 最长 120s）
+// - 标签页隐藏时暂停一切轮询；恢复立即跑一次
+const _POLL = {
+  excelFail: 0,
+  sarFail: 0,
+  excelTimer: null,
+  sarTimer: null,
+  excelInterval: 30000, // 初始 30s
+  sarInterval: 10000,
+  maxInterval: 120000, // 最长 2 分钟
+  minInterval: 10000,
+  paused: false,
+};
+function _scheduleExcel() {
+  if (_POLL.excelTimer) clearTimeout(_POLL.excelTimer);
+  if (_POLL.paused) return;
+  const delay = Math.max(_POLL.minInterval, Math.min(_POLL.maxInterval,
+    _POLL.excelInterval * Math.pow(1.6, Math.max(0, _POLL.excelFail - 1))));
+  _POLL.excelTimer = setTimeout(() => { checkServerStatus(); }, Math.round(delay));
+}
+function _scheduleSar() {
+  if (_POLL.sarTimer) clearTimeout(_POLL.sarTimer);
+  if (_POLL.paused) return;
+  const delay = Math.max(_POLL.minInterval, Math.min(_POLL.maxInterval,
+    _POLL.sarInterval * Math.pow(1.6, Math.max(0, _POLL.sarFail - 1))));
+  _POLL.sarTimer = setTimeout(() => {
+    checkSarStatus();
+    // 独立服务轮询时顺带轻量刷新任务列表：任务自动执行完成后自动更新卡片状态
+    refreshTaskListIfChanged();
+  }, Math.round(delay));
+}
+
+// 轻量任务列表自动刷新：仅从独立服务 9529 拉取，与当前渲染数据指纹对比，
+// 有变化才走完整 loadTasks 重绘（自动/手动执行完成后无需手动点刷新）
+let _taskFingerprint = '';
+async function refreshTaskListIfChanged() {
+  try {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 3000);
+    const res = await fetch('http://localhost:9529/tasks', { method: 'GET', signal: c.signal });
+    clearTimeout(t);
+    if (!res.ok) return;
+    const d = await res.json().catch(() => null);
+    const arr = Array.isArray(d) ? d : (d && d.data) || [];
+    const fp = JSON.stringify(arr.map(x => x && [x.Id, x.UpdatedAt || '', x.LastRun || '', x.NextRun || '', x.LastResult || '', x.Running === true ? 'run' : '', x.Enabled === false ? 'off' : 'on'].join('|')));
+    if (fp !== _taskFingerprint) {
+      _taskFingerprint = fp;
+      loadTasks();
+    }
+  } catch (e) { /* 独立服务暂不可达，保持现状，下轮再试 */ }
+}
+document.addEventListener('visibilitychange', () => {
+  const hidden = document.hidden;
+  _POLL.paused = !!hidden;
+  if (hidden) {
+    if (_POLL.excelTimer) { clearTimeout(_POLL.excelTimer); _POLL.excelTimer = null; }
+    if (_POLL.sarTimer)   { clearTimeout(_POLL.sarTimer);   _POLL.sarTimer = null; }
+  } else {
+    // 回到前台：立刻跑一次（失败已多时也要立刻重新探测是否恢复）
+    checkServerStatus();
+    checkSarStatus();
+    refreshTaskListIfChanged();
+  }
+});
+// 正在执行中的任务 id 集合 → renderTasks 时在卡片名旁显示 🌀 正在执行
+const _INFLIGHT = new Set();
+
+// ========== 任务级模型选择器：渲染规则和聊天栏的 select 保持一致（AUTO/分组/Ollama 实时检测）==========
+// 独立页完全离线（file://，不加载 js/task-planner.js），因此自带一套与聊天栏 PROVIDER_CONFIGS 一致的服务商/模型，
+// 并可从独立服务 9529 拉取已导出的 llm_config.json（拿到当前配置的 provider/model）。
+// 若宿主环境中已存在 TaskPlanner（window.TaskPlanner），优先委托其 refreshTaskModelSelect。
+// 内嵌服务商/模型列表：与 js/app-bootstrap.js 的 PROVIDER_CONFIGS 保持一致，保证选项与聊天区一致
+const _TASK_PROVIDERS = [
+  { key:'ollama',   label:'Ollama 本地', models:["llama3.1","llama3.2","llama3.3","qwen2.5:7b","qwen2.5:32b","qwen2.5:72b","qwen3:4b","qwen3:8b","qwen3:30b","deepseek-r1:8b","gemma3:4b","gemma3:12b","qwen2.5-vl"] },
+  { key:'openai',   label:'OpenAI',      models:["gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna","gpt-5.5","gpt-5.4","gpt-5.4-pro","gpt-5.4-mini","gpt-5.4-nano","gpt-5.3-codex","gpt-4.1","gpt-4.1-mini","gpt-4o","gpt-4o-mini","gpt-6-astra","gpt-chat-latest"] },
+  { key:'wenxin',   label:'文心一言',     models:["ernie-5.1","ernie-5.0","ernie-x1.1","ernie-4.5-turbo-128k","ernie-4.5-turbo-32k","ernie-4.5-turbo-vl"] },
+  { key:'qianwen',  label:'通义千问',     models:["qwen3.8-max","qwen3.8-flash","qwen3.8-max-0902","qwen3.7-max","qwen3.7-plus","qwen3.6-flash","qwen3.5-plus","qwen3.5-flash","qwen3-max","qwen3-coder-plus"] },
+  { key:'zhipu',    label:'智谱 AI',      models:["glm-5.3","glm-5.3-flash","glm-5.2","glm-5.1","glm-5.1-highspeed","glm-5","glm-5-turbo","glm-5v-turbo","glm-4.7","glm-4.6v"] },
+  { key:'xunfei',   label:'讯飞星火',     models:["spark-4.0-ultra","spark-max","spark-pro","spark-lite","4.0Ultra","pro-128k","max-32k","generalv3.5"] },
+  { key:'moonshot', label:'Moonshot',    models:["kimi-k3","kimi-k2.7-code","kimi-k2.7-code-highspeed","kimi-k2.6"] }
+  // azure/custom 无内嵌预置模型，配置后经 /model-config 追加
+];
+
+// 独立页自带的模型下拉渲染器：AUTO 开头 → Ollama 本地 → 云端，值格式 "provider::model"
+async function renderStandaloneModelSelect(selectId, btnEl, restoreValue) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  if (btnEl) { btnEl.disabled = true; const t = btnEl.textContent; try { btnEl._orig = t; } catch(e){} btnEl.textContent = '刷新中…'; }
+  try {
+    // 1) 探测本地 Ollama（11434）真实模型；失败沿用内嵌兜底
+    let ollamaReal = [];
+    try {
+      const c = new AbortController(); const tt = setTimeout(()=>c.abort(), 2000);
+      const r = await fetch('http://localhost:11434/api/tags', { method:'GET', signal: c.signal });
+      clearTimeout(tt);
+      if (r.ok) { const jr = await r.json(); if (jr && Array.isArray(jr.models)) {
+        ollamaReal = jr.models.map(m => { let n = (m.name || m.model || '').toString(); if (n && !n.includes(':')) n += ':latest'; return n; }).filter(Boolean);
+      } }
+    } catch(e) { /* Ollama 不在线 */ }
+
+    // 2) 尽量从独立服务 9529 拉取已导出的 llm_config.json，确认"当前配置了哪个"服务商/模型
+    let configuredProvider = '', configuredModel = '';
+    try {
+      const c = new AbortController(); const tt = setTimeout(()=>c.abort(), 3000);
+      const r = await fetch(SAR_API + '/model-config', { method:'GET', signal: c.signal });
+      clearTimeout(tt);
+      if (r.ok) {
+        const jj = await r.json();
+        if (jj && jj.success && jj.data) {
+          configuredProvider = (jj.data.provider || jj.data.apiType || '').toLowerCase();
+          configuredModel = jj.data.model || '';
+        }
+      }
+    } catch(e) { /* 独立服务未启动 */ }
+
+    // 3) 组装分组：
+    //   - ollama 只用真实 /api/tags 探测到的模型，不再用预置占位（否则列表里一堆 "deepseek-r1/gemma3" 没拉）
+    //   - 云端只用 llm_config 里实际配置了（有 API Key/端点）的那个 provider，并把配置的 model 置顶；其它 provider 不列预置模型。
+    // 这样独立页也不会显示"看起来能用、实际根本跑不通"的假选项。
+    const groups = [];
+    const ollamaGrp = _TASK_PROVIDERS.find(p => p.key === 'ollama');
+    if (ollamaGrp && ollamaReal.length) {
+      groups.push({ key:'ollama', label:ollamaGrp.label, models: ollamaReal.slice() });
+    }
+    const cfgProvider = configuredProvider || 'openai';
+    const cfgGrp = _TASK_PROVIDERS.find(p => p.key === cfgProvider);
+    if (cfgGrp && cfgProvider !== 'ollama' && cfgProvider !== 'custom') {
+      const base = cfgGrp.models.slice();
+      if (configuredModel && !base.includes(configuredModel)) base.unshift(configuredModel);
+      groups.push({ key: cfgProvider, label: cfgGrp.label, models: base });
+    }
+
+    // 4) 重建下拉
+    sel.innerHTML = '';
+    let auto = document.createElement('option');
+    auto.value = ''; auto.textContent = '🤖 AUTO（智能自动选择）';
+    sel.appendChild(auto);
+
+    const appendGroup = (p) => {
+      const models = (p.models || []).filter((m,i,a) => a.indexOf(m) === i);
+      if (!models.length) return;
+      const lab = document.createElement('option');
+      lab.value = ''; lab.disabled = true;
+      lab.style.cssText = 'font-weight:700;background:#f5f5f5;color:#333;';
+      lab.textContent = (p.key === 'ollama' ? '🖥️  ' : '☁️  ') + p.label + (p.key === 'ollama' ? '  ·  本地 ' + models.length + ' 个' : '');
+      sel.appendChild(lab);
+      for (const m of models) {
+        const o = document.createElement('option');
+        o.value = p.key + '::' + m;
+        o.dataset.provider = p.key; o.dataset.model = m;
+        let prefix = '  · ';
+        const isV = /(vision|vl|vt|llava|minicpm|pixtral|gemini|internvl)/i.test(m);
+        const isR = /(r1|reasoning|deepseek-reasoner|o1|o3)/i.test(m);
+        if (isV) prefix += '👁️ '; if (isR) prefix += '🧠 ';
+        o.textContent = prefix + m;
+        if (isV) o.style.color = '#4a90d9'; if (isR) o.style.color = '#7c3aed';
+        sel.appendChild(o);
+      }
+    };
+    const ollamaGroup = groups.find(g => g.key === 'ollama');
+    if (ollamaGroup) appendGroup(ollamaGroup);
+    groups.forEach(g => { if (g.key !== 'ollama') appendGroup(g); });
+
+    // 5) 回填选中值
+    const rv = restoreValue || currentEditingModel || '';
+    if (rv) {
+      const exists = Array.from(sel.options).some(o => o.value === rv);
+      if (exists) { sel.value = rv; }
+      else {
+        let guess = rv;
+        try { if (/^[\[{]/.test(rv)) { const j = JSON.parse(rv); guess = (j.provider||'')+'::'+(j.model||''); } } catch(e){}
+        if (!guess.includes('::')) guess = '::' + guess;
+        if (Array.from(sel.options).some(o => o.value === guess)) sel.value = guess;
+      }
+    }
+  } finally {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = btnEl._orig || '🔄 刷新'; }
+  }
+}
+
+function refreshModelSelect(selectId, btnEl, restoreValue) {
+  if (window.TaskPlanner && typeof TaskPlanner.refreshTaskModelSelect === 'function') {
+    // 保存回去，下次点刷新时 restoreValue 走 currentEditingModel
+    if (typeof restoreValue === 'string' || restoreValue === '') { currentEditingModel = restoreValue || currentEditingModel || ''; }
+    return window.TaskPlanner.refreshTaskModelSelect(selectId, btnEl, (typeof restoreValue === 'string' ? restoreValue : undefined) || currentEditingModel);
+  }
+  // 独立页完全离线：使用自带渲染器（不依赖 TaskPlanner 模块）
+  renderStandaloneModelSelect(selectId, btnEl, restoreValue);
+}
+function parseTaskModelValue(v) {
+  if (window.TaskPlanner && typeof TaskPlanner.parseTaskModelValue === 'function') return TaskPlanner.parseTaskModelValue(v);
+  if (!v) return {};
+  const i = v.indexOf('::');
+  return i < 0 ? { model: v } : { provider: v.substring(0,i) || undefined, model: v.substring(i+2) || undefined };
+}
+
+// ===== 初始化 =====
+document.addEventListener('DOMContentLoaded', () => {
+  // 首页按钮所有模式都显示（HTML 初始 display:none，这里统一放开）：
+  // file:// 本地页回同目录 index.html，9528 服务页回根路径，9529 服务页 Excel 在线则回首页
+  document.getElementById('homeBtn').style.display = '';
+  if (isStandalone) {
+    document.getElementById('dataNote').textContent = '独立模式 · 数据存储在本地浏览器中，无需 Excel 即可使用';
+  }
+
+  loadTasks();
+  checkServerStatus();
+  checkSarStatus();
+  // 🆕 打开独立任务列表时自动处理配置：就绪→静默；缺失+9529在线→直接弹表单；其他情况兜底
+  try { ensureConfigReady(); } catch(e) {}
+  // 顶部模型选择条：回显当前保存的模型（Excel HTTP 不在线时静默跳过）
+  if (window.TaskPlanner && typeof TaskPlanner.loadLLMBar === 'function') {
+    try { TaskPlanner.loadLLMBar(); } catch(e) {}
+  }
+  // 智能轮询调度器（指数退避 + 可见性暂停），替代原 setInterval 固定 30s 狂轰 ——
+  // 避免 Excel 退出时 HttpListener 挂起请求导致 Excel 进程长时间无法退出（"关闭很卡"）。
+  _scheduleExcel();
+  _scheduleSar();
+});
+
+// ===== 获取宿主（当前 Excel 打开的工作簿）路径信息 =====
+let _hostCache = null;
+async function fetchHostWorkbook(force) {
+  if (!force && _hostCache) return _hostCache;
+  let data = null;
+  // 1) COM Bridge
+  try {
+    if (window.ExcelBridge && typeof window.ExcelBridge.GetHostWorkbook === 'function') {
+      const raw = window.ExcelBridge.GetHostWorkbook();
+      if (raw) data = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+    }
+  } catch(e){}
+  // 2) HTTP fallback
+  if (!data) {
+    try {
+      let hostBase = isStandalone ? 'http://localhost:9528/api' : API_BASE;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 2000);
+      await getExcelToken();
+      const res = await fetch(excelApiUrl(hostBase + '/host/workbook'), { method: 'GET', signal: ctrl.signal });
+      clearTimeout(t);
+      if (res.ok) data = await res.json();
+    } catch(e){}
+  }
+  const def = { success: false, hasHost: false, path: '', directory: '', name: '' };
+  const r = Object.assign({}, def, data || {});
+  _hostCache = r;
+  return r;
+}
+
+// 目标：往输入框塞一个本地文件的完整路径。
+// 思路：
+//   1) Excel 内嵌面板（有 window.ExcelBridge.PickExcelFile）：直接弹系统对话框，选中就塞路径。
+//   2) 其它一切环境（浏览器/豆包/…）：用原生 <input type="file"> 弹系统文件选择。
+//      多数 WebView2/Electron/扩展注入环境能通过 File.path 拿到真实路径；
+//      拿不到时（纯浏览器沙箱）退化成"把文件名告诉你，请你粘贴完整路径"。
+async function pickExcelFileBridge(opts) {
+  opts = opts || {};
+
+  // ① 内嵌面板 → 宿主线程直接 ShowDialog，最稳。
+  if (window.ExcelBridge && typeof window.ExcelBridge.PickExcelFile === 'function') {
+    let raw = null;
+    try {
+      raw = window.ExcelBridge.PickExcelFile(
+        opts.filter || '',
+        opts.title || '选择目标 Excel 文件',
+        opts.initialDir || ''
+      );
+    } catch (e) {
+      showToast('弹文件框异常：' + (e && e.message || String(e)) + '，请直接粘贴路径到输入框', 'error');
+      return null;
+    }
+    if (!raw) {
+      showToast('文件框未返回结果，请重试或直接粘贴路径', 'error');
+      return null;
+    }
+    try {
+      const data = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+      if (data && data.success && data.filePath) return data.filePath;
+      if (data && data.error) {
+        showToast('文件选择失败：' + data.error + '，请直接粘贴路径', 'error');
+        return null;
+      }
+      // 用户取消 → 静默
+      return null;
+    } catch (e) {
+      showToast('文件桥返回解析失败：' + (e && e.message || String(e)) + '，请直接粘贴路径', 'error');
+      return null;
+    }
+  }
+
+  // ② 非内嵌环境 → 原生 <input type="file"> 选文件。
+  return new Promise(function (resolve) {
+    let input = null;
+    let settled = false;
+    const finish = function (val, msg, toastKind) {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (msg) showToast(msg, toastKind || (val ? 'success' : 'error'));
+      resolve(val || null);
+    };
+    const cleanup = function () {
+      try { if (input && input.parentNode) input.parentNode.removeChild(input); } catch (e) {}
+    };
+    const trySearchFullPath = async function (filename) {
+      // 选完只拿到文件名 → 去独立服务查完整路径（Desktop/Documents/Downloads/OneDrive 等常见目录）
+      const enc = encodeURIComponent(filename);
+      await getExcelToken();
+      const candidates = [
+        'http://localhost:9529/search-file?name=' + enc,
+        (typeof SAR_API !== 'undefined' ? SAR_API + '/search-file?name=' + enc : null),
+        excelApiUrl('http://localhost:9528/api/search/excel-file?name=' + enc),
+        (typeof API_BASE !== 'undefined' ? excelApiUrl(API_BASE + '/search/excel-file?name=' + enc) : null),
+      ].filter(Boolean);
+      let idx = 0;
+      const one = function () {
+        if (idx >= candidates.length) { finish(null, '选择了：' + filename + '。独立服务没找到完整路径，请手动复制路径粘贴到输入框。'); return; }
+        const url = candidates[idx++];
+        fetch(url, { method: 'GET', signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined })
+          .then(function (r) { return r.json().catch(function () { return null; }); })
+          .then(function (d) {
+            if (d && d.success && d.matches && d.matches.length > 0) {
+              finish(d.matches[0], '✓ 已自动填入完整路径：' + d.matches[0], 'success');
+              return;
+            }
+            one();
+          })
+          .catch(function () { one(); });
+      };
+      one();
+    };
+    input = document.createElement('input');
+    input.type = 'file';
+    input.accept = (opts.filterAsAccept || '.xlsx,.xls,.xlsm,.csv,.mhtml,.xla,.xlt,.xlam');
+    input.style.cssText = 'position:absolute;left:-9999px;top:-9999px;opacity:0;';
+    input.addEventListener('change', function (e) {
+      const f = e.target && e.target.files && e.target.files[0];
+      if (!f) { finish(null); return; }
+      // WebView2 / Electron 会把真实路径放 File.path 上
+      if (f.path) { finish(f.path); return; }
+      // 浏览器沙箱：File.path 拿不到，但独立服务能在本机全盘搜 —— 自动查自动填
+      trySearchFullPath(f.name);
+    }, { once: true });
+    document.body.appendChild(input);
+    setTimeout(function () { try { input.click(); } catch (e) { finish(null, '无法打开文件选择，请直接粘贴路径到输入框。'); } }, 10);
+  });
+}
+
+// 将选择结果填入指定输入框（拿到就写，拿不到就什么也不写，让用户手输/粘贴）
+async function pickTargetExcelFile(inputId) {
+  const path = await pickExcelFileBridge({
+    title: '选择目标 Excel 文件（独立执行操作此文件）'
+  });
+  if (path) {
+    const el = document.getElementById(inputId);
+    if (el) { el.value = path; el.dispatchEvent(new Event('input', { bubbles: true })); }
+    // 选完立刻探测，工作表/表头自动填入引用区
+    try { await detectWorkbookInfo(); } catch(e) {}
+  }
+}
+// ===== 引用区：工作簿探测 & 上下文拼接（独立模式代替 Excel COM 宿主感应）=====
+let _wbInfoCache = null; // { path, fileName, sheets:[{name,rows,cols,headerRow}] }
+async function detectWorkbookInfo(suppressToast) {
+  const pathEl = document.getElementById('taskTargetFile');
+  const path = (pathEl && pathEl.value || '').trim();
+  const sel = document.getElementById('refSheet');
+  const prev = document.getElementById('refPreview');
+  const chips = document.getElementById('refChips');
+  if (sel) { sel.innerHTML = '<option value="">（探测后可选）</option>'; }
+  _wbInfoCache = null;
+  if (!path) {
+    if (!suppressToast) showToast('请先填写目标 Excel 文件路径', 'error');
+    onRefChange();
+    return false;
+  }
+  const setPreview = function (text, isErr) {
+    if (prev) {
+      prev.textContent = text;
+      prev.style.color = isErr ? '#d32f2f' : '#475569';
+    }
+  };
+  setPreview('读取中…', false);
+  // 尝试 Excel 端 /workbook-info 端点（若在线）→ 再尝试独立服务 9529 /workbook-info
+  const q = '?path=' + encodeURIComponent(path);
+  const bases = sarApiBases().map(b => b + '/workbook-info' + q).concat(
+    excelApiBases().map(b => b + '/workbook-info' + q));
+  let data = null;
+  await getExcelToken();
+  for (const url0 of bases) {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 4000);
+      const r = await fetch(excelApiUrl(url0), { method: 'GET', signal: c.signal });
+      clearTimeout(t);
+      if (r.ok) {
+        const d = await r.json().catch(() => null);
+        if (d && d.success && Array.isArray(d.sheets)) { data = d; break; }
+      }
+    } catch(e) { /* 下一个 */ }
+  }
+  if (!data) {
+    setPreview('⚠️ 无法读取该 xlsx。常见原因：\n  • 路径写错/文件不存在\n  • 两端服务都未运行（独立页场景请先启动独立服务）\n  • 文件被 Excel 独占打开且处于保存状态（关掉 Excel 再探测）', true);
+    if (chips) chips.textContent = '—';
+    return false;
+  }
+  _wbInfoCache = data;
+  if (sel) {
+    const opts = ['<option value="">（请选择工作表）</option>'];
+    for (const s of data.sheets) {
+      const tag = s.rows || s.cols
+        ? '（' + (s.rows || 0) + '行 × ' + (s.cols || 0) + '列）'
+        : '';
+      opts.push('<option value="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + tag + '</option>');
+    }
+    sel.innerHTML = opts.join('');
+    // 默认选第一张（通常是数据所在），方便直接"插入引用"
+    if (data.sheets.length === 1) {
+      sel.value = data.sheets[0].name;
+    } else {
+      // 尝试按中文常用 sheet 名优先，兜底第一张
+      const preferred = ['Sheet1', 'sheet1', '工作表1', '数据', '明细', 'Main', 'main'];
+      let picked = data.sheets.find(s => preferred.indexOf(s.name) >= 0);
+      if (!picked) picked = data.sheets[0];
+      if (picked) sel.value = picked.name;
+    }
+  }
+  onRefChange();
+  if (!suppressToast) showToast('✓ 已读取 ' + data.sheets.length + ' 个工作表', 'success');
+  return true;
+}
+function _getSelectedSheetMeta() {
+  if (!_wbInfoCache || !Array.isArray(_wbInfoCache.sheets)) return null;
+  const sName = document.getElementById('refSheet');
+  const name = sName ? (sName.value || '') : '';
+  if (!name) return null;
+  return _wbInfoCache.sheets.find(s => s.name === name) || null;
+}
+function onRefChange() {
+  const pathEl = document.getElementById('taskTargetFile');
+  const rng = document.getElementById('refRange');
+  const sel = document.getElementById('refSheet');
+  const prev = document.getElementById('refPreview');
+  const chips = document.getElementById('refChips');
+  const path = (pathEl && pathEl.value || '').trim();
+  const sheet = (sel && sel.value || '').trim();
+  const range = (rng && rng.value || '').trim();
+  const meta = _getSelectedSheetMeta();
+  const parts = [];
+  if (path) parts.push('📄 文件: ' + path);
+  if (sheet) parts.push('📋 工作表: ' + sheet);
+  if (range) parts.push('🔲 范围: ' + range);
+  if (prev) {
+    if (parts.length === 0) {
+      prev.textContent = '—';
+      prev.style.color = '#94a3b8';
+    } else {
+      let txt = parts.join('\n');
+      if (meta && meta.headerRow && meta.headerRow.length > 0) {
+        const headers = meta.headerRow.filter(function (h){ return String(h || '').trim() !== ''; });
+        if (headers.length > 0) {
+          txt += '\n🎯 表头（共 ' + headers.length + ' 列）: ' + headers.join(' ｜ ');
+        }
+      }
+      if (meta) {
+        txt += '\n📊 规模: ' + (meta.rows || 0) + ' 行 × ' + (meta.cols || 0) + ' 列';
+      }
+      prev.textContent = txt;
+      prev.style.color = '#0f172a';
+    }
+  }
+  if (chips) {
+    const chipStr = [];
+    if (path) chipStr.push('📄 ' + (path.split(/[\\\/]/).pop() || path));
+    if (sheet) chipStr.push('📋 ' + sheet);
+    if (range) chipStr.push('🔲 ' + range);
+    chips.textContent = chipStr.length === 0 ? '—' : chipStr.join(' · ');
+  }
+}
+function appendRefToCommand() {
+  const pathEl = document.getElementById('taskTargetFile');
+  const rng = document.getElementById('refRange');
+  const sel = document.getElementById('refSheet');
+  const cmd = document.getElementById('taskCommand');
+  const path = (pathEl && pathEl.value || '').trim();
+  const sheet = (sel && sel.value || '').trim();
+  const range = (rng && rng.value || '').trim();
+  if (!path && !sheet && !range) { showToast('请先选择文件/工作表/范围再插入引用', 'error'); return; }
+  const lines = [];
+  lines.push('【执行上下文引用】');
+  if (path) lines.push('文件 = ' + path);
+  if (sheet) lines.push('工作表 = ' + sheet);
+  if (range) lines.push('范围 = ' + range);
+  const meta = _getSelectedSheetMeta();
+  if (meta && meta.headerRow) {
+    const headers = meta.headerRow.filter(function (h){ return String(h || '').trim() !== ''; });
+    if (headers.length > 0) lines.push('表头列 = ' + headers.join(', '));
+  }
+  if (meta) lines.push('数据规模 = ' + (meta.rows || 0) + ' 行 × ' + (meta.cols || 0) + ' 列');
+  const append = lines.join('\n');
+  if (cmd) {
+    const cur = (cmd.value || '');
+    const prefix = (cur === '' || cur.endsWith('\n')) ? '' : '\n';
+    cmd.value = cur + prefix + '\n' + append + '\n';
+    cmd.focus();
+  }
+  showToast('✓ 已把引用追加到指令末尾', 'success');
+}
+function appendHeaderHintToCommand() {
+  const meta = _getSelectedSheetMeta();
+  if (!meta || !meta.headerRow) { showToast('请先探测工作簿并选择工作表', 'error'); return; }
+  const headers = meta.headerRow.filter(function (h){ return String(h || '').trim() !== ''; });
+  if (headers.length === 0) { showToast('当前工作表没有检测到表头行（row 1 全空）', 'error'); return; }
+  const cmd = document.getElementById('taskCommand');
+  if (cmd) {
+    const cur = (cmd.value || '');
+    const prefix = (cur === '' || cur.endsWith('\n')) ? '' : '\n';
+    cmd.value = cur + prefix + '\n【表头参考】此工作表有 ' + headers.length + ' 列：' + headers.join('、') + '\n';
+    cmd.focus();
+  }
+  showToast('✓ 已把表头字段追加到指令', 'success');
+}
+function clearRefs() {
+  const sel = document.getElementById('refSheet');
+  const rng = document.getElementById('refRange');
+  if (sel) sel.innerHTML = '<option value="">（探测后可选）</option>';
+  if (rng) rng.value = '';
+  _wbInfoCache = null;
+  onRefChange();
+}
+
+// ===== 独立服务（9529）状态检查 =====
+async function checkSarStatus() {
+  const dot = document.getElementById('sarDot');
+  const text = document.getElementById('sarStatusText');
+  const btn = document.getElementById('sarToggleBtn');
+  const btnIcon = document.getElementById('sarBtnIcon');
+  const btnText = document.getElementById('sarBtnText');
+  let online = false;
+  let cfgMissing = false;
+  const timeoutMs = _POLL.sarFail >= 2 ? 1200 : 2000;
+  try {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), timeoutMs);
+    const res = await fetch(SAR_API + '/health', { method: 'GET', signal: c.signal });
+    clearTimeout(t);
+    const data = await res.json();
+    if (data.ok) {
+      online = true;
+      cfgMissing = !data.config_found;
+      dot.className = 'server-dot';
+      // 未找到配置 → 用琥珀色 badge 附加
+      text.innerHTML = '独立服务运行中' + (cfgMissing
+        ? '<span class="ss-warn">需配置</span>' : '');
+    } else {
+      dot.className = 'server-dot offline';
+      text.textContent = '独立服务异常';
+    }
+  } catch (e) {
+    dot.className = 'server-dot offline';
+    text.textContent = '独立服务未启动';
+  }
+  if (online) {
+    _POLL.sarFail = 0;
+    window._sarOnlineCached = true;
+  } else {
+    _POLL.sarFail = Math.min(10, _POLL.sarFail + 1);
+    window._sarOnlineCached = false;
+  }
+  if (btn) {
+    // 统一 36px 按钮：运行中 = 红色描边停止；未运行 = 绿色主色启动
+    if (online) {
+      btn.className = 'btn btn-danger';
+      if (btnIcon) btnIcon.textContent = '⏹';
+      if (btnText) btnText.textContent = '停止服务';
+    } else {
+      btn.className = 'btn btn-success';
+      if (btnIcon) btnIcon.textContent = '▶';
+      if (btnText) btnText.textContent = '启动服务';
+    }
+  }
+  _scheduleSar();
+}
+
+// ===== 一键启动/停止独立服务 =====
+function setSarBtnLabel(icon, label, disabled) {
+  const btn = document.getElementById('sarToggleBtn');
+  if (!btn) return;
+  const iconEl = document.getElementById('sarBtnIcon');
+  const textEl = document.getElementById('sarBtnText');
+  // 若按钮内部 span 已因 textContent 被破坏（兼容兜底），重写 innerHTML
+  if (!iconEl || !textEl) {
+    btn.innerHTML = '<span id="sarBtnIcon">' + (icon || '') + '</span>'
+      + '<span id="sarBtnText">' + (label || '') + '</span>';
+  } else {
+    if (icon != null) iconEl.textContent = icon;
+    if (label != null) textEl.textContent = label;
+  }
+  btn.disabled = !!disabled;
+}
+
+async function toggleStandaloneService() {
+  const btn = document.getElementById('sarToggleBtn');
+  const dot = document.getElementById('sarDot');
+  const text = document.getElementById('sarStatusText');
+  let online = dot && dot.className === 'server-dot';
+
+  // 启动：需借助 Excel(9528) 拉起 python 进程
+  if (!online) {
+    // 若当前是独立模式且 Excel 不可达，无进程拉起能力
+    if (isStandalone) {
+      const excelUp = await excelIsUp();
+      if (!excelUp) {
+        showToast('当前为独立离线模式，无法启动进程。请在 Excel 内打开本页面启动，或手动运行 StandaloneAgent\\standalone_agent.py', 'error');
+        return;
+      }
+    }
+    setSarBtnLabel('↻', '启动中…', true);
+    try {
+      await getExcelToken();
+      const res = await fetch(excelApiUrl(API_BASE + '/standalone/start'), { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || '独立服务已启动', 'success');
+      } else {
+        showToast(data.error || '启动失败', 'error');
+      }
+    } catch (e) {
+      showToast('无法通过 Excel 启动独立服务：' + e.message, 'error');
+    }
+    setSarBtnLabel(null, null, false);
+    checkSarStatus();
+    return;
+  }
+
+  // 停止：优先走独立服务自身 /shutdown（9529 可达即可，无需 Excel）
+  setSarBtnLabel('↻', '停止中…', true);
+  try {
+    await fetch(SAR_API + '/shutdown', { method: 'POST' });
+    // 等待端口释放
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 300));
+      try { await fetch(SAR_API + '/health', { method: 'GET' }); }
+      catch (e) { break; }
+    }
+    showToast('独立服务已停止', 'success');
+  } catch (e) {
+    showToast('停止失败：' + e.message, 'error');
+  }
+  setSarBtnLabel(null, null, false);
+  checkSarStatus();
+}
+
+// ===== 🔧 修复配置：优先 Excel 导出 → 失败降级 9529 重载/检查 → 仍缺失时直接弹窗表单让用户填 =====
+async function fixStandaloneConfig() {
+  const btn = document.getElementById('fixConfigBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🔧 导出中…'; }
+  let excelErr = '';
+  let handled = false;
+
+  // 1) 先试 Excel HTTP 导出配置（写到 bin/Debug/Config、StandaloneAgent、AppData 等多处）
+  let excelUrl = isStandalone ? 'http://localhost:9528/api' : API_BASE;
+  try {
+    await getExcelToken();
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(excelApiUrl(excelUrl + '/llm/export-config'), { method: 'POST', signal: ctrl.signal });
+    clearTimeout(t);
+    const data = await res.json().catch(()=>({success:false}));
+    if (!res.ok || !data.success) {
+      excelErr = (data && data.error) ? data.error : ('导出失败（HTTP ' + res.status + '）');
+    } else {
+      showToast('✅ LLM 配置已重新导出（Excel → 权威位置）', 'success');
+      handled = true;
+    }
+  } catch (e) {
+    excelErr = '无法连接 Excel 服务（' + e.message + '）';
+  }
+
+  // 2) Excel 不通或失败 → 降级：直接让独立服务（9529）重载配置并检查是否已就绪
+  let sarOk = false;
+  let cfgValid = false;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(SAR_API + '/reload-config', { method: 'POST', signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) {
+      sarOk = true;
+      const d = await res.json().catch(()=>({}));
+      if (d && d.configFound) {
+        // 检查实际内容是否有 provider + model
+        try {
+          const ctrl2 = new AbortController();
+          const t2 = setTimeout(() => ctrl2.abort(), 3000);
+          const mres = await fetch(SAR_API + '/model-config', { method: 'GET', signal: ctrl2.signal });
+          clearTimeout(t2);
+          if (mres.ok) {
+            const mj = await mres.json().catch(()=>({}));
+            const dd = mj && mj.data;
+            if (dd && (dd.provider || dd.apiType) && dd.model) {
+              cfgValid = true;
+              if (!handled) {
+                showToast('✅ 配置已就绪（直接从本地权威位置加载，无需 Excel）', 'success');
+                handled = true;
+              }
+            }
+          }
+        } catch(e) {}
+      }
+    }
+  } catch(e) {}
+
+  // 3) 两边都没搞定 → 如果独立服务在线，直接打开表单让用户填（不用绕回 Excel）
+  if (!handled) {
+    if (sarOk) {
+      showToast('⚠️ 还没有模型配置，正在打开配置表单…（无需 Excel，直接在这里填即可）', 'info');
+      setTimeout(function () { openConfigForm(); }, 600);
+    } else {
+      // 9529 也不在线 → 只能提示启动或回 Excel
+      const errMsg = excelErr
+        ? (excelErr + '；请先启动「独立服务」或在 Excel 里保存一次 AI 模型设置')
+        : '未能定位到 llm_config.json；请先启动「独立服务」或回到 Excel 设置 → AI 模型 → 点保存';
+      showToast('⚠️ ' + errMsg, 'error');
+    }
+  } else {
+    // 搞定了 → 如果独立服务在线就再推一次 reload 确认
+    try {
+      const res = await fetch(SAR_API + '/reload-config', { method: 'POST' });
+      if (res.ok) {
+        const dd = await res.json().catch(()=>({}));
+        if (dd && dd.configFound) showToast('✅ 独立服务已重加载新配置', 'success');
+      }
+    } catch(e) {}
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🔧 修复配置'; }
+  checkSarStatus();
+}
+
+// ===== 打开独立任务列表时：自动探测配置，缺失时直接提示/弹窗（无需用户手动点修复）=====
+async function ensureConfigReady() {
+  // 先看 9529 是否在线且已有有效配置
+  try {
+    const c = new AbortController();
+    const t = setTimeout(()=>c.abort(), 2500);
+    const r = await fetch(SAR_API + '/model-config', { method: 'GET', signal: c.signal });
+    clearTimeout(t);
+    if (r.ok) {
+      const j = await r.json().catch(()=>({}));
+      const d = j && j.data;
+      if (d && (d.provider || d.apiType) && d.model) {
+        return; // 配置已就绪，静默返回
+      }
+    }
+  } catch(e) { /* 9529 不在线 */ }
+
+  // 尝试 Excel 在线的话：先静默触发一次 export（能导出就万事大吉）
+  let excelExported = false;
+  try {
+    await getExcelToken();
+    const c = new AbortController();
+    const t = setTimeout(()=>c.abort(), 3000);
+    let excelUrl = isStandalone ? 'http://localhost:9528/api' : API_BASE;
+    const r = await fetch(excelApiUrl(excelUrl + '/llm/export-config'), { method: 'POST', signal: c.signal });
+    clearTimeout(t);
+    if (r.ok) {
+      const j = await r.json().catch(()=>({}));
+      if (j && j.success) {
+        excelExported = true;
+        try { await fetch(SAR_API + '/reload-config', { method: 'POST' }).catch(()=>{}); } catch(e){}
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // 还没有 → 检测 9529 是否在线；在线 = 直接弹表单，不在线 = 橙色提示
+  try {
+    const c = new AbortController();
+    const t = setTimeout(()=>c.abort(), 1800);
+    const r = await fetch(SAR_API + '/health', { method: 'GET', signal: c.signal });
+    clearTimeout(t);
+    if (r.ok) {
+      showToast('📋 还没配置 AI 模型，正在打开配置表单…（填完即可用，不依赖 Excel）', 'info');
+      setTimeout(openConfigForm, 700);
+      return;
+    }
+  } catch(e) {}
+
+  // 两边都不在线 → 静默，仅靠 banner 提示；等用户点「启动独立服务」或「修复配置」再处理
+}
+
+// ===== 配置表单：打开/关闭/联动/提交 =====
+function openConfigForm() {
+  const ov = document.getElementById('configFormOverlay');
+  if (!ov) return;
+  ov.style.display = 'flex';
+  // 尝试从 9529 拉已有的部分配置回填
+  (async function () {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(()=>c.abort(), 2500);
+      const r = await fetch(SAR_API + '/model-config', { method: 'GET', signal: c.signal });
+      clearTimeout(t);
+      if (r.ok) {
+        const j = await r.json().catch(()=>({}));
+        const d = j && j.data;
+        if (d) {
+          const p = (d.provider || d.apiType || '').toLowerCase();
+          const prov = document.getElementById('cfgProvider');
+          if (prov) prov.value = p;
+          const m = document.getElementById('cfgModel');
+          if (m) m.value = d.model || '';
+          const k = document.getElementById('cfgApiKey');
+          if (k) {
+            k.value = '';
+            if (d.apiKeyConfigured) {
+              k.placeholder = '已保存（留空则不修改）';
+              k.dataset.keepExisting = '1';
+            } else {
+              k.dataset.keepExisting = '';
+            }
+          }
+          const u = document.getElementById('cfgApiUrl');
+          if (u) u.value = d.apiUrl || d.baseUrl || '';
+          onCfgProviderChange();
+        }
+      }
+    } catch(e) {}
+  })();
+}
+function closeConfigForm() {
+  const ov = document.getElementById('configFormOverlay');
+  if (ov) ov.style.display = 'none';
+}
+function onCfgProviderChange() {
+  const p = (document.getElementById('cfgProvider').value || '').toLowerCase();
+  const star = document.getElementById('cfgApiKeyStar');
+  const hint = document.getElementById('cfgApiKeyHint');
+  const urlInput = document.getElementById('cfgApiUrl');
+  if (p === 'ollama') {
+    if (star) star.style.display = 'none';
+    if (hint) hint.textContent = '✅ 本地 Ollama 无需 API Key；如未填模型，点旁边「🔄 扫本地 Ollama」可自动列出';
+    if (urlInput && !urlInput.value) urlInput.value = 'http://localhost:11434/api/chat';
+  } else {
+    if (star) star.style.display = '';
+    if (hint) hint.textContent = '云端服务商必填；请妥善保管，仅写入本磁盘权威位置';
+  }
+  // 填入预置模型建议
+  const dl = document.getElementById('cfgModelSuggest');
+  if (dl) {
+    const grp = _TASK_PROVIDERS.find(function(x){ return x.key === p; });
+    if (grp && grp.models && grp.models.length) {
+      dl.innerHTML = grp.models.map(function(n){ return '<option value="'+escapeHtml(n)+'">'; }).join('');
+    } else {
+      dl.innerHTML = '';
+    }
+  }
+}
+async function cfgRefreshOllama(btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '扫描中…'; }
+  let models = [];
+  try {
+    const c = new AbortController();
+    const t = setTimeout(()=>c.abort(), 3000);
+    const r = await fetch('http://localhost:11434/api/tags', { method: 'GET', signal: c.signal });
+    clearTimeout(t);
+    if (r.ok) {
+      const jr = await r.json();
+      if (jr && Array.isArray(jr.models)) {
+        models = jr.models.map(function(m){
+          let n = (m.name || m.model || '').toString();
+          if (n && !n.includes(':')) n += ':latest';
+          return n;
+        }).filter(Boolean);
+      }
+    }
+  } catch(e) {}
+  if (models.length === 0) {
+    showToast('⚠️ 未检测到本地 Ollama（11434 不可达或还没下载模型）', 'error');
+  } else {
+    const dl = document.getElementById('cfgModelSuggest');
+    if (dl) dl.innerHTML = models.map(function(n){ return '<option value="'+escapeHtml(n)+'">'; }).join('');
+    const mi = document.getElementById('cfgModel');
+    if (mi && !mi.value) mi.value = models[0];
+    showToast('✅ 扫到 ' + models.length + ' 个 Ollama 模型，已填入建议列表', 'success');
+  }
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '🔄 扫本地 Ollama'; }
+}
+async function submitConfigForm() {
+  const btn = document.getElementById('cfgSubmitBtn');
+  const provider = (document.getElementById('cfgProvider').value || '').trim();
+  const model = (document.getElementById('cfgModel').value || '').trim();
+  const apiKey = (document.getElementById('cfgApiKey').value || '').trim();
+  const apiUrl = (document.getElementById('cfgApiUrl').value || '').trim();
+  if (!provider) { showToast('请选择服务商', 'error'); return; }
+  if (!model) { showToast('请填写模型名称', 'error'); return; }
+  const keyEl = document.getElementById('cfgApiKey');
+  const keepExisting = keyEl && keyEl.dataset.keepExisting === '1';
+  if (provider !== 'ollama' && !apiKey && !keepExisting) { showToast('云端服务商需要 API Key（Ollama 本地可留空）', 'error'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+  // 先尝试通过 9529 独立服务写入（SSOT 权威位置）—— 不依赖 Excel
+  let ok = false, msg = '';
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 8000);
+    const res = await fetch(SAR_API + '/save-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: provider, model: model, apiKey: apiKey, apiUrl: apiUrl }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    const d = await res.json().catch(()=>({success:false}));
+    if (res.ok && d && d.success) {
+      ok = true;
+      msg = d.message || '配置已保存';
+      // reload 让独立服务立刻生效
+      try { await fetch(SAR_API + '/reload-config', { method: 'POST' }).catch(()=>{}); } catch(e){}
+      closeConfigForm();
+      showToast('✅ ' + msg, 'success');
+    } else {
+      msg = (d && d.message) ? d.message : ('保存失败 HTTP ' + res.status);
+    }
+  } catch (e) {
+    msg = '无法连接独立服务（' + e.message + '）。请先点「▶ 启动独立服务」再保存。';
+  }
+  if (!ok) showToast('⚠️ ' + msg, 'error');
+  if (btn) { btn.disabled = false; btn.textContent = '保存配置'; }
+}
+
+// ===== 服务器状态检查（仅用于同步提示）=====
+// 健康检查探针：API_BASE + localhost:9528 并行，任一端 HTTP 2xx 即判"Excel 已连接"。
+// 失败连续累积 >= 2 次：缩短超时到 1.5s，避免 Excel 退出时被挂起 4s * N 拖住 HttpListener.Dispose。
+async function excelIsUp() {
+  const backoffMode = _POLL.excelFail >= 2;
+  const timeoutMs = backoffMode ? 1500 : 4000;
+  function probe(url) {
+    return new Promise(async function (resolve, reject) {
+      try {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), timeoutMs);
+        const r = await fetch(url, { method: 'GET', signal: c.signal, cache: 'no-store' });
+        clearTimeout(t);
+        if (!r.ok) return reject(new Error('HTTP ' + r.status));
+        try {
+          const j = await r.json();
+          if (j && (j.success || j.ok)) resolve(true); else reject(new Error('bad json'));
+        } catch (e) {
+          resolve(true);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+  const probes = [probe(API_BASE + '/status')];
+  const direct = 'http://localhost:9528/api/status';
+  try {
+    const u = new URL(API_BASE + '/status');
+    if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') probes.push(probe(direct));
+  } catch (e) { probes.push(probe(direct)); }
+  if (typeof Promise.any === 'function') {
+    try { const v = await Promise.any(probes); if (v) return true; } catch (_) { return false; }
+    return false;
+  }
+  const results = await Promise.all(probes.map(function (p){ return p.catch(function() { return false; }); }));
+  return results.some(Boolean);
+}
+async function checkServerStatus() {
+  const dot = document.getElementById('serverDot');
+  const text = document.getElementById('serverStatusText');
+  const banner = document.getElementById('offlineBanner');
+  const ok = await excelIsUp();
+  if (ok) {
+    _POLL.excelFail = 0;
+    dot.className = 'server-dot';
+    text.textContent = 'Excel 已连接';
+    banner.classList.remove('show');
+  } else {
+    _POLL.excelFail = Math.min(10, _POLL.excelFail + 1);
+    dot.className = 'server-dot offline';
+    text.textContent = 'Excel 未运行';
+    banner.classList.add('show');
+  }
+  _scheduleExcel();
+}
+
+// ===== 数据持久化 =====
+
+// 从 localStorage 加载
+function loadFromLocal() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+// 保存到 localStorage
+function saveToLocal(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+
+// 服务端墓碑删除（410/deleted）时同步清除本地残留：localStorage + 内存数组 + 界面重绘
+function removeTaskFromLocal(id) {
+  const cur = (typeof tasks !== 'undefined' ? tasks : loadFromLocal());
+  const arr = cur.filter(x => x && x.Id !== id);
+  if (typeof tasks !== 'undefined') tasks = arr;
+  saveToLocal(arr);
+  renderTasks();
+}
+
+// 前端重算下次执行时间（与 VB TaskSchedulerBridge.CalculateNextRun 对齐）
+// 目的：保存后无需等待后端回读，马上看到"下次执行"时间
+function calcNextRun(task) {
+  if (!task) return '';
+  if (task.Enabled === false) return '';
+  if (String(task.Frequency || '').toLowerCase() === 'once' && task.LastRun) return '';
+
+  const freq = task.Frequency || 'daily';
+  const timeStr = task.Time || '09:00';
+
+  // 每小时 → 下一个 hour:minute
+  if (freq === 'hourly') {
+    const parts = String(timeStr).split(':');
+    const minute = (parts.length >= 2 && /^\d+$/.test(parts[1])) ? parseInt(parts[1], 10) : 0;
+    const now = new Date();
+    let next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), minute, 0, 0);
+    if (next.getTime() <= now.getTime()) next = new Date(next.getTime() + 3600 * 1000);
+    return fmtYmdHms(next);
+  }
+
+  const parts = String(timeStr).split(':');
+  const hour = (parts.length >= 1 && /^\d+$/.test(parts[0])) ? parseInt(parts[0], 10) : 9;
+  const minute = (parts.length >= 2 && /^\d+$/.test(parts[1])) ? parseInt(parts[1], 10) : 0;
+
+  const now = new Date();
+  let next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0);
+  if (next.getTime() <= now.getTime()) next = new Date(next.getTime() + 24 * 3600 * 1000);
+
+  if (freq === 'weekdays') {
+    while (next.getDay() === 0 || next.getDay() === 6) next = new Date(next.getTime() + 24 * 3600 * 1000);
+  } else if (freq === 'weekly') {
+    while (next.getDay() !== 1) next = new Date(next.getTime() + 24 * 3600 * 1000);
+  }
+  return fmtYmdHms(next);
+}
+
+function fmtYmdHms(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+
+// 尝试从 HTTP API 同步（后台，不阻塞）
+async function syncFromApi() {
+  try {
+    await getExcelToken();
+    const res = await fetch(excelApiUrl(API_BASE + '/tasks'));
+    if (res.ok) {
+      const data = await res.json();
+      const apiTasks = Array.isArray(data) ? data : (data?.data || []);
+      if (apiTasks.length > 0) {
+        tasks = apiTasks;
+        saveToLocal(tasks);
+        renderTasks();
+        return true;
+      }
+    }
+  } catch (e) {}
+  return false;
+}
+
+// ===== 请求基址解析：避免 app.excelai.local 代理异常导致"看起来保存成功/实际后端没收到" =====
+// 与 pickExcelFileBridge / checkServerStatus / executeTask 同源：
+//   - Excel HTTP 服务（apiBases） ：永远把 http://localhost:9528/api 放第 0 位；API_BASE 非本地 host 时加代理做兜底
+//   - 独立服务（sarBases）    ：永远把 http://localhost:9529 放第 0 位；SAR_API 非本地 host 时加代理
+function buildApiBaseList(primary, fallback) {
+  const out = [];
+  if (primary) out.push(String(primary).replace(/\/+$/, ''));
+  try {
+    if (fallback) {
+      const u = new URL(String(fallback) + '/');
+      if (!(u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {
+        out.push(String(fallback).replace(/\/+$/, ''));
+      }
+    }
+  } catch (e) {
+    // fallback 是相对路径，直接加（同源场景）
+    if (fallback) out.push(String(fallback).replace(/\/+$/, ''));
+  }
+  return out.filter(Boolean);
+}
+function excelApiBases() { return buildApiBaseList('http://localhost:9528/api', API_BASE); }
+function sarApiBases()   { return buildApiBaseList('http://localhost:9529',     SAR_API); }
+
+// 对一组候选 URL 做"首个成功者返回"；失败全部收集返回 null。都失败时返回 {allFailed:true, failures:[]}
+async function raceFirstFetch(method, bases, path, body, opt_timeout_ms) {
+  const failures = [];
+  await getExcelToken();
+  for (const base of bases) {
+    const url = excelApiUrl(base + path);
+    try {
+      const opts = { method: String(method).toUpperCase(), headers: { 'Content-Type': 'application/json' } };
+      if (body != null) opts.body = (typeof body === 'string') ? body : JSON.stringify(body);
+      if (opt_timeout_ms > 0) {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), opt_timeout_ms);
+        opts.signal = c.signal;
+        const r = await fetch(url, opts);
+        clearTimeout(t);
+        if (r.ok) return { ok: true, url, response: r };
+        failures.push(url + ' → HTTP ' + r.status);
+      } else {
+        const r = await fetch(url, opts);
+        if (r.ok) return { ok: true, url, response: r };
+        failures.push(url + ' → HTTP ' + r.status);
+      }
+    } catch (e) {
+      const tag = (e && e.name === 'AbortError') ? '超时('+opt_timeout_ms+'ms)' : String(e && e.message || e);
+      failures.push(url + ' → ' + tag);
+    }
+  }
+  return { ok: false, allFailed: true, failures };
+}
+
+// 后台同步到 Excel HTTP 服务（9528 优先，代理兜底）
+async function syncToApi(method, relPath, body) {
+  const bases = excelApiBases();
+  const r = await raceFirstFetch(method, bases, relPath, body, 5000);
+  if (!r.ok) { try { console.warn('[syncToApi] 同步失败（两端）：', r.failures); } catch(e) {} return null; }
+  try {
+    if (String(method).toUpperCase() !== 'DELETE') await syncFromApi();
+  } catch(e) {}
+  return r.response;
+}
+
+// 后台同步到独立服务（9529 优先；路径形如 /tasks 或 /tasks/{id}）
+async function syncToSar(method, relPath, body) {
+  const bases = sarApiBases();
+  const r = await raceFirstFetch(method, bases, relPath, body, 5000);
+  if (!r.ok) { try { console.warn('[syncToSar] 同步失败（两端）：', r.failures); } catch(e) {} return null; }
+  return r.response;
+}
+
+// 从独立服务拉取并合并任务（Excel 关闭后的主调度副本）
+async function mergeFromSar() {
+  try {
+    const res = await fetch(SAR_API + '/tasks', { method: 'GET' });
+    if (!res.ok) return false;
+    const gd = await res.json();
+    const sarList = Array.isArray(gd) ? gd : (gd.data || []);
+    if (!sarList.length) return false;
+    // 合并：本地已有且 SAR 有则用 SAR 覆盖该条（含 LastResult/NextRun），本地独有的保留
+    const map = new Map();
+    tasks.forEach(t => map.set(t.Id, t));
+    sarList.forEach(s => map.set(s.Id, s));
+    tasks = Array.from(map.values());
+    saveToLocal(tasks);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ===== 去重（按 Name+Frequency+Time 指纹）=====
+function deduplicate() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const items = JSON.parse(raw);
+    if (!Array.isArray(items) || items.length < 2) return;
+    const seen = new Set();
+    const deduped = [];
+    let removed = 0;
+    for (const t of items) {
+      const key = (t.Name||'') + '|' + (t.Frequency||'') + '|' + (t.Time||'');
+      if (seen.has(key)) { removed++; continue; }
+      seen.add(key);
+      deduped.push(t);
+    }
+    if (removed > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+      console.log('[TaskPlanner] 去重完成，移除 ' + removed + ' 个重复任务');
+    }
+  } catch (e) {
+    console.warn('[TaskPlanner] 去重失败:', e.message);
+  }
+}
+
+// ===== 刷新按钮：点击后立即给出"刷新中…"反馈，加载完成再恢复 =====
+// （Excel 关闭时 loadTasks 要等 9528 超时，若无反馈会误以为按钮"无效"）
+async function refreshTasks(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 刷新中…'; }
+  try { await loadTasks(); } catch (e) { console.warn('[TaskPlanner] 刷新失败:', e); }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 刷新'; }
+}
+
+// ===== 加载任务 =====
+async function loadTasks() {
+  const taskList = document.getElementById('taskList');
+
+  // 0. 先去重（按 Name+Frequency+Time 指纹清理历史重复项）
+  deduplicate();
+
+  // 三方（Excel 9528 / 独立服务 9529 / localStorage）合并。策略：
+  //   都读（失败静默跳过），再按 Id 合并 → 最新修改覆盖 → 渲染
+  const byId = new Map();
+
+  const mergeIn = function (arr) {
+    if (!Array.isArray(arr)) return;
+    for (const t of arr) {
+      if (!t || !t.Id) continue;
+      // 给没 UpdatedAt 的任务补一个，避免老数据被后写入的"空时间"乱覆盖
+      if (!t.UpdatedAt) t.UpdatedAt = (t.LastRun || t.CreatedAt || new Date(0).toISOString());
+      const old = byId.get(t.Id);
+      if (!old) { byId.set(t.Id, Object.assign({}, t)); continue; }
+      // 按 UpdatedAt 谁新谁胜；时区格式可能不一致（ISO UTC vs 本地时间），
+      // 必须归一化为时间戳比较，否则字符串比较会让旧数据误判为"更新"覆盖新执行结果
+      const toTs = function (v) {
+        if (!v) return 0;
+        const n = Date.parse(v);
+        if (!isNaN(n)) return n;
+        // 兜底：'YYYY-MM-DD HH:MM:SS'（空格分隔，部分环境 Date.parse 不识别）
+        const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+        return 0;
+      };
+      const takeOld = toTs(old.UpdatedAt) > toTs(t.UpdatedAt);
+      const winner = takeOld ? old : t;
+      const loser = takeOld ? t : old;
+      byId.set(t.Id, Object.assign({}, loser, winner, {
+        NextRun: winner.NextRun || loser.NextRun,
+        LastRun: winner.LastRun || loser.LastRun,
+        LastResult: winner.LastResult || loser.LastResult,
+        LastSteps: (Array.isArray(winner.LastSteps) && winner.LastSteps.length ? winner.LastSteps : loser.LastSteps),
+      }));
+    }
+  };
+
+  // ① localStorage：先入（兜底）
+  mergeIn(loadFromLocal());
+
+  // ② Excel 内嵌后端 9528 /tasks（失败跳过；Excel 服务已连续失败≥2 次时直接跳过，
+  //    避免每次刷新都等超时，Excel 关闭时"刷新"也能即时响应）
+  if (_POLL.excelFail < 2) {
+    try {
+      await getExcelToken();
+      const bases = excelApiBases();
+      let apiTasks = null;
+      for (const base of bases) {
+        try {
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 1500);
+          const res = await fetch(excelApiUrl(base + '/tasks'), { method: 'GET', signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) {
+            const d = await res.json().catch(() => null);
+            const arr = Array.isArray(d) ? d : (d && d.data) || [];
+            if (Array.isArray(arr) && arr.length > 0) { apiTasks = arr; break; }
+          }
+        } catch (e) { /* 这条源不通，试下一个 */ }
+      }
+      if (apiTasks && apiTasks.length) mergeIn(apiTasks);
+    } catch (e) {
+      console.log('[TaskPlanner] 9528 同步失败（忽略）: ' + e.message);
+    }
+  }
+
+  // ③ 独立服务 9529 /tasks（失败静默跳过）
+  try {
+    const bases = sarApiBases();
+    let sarTasks = null;
+    for (const base of bases) {
+      try {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), 3000);
+        const res = await fetch(base + '/tasks', { method: 'GET', signal: c.signal });
+        clearTimeout(t);
+        if (res.ok) {
+          const d = await res.json().catch(() => null);
+          const arr = Array.isArray(d) ? d : (d && d.data) || [];
+          if (Array.isArray(arr) && arr.length > 0) { sarTasks = arr; break; }
+        }
+      } catch (e) { /* 跳过 */ }
+    }
+    if (sarTasks && sarTasks.length) mergeIn(sarTasks);
+  } catch (e) {
+    console.log('[TaskPlanner] 9529 同步失败（忽略）: ' + e.message);
+  }
+
+  tasks = Array.from(byId.values());
+
+  // 本地 → 独立服务(9529) 补同步：9529 缺失本地任务时批量 upsert。
+  // 背景：9529 的 tasks.json 可能被构建覆盖/清空（localStorage 是前端权威），而 scheduler_loop 只轮询
+  //       9529 内存任务；若 9529 缺失任务，则到点不会自动执行（手动执行仍可走 /tasks/{id}/execute）。
+  // 兜底：每次打开任务规划页即自动把本地任务补进 9529，保证自动执行恢复。
+  try {
+    const sBases = sarApiBases();
+    if (sBases.length && tasks.some(t => t && t.Id)) {
+      let sarKnown = null;
+      try {
+        const c = new AbortController(); const t = setTimeout(() => c.abort(), 2500);
+        const res = await fetch(sBases[0] + '/tasks', { method: 'GET', signal: c.signal });
+        clearTimeout(t);
+        if (res.ok) {
+          const d = await res.json().catch(() => null);
+          const arr = Array.isArray(d) ? d : (d && d.data) || [];
+          if (Array.isArray(arr)) sarKnown = new Set(arr.filter(x => x && x.Id).map(x => x.Id));
+        }
+      } catch (e) { /* 9529 不在线则跳过 */ }
+      if (sarKnown) {
+        for (const t of tasks) {
+          if (!t || !t.Id || sarKnown.has(t.Id)) continue;
+          try {
+            const c = new AbortController(); const to = setTimeout(() => c.abort(), 5000);
+            const res = await fetch(sBases[0] + '/tasks', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(t), signal: c.signal
+            });
+            clearTimeout(to);
+            if (res.ok) { sarKnown.add(t.Id); continue; }
+            // 服务端墓碑拒绝（410/deleted）：本地同步清除，防止已删任务残留回推与界面残留
+            let tombstoned = false;
+            try { const d = await res.json().catch(() => null); tombstoned = !!(d && d.deleted); } catch (e) {}
+            if (res.status === 410 || tombstoned) removeTaskFromLocal(t.Id);
+          } catch (e) { /* 单条失败不影响其余 */ }
+        }
+      }
+    }
+  } catch (e) {}
+
+  if (tasks.length > 0) {
+    saveToLocal(tasks);
+    renderTasks();
+    return;
+  }
+
+  // 空状态
+  taskList.innerHTML = '<div class="empty-state"><div class="icon">📋</div><h3>暂无定时任务</h3>' +
+    '<p>点击"新建任务"按钮创建第一个定时任务</p>' +
+    '<button class="btn btn-secondary" onclick="refreshTasks(this)" style="margin-top:12px;">🔄 刷新</button></div>';
+}
+
+// ===== 返回首页 =====
+function goHome() {
+  // 各运行模式的首页目标：
+  // - file:// 本地页：同目录 index.html（可直接打开）
+  // - 9528 Excel 服务页：根路径 /（/index.html 不在公开路径会 401）
+  // - 9529 独立服务页：不托管首页（根路径 302 回 task-planner）→ Excel(9528) 在线则回 Excel 首页，否则提示
+  if (window.location.protocol === 'file:') {
+    window.location.href = window.location.href.replace('task-planner.html', 'index.html');
+    return;
+  }
+  if (Number(window.location.port) === 9529) {
+    var excelHome = 'http://localhost:9528/';
+    fetch(excelHome, { method: 'GET' }).then(function (r) {
+      if (r && r.ok) { window.location.href = excelHome; }
+      else { showToast('Excel 未运行，无法返回首页', 'error'); }
+    }).catch(function () { showToast('Excel 未运行，无法返回首页', 'error'); });
+    return;
+  }
+  window.location.href = window.location.protocol + '//' + window.location.host + '/';
+}
+
+// ===== 渲染 =====
+function renderTasks() {
+  const container = document.getElementById('taskList');
+  const stats = document.getElementById('taskStats');
+
+  const total = tasks.length;
+  const enabled = tasks.filter(t => t.Enabled !== false).length;
+  const paused = total - enabled;
+  const inFlightCount = tasks.filter(t => _INFLIGHT.has(t.Id) || t.Running === true).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statRunning').textContent = inFlightCount > 0
+    ? (enabled + '（执行中 ' + inFlightCount + '）')
+    : String(enabled);
+  document.getElementById('statPaused').textContent = paused;
+
+  if (total === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><h3>暂无定时任务</h3><p>点击"新建任务"按钮创建第一个定时任务</p></div>';
+    return;
+  }
+
+  container.innerHTML = tasks.map(t => {
+    const tEnabled = t.Enabled !== false;
+    // 服务端 Running 标记（自动/手动执行中）或本页手动执行的 _INFLIGHT → 都视为执行中
+    const inFlight = _INFLIGHT.has(t.Id) || t.Running === true;
+    const statusDot = inFlight ? 'running' : (tEnabled ? 'running' : 'paused');
+    const statusText = inFlight ? '🌀 正在执行…' : (tEnabled ? '已启用' : '已暂停');
+    const freqText = { once:'仅一次', hourly:'每小时', daily:'每天', weekdays:'工作日每天', weekly:'每周一' }[t.Frequency] || t.Frequency || '--';
+    const nextRun = t.NextRun || '--';
+    const lastRun = t.LastRun || '从未执行';
+    const mRaw = t.Model || t.model || '';
+    const parsed = parseTaskModelValue(mRaw);
+    let modelBadge = '';
+    if (parsed && parsed.model) {
+      const providerLabels = { openai:'OpenAI', azure:'Azure', moonshot:'Kimi', qianwen:'千问', zhipu:'智谱', ollama:'Ollama', deepseek:'DeepSeek', anthropic:'Anthropic' };
+      const pLabel = parsed.provider ? (providerLabels[parsed.provider] || parsed.provider) : '';
+      const isVision = /(vision|vl|vt|llava|minicpm|pixtral|gemini|internvl)/i.test(parsed.model);
+      const isReason = /(r1|reasoning|deepseek-reasoner|o1|o3)/i.test(parsed.model);
+      const bg = parsed.provider === 'ollama' ? '#3c823d' : (isReason ? '#7c3aed' : (isVision ? '#1976d2' : '#d32f2f'));
+      const inner = (parsed.provider === 'ollama' ? '🖥️ ' : '') + (isVision ? '👁️ ' : '') + (isReason ? '🧠 ' : '') + (pLabel ? pLabel + ' · ' : '') + parsed.model;
+      modelBadge = `<div style="margin-top:8px;"><span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;color:#fff;background:${bg};vertical-align:middle;">${escapeHtml(inner)}</span></div>`;
+    }
+    const nameBadge = inFlight
+      ? `<span style="margin-left:8px;display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:#fff;background:#1976d2;vertical-align:middle;animation:tp-pulse 1.2s ease-in-out infinite;">🌀 正在执行</span>`
+      : '';
+    const execBtnDisabled = inFlight ? ' disabled style="opacity:.65;cursor:not-allowed;"' : '';
+
+    return `<div class="task-card"${inFlight ? ' style="box-shadow:0 0 0 2px #1976d233, 0 2px 8px rgba(25,118,210,.08);"' : ''}>
+      <div class="task-card-header">
+        <div class="task-card-name">
+          <span class="task-status-dot ${statusDot}"></span>
+          ${escapeHtml(t.Name)}${nameBadge}
+        </div>
+        <div class="task-card-actions">
+          <button class="btn btn-success btn-sm" onclick="executeTask('${t.Id}')" title="立即执行"${execBtnDisabled}>▶ 执行</button>
+          <button class="btn btn-sm ${tEnabled ? 'btn-secondary' : 'btn-primary'}" onclick="toggleTask('${t.Id}')">${tEnabled ? '⏸ 暂停' : '▶ 恢复'}</button>
+          <button class="btn btn-secondary btn-sm" onclick="openEditForm('${t.Id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.Id}')">🗑</button>
+        </div>
+      </div>
+      <div class="task-card-body">
+        <div class="row">
+          <span><span class="label">频率：</span><span class="val">${freqText}</span></span>
+          <span><span class="label">时间：</span><span class="val">${t.Time || '--'}</span></span>
+          <span><span class="label">状态：</span><span class="val" style="${inFlight ? 'color:#1976d2;font-weight:600;' : ''}">${statusText}</span></span>
+        </div>
+        <div class="row" style="margin-top:4px;">
+          <span><span class="label">下次执行：</span><span class="val">${nextRun}</span></span>
+          <span><span class="label">上次执行：</span><span class="val">${lastRun}</span></span>
+        </div>
+        ${t.TargetFile ? `<div class="row" style="margin-top:4px;"><span><span class="label">目标文件：</span><span class="val">${escapeHtml(t.TargetFile)}</span></span></div>` : ''}
+        ${t.LastResult ? (function () {
+            const r = String(t.LastResult || '');
+            const isOk = r.indexOf('✅') === 0 || r.indexOf('成功') === 0 || r.indexOf('已写入') === 0;
+            const isFail = r.indexOf('❌') === 0 || r.indexOf('失败') >= 0 || r.indexOf('占用') >= 0 || r.indexOf('不存在') >= 0 || r.indexOf('无法') >= 0;
+            const color = isOk ? '#2e7d32' : (isFail ? '#d32f2f' : '#262626');
+            return `<div class="row" style="margin-top:4px;"><span><span class="label">最近结果：</span><span class="val" style="color:${color};font-weight:500;">${escapeHtml(r)}</span></span></div>`;
+          })() : ''}
+        ${Array.isArray(t.LastSteps) && t.LastSteps.length ? (function () {
+            const okCount = t.LastSteps.filter(s => s && s.ok !== false).length;
+            const total = t.LastSteps.length;
+            const inner = t.LastSteps.map((s, i) => {
+              const ok = s && s.ok !== false;
+              const badge = ok
+                ? '<span style="display:inline-block;padding:0 7px;border-radius:4px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32;margin-right:7px;flex:0 0 auto;">✓</span>'
+                : '<span style="display:inline-block;padding:0 7px;border-radius:4px;font-size:11px;font-weight:600;background:#fdecea;color:#d32f2f;margin-right:7px;flex:0 0 auto;">✗</span>';
+              const no = '<span style="display:inline-block;min-width:22px;color:#999;font-size:11px;margin-right:7px;flex:0 0 auto;">' + (i + 1) + '.</span>';
+              const desc = '<span style="flex:1 1 auto;word-break:break-all;">' + escapeHtml((s && s.desc) || s.op || '') + '</span>';
+              const detail = s && s.detail
+                ? '<div style="margin-top:2px;color:#d32f2f;font-size:11px;line-height:1.5;word-break:break-all;">原因：' + escapeHtml(String(s.detail)) + '</div>'
+                : '';
+              return '<div style="display:flex;align-items:flex-start;padding:5px 8px;border-radius:6px;background:#fafafa;margin-top:4px;border:1px solid #eee;font-size:12px;line-height:1.6;">' + no + badge + desc + '</div>' + detail;
+            }).join('');
+            return `<details style="margin-top:8px;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;background:#fff;">
+              <summary style="cursor:pointer;font-size:12px;font-weight:600;color:#333;user-select:none;outline:none;">📋 本次执行步骤（${okCount}/${total} 成功）</summary>
+              <div style="margin-top:6px;">${inner}</div>
+            </details>`;
+          })() : ''}
+      </div>
+      ${modelBadge}
+      ${t.Command ? `<div class="task-card-footer"><span class="task-command">${escapeHtml(t.Command)}</span></div>` : ''}
+    </div>`;
+  }).join('');
+}
+// 🌀 正在执行 的脉冲动画 keyframes（兜底注入一次）
+(function injectPulseAnim() {
+  try {
+    if (document.getElementById('tp-pulse-kf')) return;
+    const s = document.createElement('style');
+    s.id = 'tp-pulse-kf';
+    s.textContent = '@keyframes tp-pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.7; transform:scale(.97); } }';
+    document.head.appendChild(s);
+  } catch(e) {}
+})();
+
+// ===== 表单操作 =====
+function openCreateForm() {
+  editingId = null;
+  currentEditingModel = '';
+  document.getElementById('formTitle').textContent = '新建定时任务';
+  document.getElementById('formSubmitBtn').textContent = '保存';
+  document.getElementById('taskName').value = '';
+  document.getElementById('taskFrequency').value = 'daily';
+  document.getElementById('taskTime').value = '09:00';
+  document.getElementById('taskCommand').value = '';
+  document.getElementById('taskTargetFile').value = '';
+  clearRefs();
+  // 路径输入变化 → 若和缓存不一致，清空引用区（避免展示错误的旧 sheet/表头）
+  _bindTargetFileListener();
+  try { const ms = document.getElementById('taskModel'); if (ms) ms.value = ''; } catch(e) {}
+  // 默认目标文件 = 宿主（当前 Excel 打开的工作簿）
+  (async function () {
+    try {
+      const h = await fetchHostWorkbook(true);
+      if (h && h.hasHost && h.path) {
+        const el = document.getElementById('taskTargetFile');
+        if (el && !el.value) { el.value = h.path; el.dispatchEvent(new Event('input', { bubbles: true })); }
+        // 拿到宿主路径立刻探测：此时 Excel 端通常在线，能直接读到当前工作簿 sheet
+        try { await detectWorkbookInfo(true); } catch(e) {}
+      } else {
+        onRefChange();
+      }
+    } catch(e) { onRefChange(); }
+  })();
+  // 打开表单时自动检测模型并填充选项
+  try { refreshModelSelect('taskModel', null, ''); } catch(e) {}
+  document.getElementById('taskFormOverlay').style.display = 'flex';
+  document.getElementById('timeGroup').style.display = '';
+}
+
+function openEditForm(id) {
+  try {
+    const task = tasks.find(t => t.Id === id);
+    if (!task) {
+      showToast('未找到任务: ' + id, 'error');
+      return;
+    }
+    editingId = id;
+    const tModel = task.Model || task.model || '';
+    currentEditingModel = tModel;
+    document.getElementById('formTitle').textContent = '编辑定时任务';
+    document.getElementById('formSubmitBtn').textContent = '更新';
+    document.getElementById('taskName').value = task.Name || '';
+    document.getElementById('taskFrequency').value = task.Frequency || 'daily';
+    document.getElementById('taskTime').value = task.Time || '09:00';
+    document.getElementById('taskCommand').value = task.Command || '';
+    document.getElementById('taskTargetFile').value = task.TargetFile || task.target_file || '';
+    clearRefs();
+    _bindTargetFileListener();
+    // 如果任务已有目标文件，静默执行探测，回填工作表下拉+预览
+    (async function () {
+      try {
+        const tf = (task.TargetFile || task.target_file || '').trim();
+        if (tf) { await detectWorkbookInfo(true); }
+        else { onRefChange(); }
+      } catch(e) { onRefChange(); }
+    })();
+    try { refreshModelSelect('taskModel', null, tModel); } catch(e) {}
+    document.getElementById('taskFormOverlay').style.display = 'flex';
+    document.getElementById('timeGroup').style.display = task.Frequency === 'hourly' ? 'none' : '';
+  } catch (e) {
+    showToast('编辑出错: ' + e.message, 'error');
+  }
+}
+let _tfBound = false;
+function _bindTargetFileListener() {
+  if (_tfBound) return;
+  _tfBound = true;
+  const el = document.getElementById('taskTargetFile');
+  if (!el) return;
+  el.addEventListener('input', function () {
+    if (_wbInfoCache && _wbInfoCache.path) {
+      const cur = (el.value || '').trim();
+      if (cur && cur !== _wbInfoCache.path) {
+        const sel = document.getElementById('refSheet');
+        if (sel) sel.innerHTML = '<option value="">（探测后可选）</option>';
+        _wbInfoCache = null;
+        onRefChange();
+      }
+    }
+  });
+  el.addEventListener('change', function () {
+    const v = (el.value || '').trim();
+    if (v && (!_wbInfoCache || _wbInfoCache.path !== v)) {
+      // 用户粘贴完回车/失焦，自动探测（省一次手动点"探测"）
+      (async () => { try { await detectWorkbookInfo(true); } catch(e) {} })();
+    }
+  });
+}
+
+function closeForm() {
+  document.getElementById('taskFormOverlay').style.display = 'none';
+  editingId = null;
+}
+
+// 遮罩层"点击外部关闭"：仅在无拖动（<8px）、无文本选区、且点到遮罩本身时关闭。
+// 否则在表单内按下左键拖拽（如选中输入框文字）松开到遮罩上时，click 的 target 会落到遮罩，
+// 旧写法会把这种拖动误判为"点击遮罩"而误关窗口。
+function initOverlayCloseOnOutsideClick(overlayId, closeFn) {
+  const overlay = document.getElementById(overlayId);
+  if (!overlay || typeof closeFn !== 'function') return;
+  let downX = 0, downY = 0, downAt = 0;
+  overlay.addEventListener('pointerdown', function (e) {
+    downX = e.clientX; downY = e.clientY; downAt = Date.now();
+  });
+  overlay.addEventListener('click', function (e) {
+    if (e.target !== overlay) return;
+    if (window.getSelection && window.getSelection().toString().trim()) return;
+    const moved = downAt ? Math.hypot(e.clientX - downX, e.clientY - downY) : 0;
+    if (moved > 8) return;
+    closeFn();
+  });
+}
+initOverlayCloseOnOutsideClick('taskFormOverlay', closeForm);
+initOverlayCloseOnOutsideClick('configFormOverlay', closeConfigForm);
+
+function onFrequencyChange() {
+  const freq = document.getElementById('taskFrequency').value;
+  document.getElementById('timeGroup').style.display = freq === 'hourly' ? 'none' : '';
+}
+
+// ===== 提交表单（本地存储 + 后台同步）=====
+function submitForm() {
+  const name = document.getElementById('taskName').value.trim();
+  const frequency = document.getElementById('taskFrequency').value;
+  const time = document.getElementById('taskTime').value || '09:00';
+  const command = document.getElementById('taskCommand').value.trim();
+  const targetFile = document.getElementById('taskTargetFile').value.trim();
+  const modelSel = document.getElementById('taskModel');
+  const model = modelSel ? (modelSel.value || '').trim() : '';
+
+  if (!name) { showToast('请输入任务名称', 'error'); return; }
+  if (!command) { showToast('请输入执行指令', 'error'); return; }
+
+  const nowIso = new Date().toISOString();
+  const taskData = {
+    Name: name,
+    Frequency: frequency,
+    Time: time,
+    Command: command,
+    TargetFile: targetFile,
+    Model: model,
+    Enabled: true,
+    UpdatedAt: nowIso
+  };
+
+  // 先保存到 localStorage（立即生效）→ 并立即重算 NextRun，保证卡片上"下次执行"立刻刷新
+  let persistedId = editingId;
+  if (editingId) {
+    const idx = tasks.findIndex(t => t.Id === editingId);
+    if (idx >= 0) {
+      const merged = { ...tasks[idx], ...taskData, UpdatedAt: nowIso };
+      merged.NextRun = calcNextRun(merged);
+      tasks[idx] = merged;
+    }
+  } else {
+    taskData.Id = 'tsk_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+    persistedId = taskData.Id;
+    taskData.CreatedAt = nowIso;
+    taskData.NextRun = calcNextRun(taskData);
+    tasks.push(taskData);
+  }
+
+  saveToLocal(tasks);
+  showToast(editingId ? '任务已更新' : '任务已创建', 'success');
+  closeForm();
+  renderTasks();
+
+  // 后台同步：两端并行 → 然后双向回读按 UpdatedAt 合并，确保内嵌/独立内容立即一致
+  (async function () {
+    try {
+      const id = persistedId;
+      const latestTask = tasks.find(t => t.Id === id) || taskData;
+      // 同步请求把前端刚算出的 NextRun 也带上，两端字段统一
+      const taskToSend = { ...latestTask, NextRun: latestTask.NextRun || calcNextRun(latestTask) };
+      const p1 = (async () => {
+        try {
+          if (editingId) return await syncToApi('PUT', '/tasks/' + encodeURIComponent(id), taskToSend);
+          return await syncToApi('POST', '/tasks', taskToSend);
+        } catch (e) { return null; }
+      })();
+      const p2 = (async () => {
+        try { return await syncToSar('POST', '/tasks', { ...taskToSend, Id: id }); }
+        catch (e) { return null; }
+      })();
+      await Promise.all([p1, p2]);
+      // 同步后双向回读一次 merge，避免两端有不一致
+      try {
+        const reads = [];
+        for (const base of excelApiBases()) {
+          try {
+            const c = new AbortController();
+            setTimeout(() => c.abort(), 2500);
+            const r = await fetch(excelApiUrl(base + '/tasks'), { method: 'GET', signal: c.signal });
+            if (r.ok) {
+              const d = await r.json().catch(() => null);
+              const arr = Array.isArray(d) ? d : (d && d.data) || [];
+              reads.push(arr);
+            }
+          } catch (e) { /* 继续下一个 */ }
+        }
+        for (const base of sarApiBases()) {
+          try {
+            const c = new AbortController();
+            setTimeout(() => c.abort(), 2500);
+            const r = await fetch(base + '/tasks', { method: 'GET', signal: c.signal });
+            if (r.ok) {
+              const d = await r.json().catch(() => null);
+              const arr = Array.isArray(d) ? d : (d && d.data) || [];
+              reads.push(arr);
+            }
+          } catch (e) { /* 继续下一个 */ }
+        }
+        let changed = false;
+        for (const arr of reads) { if (arr && arr.length) { if (!changed && arr.length !== tasks.length) changed = true; mergeByUpdatedAt(arr); } }
+        if (changed) { saveToLocal(tasks); renderTasks(); }
+      } catch (e) {}
+    } catch (e) {}
+  })();
+}
+
+// ===== 执行任务 =====
+async function executeTask(id) {
+  // 以 localStorage 为本：拿到该 Id 最新的任务（TargetFile/Command/Model 都是用户刚改过的那版）
+  const task = tasks.find(t => t.Id === id);
+  if (!task) { showToast('任务不存在：' + id, 'error'); return; }
+  if (!task.Command) { showToast('任务缺少指令内容，无法执行', 'error'); return; }
+  if (_INFLIGHT.has(id)) { showToast('该任务正在执行中，请稍后再试', 'error'); return; }
+
+  // 🌀 标记执行中（卡片显示脉冲徽标、执行按钮禁用；所有退出分支 finally 清理）
+  _INFLIGHT.add(id);
+  renderTasks();
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    _INFLIGHT.delete(id);
+    renderTasks();
+  };
+
+  try {
+    const sarDot = document.getElementById('sarDot');
+    const sarOnline = (sarDot && sarDot.className === 'server-dot') || !!window._sarOnlineCached;
+
+    // 先把最新任务 upsert 到两端（9528 & 9529），确保执行器用的是卡片上那版，不是历史脏数据
+    // （否则会出现"卡片显示 A 文件，错误提示里却报 B 文件不存在/被占用"这种令人抓狂的不一致）
+    const sarUpsert = syncToSar('POST', '/tasks', task);
+    const excelUpsert = syncToApi('POST', '/tasks', task);
+    await Promise.all([sarUpsert.catch(()=>null), excelUpsert.catch(()=>null)]);
+
+    // 真实探测 Excel 是否运行；不要只看 isStandalone
+    const excelLive = await excelIsUp();
+
+    // 1. Excel 运行中 → 走 Excel 9528 /api/tasks/{id}/execute（后端应跑真实 COM + LLM 流程）
+    if (excelLive) {
+      const bases = excelApiBases();
+      const ex = await raceFirstFetch('POST', bases, '/tasks/' + encodeURIComponent(id) + '/execute',
+        { Id: id }, 180 * 1000 /* LLM 流程长，给到 3 分钟 */);
+      if (ex.ok) {
+        try {
+          const data = await ex.response.json();
+          const ok = !!(data && (data.success === true || (data.data && data.data.success !== false)));
+          const msg = (data && (data.message || (data.data && (data.data.message || data.data.result)))) || '';
+          // 后端回传 LastResult → 合并到本地卡片
+          let lastResult = (data && data.lastResult) || (data && data.data && data.data.lastResult) || null;
+          if (!lastResult && !ok) lastResult = '执行失败：' + (msg || '未返回详情');
+          if (!lastResult && ok && msg) lastResult = String(msg);
+          // 后端回传逐步执行结果（LLM 计划 + 各操作 + 保存）→ 合并到卡片展示
+          let stepsPatch = null;
+          try {
+            const s = (data && data.steps) || (data && data.data && data.data.steps);
+            if (Array.isArray(s) && s.length) stepsPatch = { LastSteps: s };
+          } catch (e) {}
+          mergeTaskFields(id, Object.assign({ LastResult: lastResult, LastRun: (data && data.lastRun) || undefined, NextRun: (data && data.nextRun) || undefined }, stepsPatch));
+          saveToLocal(tasks);
+          renderTasks();
+          if (ok) {
+            showToast(msg ? ('任务执行完成：' + msg) : '任务执行完成', 'success');
+          } else {
+            showToast('任务执行失败：' + (msg || '后端未返回错误详情'), 'error');
+          }
+          done();
+          return;
+        } catch (parsingErr) {
+          showToast('Excel 后端返回格式异常：' + parsingErr.message, 'error');
+          done();
+          return;
+        }
+      }
+      // 两端都失败：记录后落到独立服务（如果独立服务通）
+      try { console.warn('[executeTask] Excel 两端执行失败，尝试独立服务：', ex.failures); } catch(e) {}
+    }
+
+    // 2. Excel 未运行 → 走独立服务（openpyxl 直接读写 xlsx）
+    if (!sarOnline) {
+      showToast('Excel 与独立服务均未运行，无法执行任务', 'error');
+      done();
+      return;
+    }
+    const sBases = sarApiBases();
+    const sr = await raceFirstFetch('POST', sBases, '/tasks/' + encodeURIComponent(id) + '/execute',
+      { Id: id }, 180 * 1000);
+    if (!sr.ok) {
+      showToast('独立服务执行失败（两端）：' + (sr.failures || []).join('；'), 'error');
+      done();
+      return;
+    }
+    try {
+      const data = await sr.response.json();
+      const ok = !!(data && data.success);
+      const msg = (data && data.message) || '';
+      if (ok) {
+        mergeTaskFields(id, { LastResult: msg ? ('✅ 成功：' + msg) : '✅ 执行成功' });
+        // 回读最新状态（NextRun/LastResult）
+        try {
+          const got = await fetch(sBases[0] + '/tasks', { method: 'GET' });
+          const gd = await got.json();
+          const list = Array.isArray(gd) ? gd : (gd.data || []);
+          // 不再整段替换 tasks —— 那样会把本地没同步到独立服务的任务冲掉（典型场景：内嵌面板新建后先本地、9529 还没 upsert 完就执行 → list.length=1 冲掉其余 4 条）。
+          // 改成只 merge 远端已有的、按 updatedAt 合并；本地独有的保留。
+          if (list && list.length) mergeByUpdatedAt(list);
+        } catch (e2) {}
+        saveToLocal(tasks);
+        renderTasks();
+        showToast('任务已由独立服务执行' + (msg ? '：' + msg : ''), 'success');
+      } else {
+        const patch = { LastResult: '❌ 失败：' + (msg || '无详情') };
+        if (Array.isArray(data && data.steps)) patch.LastSteps = data.steps;
+        mergeTaskFields(id, patch);
+        saveToLocal(tasks);
+        renderTasks();
+        showToast('独立服务执行失败：' + (msg || '未返回错误详情'), 'error');
+      }
+    } catch (e) {
+      showToast('独立服务响应异常：' + e.message, 'error');
+    }
+    done();
+  } catch (uncaught) {
+    // 兜底：任何未捕获异常也必须清掉 INFLIGHT，否则卡片永远"正在执行"
+    console.error('[executeTask] uncaught:', uncaught);
+    showToast('执行过程出错：' + (uncaught && uncaught.message || String(uncaught)), 'error');
+    done();
+  }
+}
+
+// 给 tasks 数组中指定的任务打 updatedAt（用于合并仲裁）
+function touchUpdatedAt(id, isoNowOverride) {
+  const iso = isoNowOverride || new Date().toISOString();
+  const idx = tasks.findIndex(t => t && t.Id === id);
+  if (idx >= 0) { tasks[idx].UpdatedAt = iso; }
+  return iso;
+}
+
+// 把传入数组按 UpdatedAt 合并到全局 tasks（tasks 中不存在的加进来；存在的按 UpdatedAt 新者胜）
+function mergeByUpdatedAt(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return;
+  // 时区格式可能不一致（ISO UTC vs 本地时间），必须归一化为时间戳比较，
+  // 否则字符串比较会让旧数据误判为"更新"覆盖新执行结果（执行后的 LastRun/LastSteps 丢失）
+  const toTs = function (v) {
+    if (!v) return 0;
+    const n = Date.parse(v);
+    if (!isNaN(n)) return n;
+    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+    return 0;
+  };
+  const byId = new Map();
+  tasks.forEach(t => byId.set(t.Id, t));
+  for (const inc of arr) {
+    if (!inc || !inc.Id) continue;
+    const incT = Object.assign({}, inc);
+    if (!incT.UpdatedAt) incT.UpdatedAt = (incT.LastRun || incT.CreatedAt || new Date(0).toISOString());
+    const old = byId.get(incT.Id);
+    if (!old) { byId.set(incT.Id, incT); continue; }
+    const takeOld = toTs(old.UpdatedAt) > toTs(incT.UpdatedAt);
+    const winner = takeOld ? old : incT;
+    const loser = takeOld ? incT : old;
+    byId.set(incT.Id, Object.assign({}, loser, winner, {
+      NextRun: winner.NextRun || loser.NextRun,
+      LastRun: winner.LastRun || loser.LastRun,
+      LastResult: winner.LastResult || loser.LastResult,
+      LastSteps: (Array.isArray(winner.LastSteps) && winner.LastSteps.length ? winner.LastSteps : loser.LastSteps),
+      Enabled: winner.Enabled !== false ? (loser.Enabled !== false ? true : false) : false
+    }));
+  }
+  tasks = Array.from(byId.values());
+}
+
+// 按 Id 合并字段到本地 tasks（不重排顺序，只更新已有字段；新字段也插入）
+function mergeTaskFields(id, patch) {
+  if (!patch) return;
+  const idx = tasks.findIndex(t => t.Id === id);
+  if (idx < 0) return;
+  tasks[idx] = Object.assign({}, tasks[idx], patch, { UpdatedAt: new Date().toISOString() });
+}
+
+// ===== 切换暂停/恢复 =====
+async function toggleTask(id) {
+  const task = tasks.find(t => t.Id === id);
+  if (!task) return;
+  const iso = new Date().toISOString();
+
+  // 本地立即切换
+  task.Enabled = !task.Enabled;
+  task.UpdatedAt = iso;
+  saveToLocal(tasks);
+  renderTasks();
+  showToast(task.Enabled ? '任务已恢复' : '任务已暂停', 'success');
+
+  // 并行同步两端，然后双向回读 merge 一次（保持两边一致）
+  (async function () {
+    const patch = { Id: id, Enabled: task.Enabled, UpdatedAt: iso };
+    try {
+      await Promise.all([
+        syncToApi('PUT', '/tasks/' + encodeURIComponent(id), patch).catch(() => null),
+        syncToSar('POST', '/tasks', patch).catch(() => null),
+      ]);
+      // 两端回读 merge
+      const reads = [];
+      for (const base of excelApiBases()) {
+        try {
+          const c = new AbortController();
+          setTimeout(() => c.abort(), 2500);
+          const r = await fetch(excelApiUrl(base + '/tasks'), { method: 'GET', signal: c.signal });
+          if (r.ok) { const d = await r.json().catch(() => null); reads.push(Array.isArray(d) ? d : (d && d.data) || []); }
+        } catch (e) {}
+      }
+      for (const base of sarApiBases()) {
+        try {
+          const c = new AbortController();
+          setTimeout(() => c.abort(), 2500);
+          const r = await fetch(base + '/tasks', { method: 'GET', signal: c.signal });
+          if (r.ok) { const d = await r.json().catch(() => null); reads.push(Array.isArray(d) ? d : (d && d.data) || []); }
+        } catch (e) {}
+      }
+      let changed = false;
+      for (const arr of reads) { if (arr && arr.length) { if (!changed && arr.length !== tasks.length) changed = true; mergeByUpdatedAt(arr); } }
+      if (changed) { saveToLocal(tasks); renderTasks(); }
+    } catch (e) {}
+  })();
+}
+
+// ===== 删除任务 =====
+function deleteTask(id) {
+  if (!confirm('确定要删除此任务吗？')) return;
+
+  // 本地立即删除（无论 API 同步是否成功）
+  tasks = tasks.filter(t => t.Id !== id);
+  saveToLocal(tasks);
+  renderTasks();
+  showToast('任务已删除', 'success');
+
+  // 并行同步两端删除 → 两端回读按 UpdatedAt merge；如果两端还有这条（说明删除没发成），那是 UpdatedAt 新的删除标记胜出（本地 tasks 已经不包含 → 远端没有的话被 mergeByUpdatedAt 合并回）
+  (async function () {
+    try {
+      await Promise.all([
+        syncToApi('DELETE', '/tasks/' + encodeURIComponent(id), null).catch(() => null),
+        syncToSar('DELETE', '/tasks/' + encodeURIComponent(id), null).catch(() => null),
+      ]);
+      // 两端回读：远端若还有这条，说明删除失败要回加；如果没有，merge 不会加回来
+      const reads = [];
+      for (const base of excelApiBases()) {
+        try {
+          const c = new AbortController();
+          setTimeout(() => c.abort(), 2500);
+          const r = await fetch(excelApiUrl(base + '/tasks'), { method: 'GET', signal: c.signal });
+          if (r.ok) { const d = await r.json().catch(() => null); reads.push(Array.isArray(d) ? d : (d && d.data) || []); }
+        } catch (e) {}
+      }
+      for (const base of sarApiBases()) {
+        try {
+          const c = new AbortController();
+          setTimeout(() => c.abort(), 2500);
+          const r = await fetch(base + '/tasks', { method: 'GET', signal: c.signal });
+          if (r.ok) { const d = await r.json().catch(() => null); reads.push(Array.isArray(d) ? d : (d && d.data) || []); }
+        } catch (e) {}
+      }
+      const beforeLen = tasks.length;
+      for (const arr of reads) { if (arr && arr.length) mergeByUpdatedAt(arr); }
+      if (beforeLen !== tasks.length) { saveToLocal(tasks); renderTasks(); }
+    } catch (e) {}
+  })();
+}
+
+// ===== Toast =====
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type ? ' ' + type : '') + ' show';
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ===== HTML 转义 =====
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
