@@ -1526,6 +1526,25 @@ Namespace ExcelAIVSTOAddIn
         End Function
 
         ''' <summary>
+        ''' P1-1 异步任务入口：提交 PPT 生成任务，立即返回 {success, result:{taskId}}，
+        ''' 后台线程执行 PowerPoint COM 生成，Excel 主线程不再阻塞，UI 不假死。
+        ''' </summary>
+        <ComVisible(True)>
+        Public Function SubmitGeneratePPT(argsJson As String) As String
+            Return PptTaskQueue.Submit(argsJson)
+        End Function
+
+        ''' <summary>
+        ''' P1-1 异步任务轮询：按 taskId 查生成状态。
+        ''' 返回 {success, result:{taskId, status, progress, stage, output?, error?}}；
+        ''' status=done 时 output 为 Generate 原始返回 JSON（与同步路径形状一致）。
+        ''' </summary>
+        <ComVisible(True)>
+        Public Function GetGeneratePPTStatus(taskId As String) As String
+            Return PptTaskQueue.GetStatus(taskId)
+        End Function
+
+        ''' <summary>
         ''' 获取 PPT 模板配置（主题 + 版式白名单），供前端动态加载主题与版式。
         ''' 数据源：Config/ppt_templates.json（内置）+ Config/custom_ppt_themes.json（用户导入）合并。
         ''' 成功时返回合并后的 JSON；失败时返回 {"success":false,"error":"..."}。

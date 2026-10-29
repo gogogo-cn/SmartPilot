@@ -460,7 +460,25 @@ Namespace Services
             End Try
         End Function
 
-        Private Shared Function GenerateImpl(argsJson As String) As String
+        ''' <summary>
+        ''' 队列入口（P1-1）：阻塞等待生成锁，供 PptTaskQueue 后台线程调用，
+        ''' 与同步 Generate 的 TryEnter 拒绝式互斥，保证任意时刻只有一个 PPT 生成执行。
+        ''' </summary>
+        Friend Shared Function GenerateQueued(argsJson As String, progress As Action(Of Integer, String)) As String
+            Monitor.Enter(_genLock)
+            Try
+                _isGenerating = True
+                Try
+                    Return GenerateImpl(argsJson, progress)
+                Finally
+                    _isGenerating = False
+                End Try
+            Finally
+                Monitor.Exit(_genLock)
+            End Try
+        End Function
+
+        Private Shared Function GenerateImpl(argsJson As String, Optional progress As Action(Of Integer, String) = Nothing) As String
             Dim reportTitle As String = ""
             Try
                 Debug.WriteLine("[PptGenerationService] ========== Generate 开始 ==========")
@@ -498,6 +516,8 @@ Namespace Services
                 Dim chartAgg As String = If(args Is Nothing, "", args.Value(Of String)("agg"))
 
                 Debug.WriteLine("[PptGenerationService] 参数: rangeAddress='" & rangeAddress & "' slidesSpec=" & If(slidesSpec Is Nothing, "Nothing", slidesSpec.Count & "项") & " autoDesign=" & autoDesign)
+
+                progress?.Invoke(5, "解析参数")
 
                 ' ---- 布局引擎：幻灯片类型白名单校验 ----
                 If slidesSpec IsNot Nothing Then
@@ -678,6 +698,8 @@ Namespace Services
                     End If
                 End If
 
+                progress?.Invoke(20, "数据就绪")
+
                 ' ---- 数据感知页面方向：前端未显式传时按数据形状推断（竖版长表 → 竖版） ----
                 If String.IsNullOrWhiteSpace(orientation) Then
                     orientation = PptDesignEngine.RecommendOrientation(headers, If(rows Is Nothing, 0, rows.Count))
@@ -710,7 +732,8 @@ Namespace Services
                 ' ---- 生成 PPT（失败抛异常，由本方法统一转错误） ----
                 ' 注意：BuildPresentation 内部已完成"保存 + 用同一个 PowerPoint 实例打开文件"，
                 ' 不再需要 Process.Start 重开，避免 CreateObject→Quit→Shell 三段式闪烁。
-                BuildPresentation(headers, rows, reportTitle, src, filePath, theme, slidesSpec, isPortrait, chartMode, CanvasW, chartAgg)
+                progress?.Invoke(30, "启动 PowerPoint 渲染")
+                BuildPresentation(headers, rows, reportTitle, src, filePath, theme, slidesSpec, isPortrait, chartMode, CanvasW, chartAgg, progress)
 
                 ' ---- 生成历史日志：成功记录 ----
                 AppendGenerationLog(True, reportTitle, theme.Name, If(slidesSpec Is Nothing, 0, slidesSpec.Count), filePath, "")
@@ -732,6 +755,7 @@ Namespace Services
                 End If
                 summary.AppendLine(DescribeChartMode(chartMode, chartPages))
 
+                progress?.Invoke(100, "完成")
                 Return JsonSuccess(summary.ToString().TrimEnd(), filePath)
             Catch ex As Exception
                 ChatLogger.Instance.LogError("PPT_GEN", "生成 PPT 异常: " & ex.ToString())
@@ -765,7 +789,8 @@ Namespace Services
                                              isPortrait As Boolean,
                                              Optional chartMode As String = "",
                                              Optional canvasWidth As Integer = 960,
-                                             Optional chartAgg As String = "sum")
+                                             Optional chartAgg As String = "sum",
+                                             Optional progress As Action(Of Integer, String) = Nothing)
             Dim pptApp As Object = Nothing
             Dim pres As Object = Nothing
             Dim toRelease As New List(Of Object)()
@@ -794,6 +819,7 @@ Namespace Services
                 If pres Is Nothing Then
                     Throw New Exception("无法创建演示文稿（PowerPoint 初始化失败）")
                 End If
+                progress?.Invoke(40, "创建 PowerPoint 应用")
 
                 ' ---- 显式设置页面尺寸与方向（数据感知：竖版长表 → 竖版，否则横版） ----
                 ' 设计空间 960x720：用自定义尺寸精确对齐。
@@ -812,15 +838,20 @@ Namespace Services
                     ' ---- 布局引擎：按 slides 规格逐页生成 ----
                     stepName = "按规格生成幻灯片"
                     ChatLogger.Instance.LogInfo("PPT_GEN", "步骤2/4：布局引擎生成 " & slidesSpec.Count.ToString() & " 页")
+                    Dim totalSlides As Integer = If(slidesSpec Is Nothing, 0, slidesSpec.Count)
+                    Dim slideIdx As Integer = 0
                     For Each item As JToken In slidesSpec
                         Dim spec As JObject = TryCast(item, JObject)
                         If spec Is Nothing Then Continue For
+                        slideIdx += 1
+                        progress?.Invoke(40 + CInt(40 * slideIdx / Math.Max(1, totalSlides)), "生成第 " & slideIdx & "/" & totalSlides & " 页")
                         BuildSlideBySpec(pres, toRelease, spec, theme, headers, rows, sourceDesc, chartMode, chartAgg)
                     Next
                 Else
                     ' ---- 旧版固定结构：标题 + 表格 + 概览 ----
                     stepName = "生成标题页"
                     ChatLogger.Instance.LogInfo("PPT_GEN", "步骤2/4：生成标题页")
+                    progress?.Invoke(50, "生成标题页")
                     Dim legacyTitleSpec As New JObject()
                     legacyTitleSpec("title") = title
                     BuildTitleSlide(pres, toRelease, legacyTitleSpec, theme, sourceDesc)
@@ -829,11 +860,13 @@ Namespace Services
                     If rowCount > 0 AndAlso headers.Count > 0 Then
                         stepName = "生成数据表格页"
                         ChatLogger.Instance.LogInfo("PPT_GEN", "步骤3/4：生成数据表格页（" & rowCount.ToString() & " 行）")
+                        progress?.Invoke(65, "生成数据表格页")
                         BuildTableSlide(pres, toRelease, headers, rows, "数据明细", sourceDesc, theme)
                     End If
 
                     stepName = "生成数据概览页"
                     ChatLogger.Instance.LogInfo("PPT_GEN", "步骤3b/4：生成数据概览页")
+                    progress?.Invoke(75, "生成数据概览页")
                     BuildOverviewSlide(pres, toRelease, headers, rows, sourceDesc, theme)
                 End If
 
@@ -842,6 +875,7 @@ Namespace Services
                 ChatLogger.Instance.LogInfo("PPT_GEN", "步骤4/4：保存到 " & filePath)
                 pres.SaveAs(filePath, 24) ' ppSaveAsOpenXMLPresentation = 24
                 ChatLogger.Instance.LogInfo("PPT_GEN", "PPT 保存成功")
+                progress?.Invoke(90, "保存文件")
 
                 ' ---- 让当前 PowerPoint 实例直接打开刚保存的文件（不再 Quit 重开） ----
                 ' 改前：SaveAs → Finally Quit → 外层 Process.Start（Shell 重开），
@@ -858,6 +892,7 @@ Namespace Services
                     pptApp.Visible = True
                     pres = pptApp.Presentations.Open(filePath, ReadOnly:=False, WithWindow:=True)
                     ChatLogger.Instance.LogInfo("PPT_GEN", "已打开生成的 PPT（复用当前 PowerPoint 实例）")
+                    progress?.Invoke(95, "打开生成的 PPT")
                 Catch opEx As Exception
                     ChatLogger.Instance.LogWarning("PPT_GEN", "PowerPoint 实例内打开失败，回退 Shell 方式：" & opEx.Message)
                     Try

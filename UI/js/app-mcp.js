@@ -1194,6 +1194,43 @@
                 const _argsJson = JSON.stringify(args);
                 // CallLocalTool 实际下发前打印 args JSON，便于诊断后端 args 序列化/反序列化是否丢字段
                 ChatLog.info('MCP-DEBUG', `[CallLocalTool] toolName=${toolName} argsJson=${_argsJson}`);
+                // ---- P1-1：ppt_generate 走异步任务队列（SubmitGeneratePPT + 轮询 GetGeneratePPTStatus）----
+                // 同步 CallLocalTool 会在 Excel 主线程执行 PowerPoint COM 生成，大 PPT 期间 Excel UI 假死；
+                // 异步路径立即返回 taskId、后台生成、前端 1s 轮询，生成期间界面可交互。
+                // 说明：返回的 output 与同步路径 data.result 形状一致（Generate 原始返回 JSON 字符串），
+                // 上层既有解析逻辑无需改动；Web/HTTP 环境无异步接口，走下方同步分支。
+                if (toolName === 'ppt_generate' && App.excelBridge && typeof App.excelBridge.SubmitGeneratePPT === 'function') {
+                    try {
+                        const subRaw = await App.excelBridge.SubmitGeneratePPT(_argsJson);
+                        const sub = parseMcpResult(subRaw);
+                        if (sub && sub.success && sub.result && sub.result.taskId) {
+                            const taskId = sub.result.taskId;
+                            ChatLog.info('MCP', `[executeLocalExcelTool] ppt_generate 已提交异步任务 ${taskId}，开始轮询`);
+                            const deadline = Date.now() + 5 * 60 * 1000; // 上限 5 分钟
+                            while (Date.now() < deadline) {
+                                await new Promise(r => setTimeout(r, 1000));
+                                const stRaw = await App.excelBridge.GetGeneratePPTStatus(taskId);
+                                const st = parseMcpResult(stRaw);
+                                const stData = st && st.success ? st.result : null;
+                                if (!stData) continue;
+                                if (stData.status === 'done') {
+                                    ChatLog.info('MCP', `[executeLocalExcelTool] ppt_generate 任务 ${taskId} 完成`);
+                                    return { result: stData.output, taskCompleted: true };
+                                }
+                                if (stData.status === 'error' || stData.status === 'cancelled') {
+                                    return { error: stData.error || 'PPT 生成失败', success: false, method: toolName };
+                                }
+                                if (stData.status === 'running' || stData.status === 'queued') {
+                                    ChatLog.info('MCP', `[executeLocalExcelTool] ppt_generate ${taskId} ${stData.status} ${stData.progress}% ${stData.stage || ''}`);
+                                }
+                            }
+                            return { error: 'PPT 生成超时（5 分钟未完成）', success: false, method: toolName };
+                        }
+                        ChatLog.warn('MCP', '[executeLocalExcelTool] ppt_generate 异步提交失败，回退同步路径: ' + JSON.stringify(sub));
+                    } catch (asyncErr) {
+                        ChatLog.warn('MCP', '[executeLocalExcelTool] ppt_generate 异步路径异常，回退同步路径: ' + asyncErr.message);
+                    }
+                }
                 let result;
                 if (typeof _fbCall === 'function') {
                     // 多来源回退：规避包装桥对个别方法不可调用（e is not a function）
