@@ -1,5 +1,5 @@
 {
-  "_comment": "默认 MCP 配置 - 使用环境变量占位符，会在加载时自动展开为当前系统路径。个人修改请写 mcp.user.json 以避免被编译覆盖。",
+  "_comment": "默认 MCP 配置 - 使用环境变量占位符，会在加载时自动展开为当前系统路径。个人修改请写 mcp.user.json 以避免被编译覆盖。filesystem(全用户目录) 与 ms365(Graph API) 权限面较大，默认关闭，按需在 mcp.user.json 中置 enabled:true 开启。",
   "mcpServers": {
     "filesystem": {
       "name": "filesystem",
@@ -7,7 +7,7 @@
       "transport": "stdio",
       "command": "%PROGRAMFILES%\\nodejs\\node.exe",
       "args": ["%APPDATA%\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js", "%USERPROFILE%"],
-      "enabled": true
+      "enabled": false
     },
     "ms365": {
       "name": "ms365",
@@ -15,7 +15,7 @@
       "transport": "stdio",
       "command": "%PROGRAMFILES%\\nodejs\\node.exe",
       "args": ["%APPDATA%\\npm\\node_modules\\@softeria\\ms-365-mcp-server\\dist\\index.js"],
-      "enabled": true
+      "enabled": false
     }
   },
   "serverPort": 9527,

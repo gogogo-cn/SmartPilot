@@ -15,14 +15,15 @@ Partial Public NotInheritable Class ThisAddIn
     Private Sub ThisAddIn_Startup(sender As Object, e As EventArgs) Handles Me.Startup
         Try
             Try
+                ' 加载路径与文件时间写入统一日志（LogServiceManager 后端），
+                ' 不再散落 %TEMP%\addin_path.log（固定名在多实例/多用户下冲突）。
                 Dim loc As String = System.Reflection.Assembly.GetExecutingAssembly().Location
                 Dim ft As String = ""
                 Try
                     ft = New System.IO.FileInfo(loc).LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
                 Catch
                 End Try
-                System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "addin_path.log"), _
-                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & " | Location=" & loc & " | FileTime=" & ft & vbCrLf)
+                ExcelAIVSTOAddIn.Utils.AppLogger.LogInfo("ADDIN", $"插件加载: Location={loc} | FileTime={ft}")
             Catch
             End Try
             

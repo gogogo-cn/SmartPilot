@@ -5,7 +5,8 @@
 '  - 选区数据复用 ExcelDataBridge.GetRangeData（已在 Excel UI 线程安全读取）。
 '  - 使用 CreateObject 晚绑定驱动 PowerPoint，无需新增 PowerShell Interop 引用。
 '  - 参数先校验；选区/表头缺失时返回明确错误，绝不生成坏文件。
-'  - 固定商务蓝主题，统一排版；不再依赖"当场拼 VBA 再编译"。
+'  - 主题由 Config/ppt_templates.json + Config/custom_ppt_themes.json 合并驱动（缺省回退内置商务蓝），
+'    支持 styleDirection 风格方向（tech/academic/business/minimal/vivid）与 WCAG 校验，不依赖"当场拼 VBA 再编译"。
 ' ============================================================
 Option Explicit On
 Option Infer On
