@@ -151,3 +151,6 @@ bin/Release/Config/mcp.user.json
 .trae-html-share-packages/
 /*.yml
 _tmp_*.png
+
+# 运行时状态目录
+OpsConsole/data/
